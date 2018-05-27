@@ -1,11 +1,12 @@
+import xmlrpc.client
+
 import requests
 import requests.auth
-import xmlrpclib
 
 
-class RequestsTransport(xmlrpclib.Transport):
+class RequestsTransport(xmlrpc.client.Transport):
     def __init__(self, secure, auth=None, proxies=None, verify_ssl=True):
-        xmlrpclib.Transport.__init__(self)
+        xmlrpc.client.Transport.__init__(self)
 
         self.secure = secure
 
@@ -54,7 +55,7 @@ class RequestsTransport(xmlrpclib.Transport):
             return self.parse_response(response)
 
         # Invalid response returned
-        raise xmlrpclib.ProtocolError(
+        raise xmlrpc.client.ProtocolError(
             host + handler,
             response.status_code, response.reason,
             response.headers

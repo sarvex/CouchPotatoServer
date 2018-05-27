@@ -2,12 +2,11 @@ import traceback
 
 from couchpotato import get_db
 from couchpotato.api import addApiView
-from couchpotato.core.event import addEvent
-from couchpotato.core.helpers.encoding import toUnicode
+from couchpotato.core.event import add_event
+from couchpotato.core.helpers.encoding import to_unicode
 from couchpotato.core.logger import CPLog
 from couchpotato.core.plugins.base import Plugin
 from .index import CategoryIndex, CategoryMediaIndex
-
 
 log = CPLog(__name__)
 
@@ -31,7 +30,7 @@ class CategoryPlugin(Plugin):
 }"""}
         })
 
-        addEvent('category.all', self.all)
+        add_event('category.all', self.all)
 
     def allView(self, **kwargs):
 
@@ -55,11 +54,11 @@ class CategoryPlugin(Plugin):
             category = {
                 '_t': 'category',
                 'order': kwargs.get('order', 999),
-                'label': toUnicode(kwargs.get('label', '')),
-                'ignored': toUnicode(kwargs.get('ignored', '')),
-                'preferred': toUnicode(kwargs.get('preferred', '')),
-                'required': toUnicode(kwargs.get('required', '')),
-                'destination': toUnicode(kwargs.get('destination', '')),
+                'label': to_unicode(kwargs.get('label', '')),
+                'ignored': to_unicode(kwargs.get('ignored', '')),
+                'preferred': to_unicode(kwargs.get('preferred', '')),
+                'required': to_unicode(kwargs.get('required', '')),
+                'destination': to_unicode(kwargs.get('destination', '')),
             }
 
             try:

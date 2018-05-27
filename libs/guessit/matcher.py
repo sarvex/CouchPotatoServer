@@ -18,11 +18,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import unicode_literals
-from guessit import PY3, u, base_text_type
+
+import logging
+
+from guessit import PY3, u
 from guessit.matchtree import MatchTree
 from guessit.textutils import normalize_unicode, clean_string
-import logging
 
 log = logging.getLogger(__name__)
 
@@ -78,7 +79,7 @@ class IterativeMatcher(object):
                            'episode', 'episodesubtitle', 'episodeinfo')
         if filetype not in valid_filetypes:
             raise ValueError("filetype needs to be one of %s" % valid_filetypes)
-        if not PY3 and not isinstance(filename, unicode):
+        if not PY3 and not isinstance(filename, str):
             log.warning('Given filename to matcher is not unicode...')
             filename = filename.decode('utf-8')
 

@@ -6,12 +6,12 @@ from sqlite3 import OperationalError
 
 from CodernityDB.database import RecordNotFound
 from CodernityDB.index import IndexException, IndexNotFoundException, IndexConflict
+
 from couchpotato import CPLog
 from couchpotato.api import addApiView
-from couchpotato.core.event import addEvent, fireEvent, fireEventAsync
-from couchpotato.core.helpers.encoding import toUnicode, sp
-from couchpotato.core.helpers.variable import getImdb, tryInt, randomString
-
+from couchpotato.core.event import add_event, fire_event, fire_event_async
+from couchpotato.core.helpers.encoding import to_unicode, sp
+from couchpotato.core.helpers.variable import get_imdb, try_int, random_string
 
 log = CPLog(__name__)
 
@@ -25,20 +25,20 @@ class Database(object):
 
         self.indexes = {}
 
-        addApiView('database.list_documents', self.listDocuments)
+        addApiView('database.list_documents', self.list_documents)
         addApiView('database.reindex', self.reindex)
         addApiView('database.compact', self.compact)
-        addApiView('database.document.update', self.updateDocument)
-        addApiView('database.document.delete', self.deleteDocument)
+        addApiView('database.document.update', self.update_document)
+        addApiView('database.document.delete', self.delete_document)
 
-        addEvent('database.setup.after', self.startup_compact)
-        addEvent('database.setup_index', self.setupIndex)
-        addEvent('database.delete_corrupted', self.deleteCorrupted)
+        add_event('database.setup.after', self.startup_compact)
+        add_event('database.setup_index', self.setup_index)
+        add_event('database.delete_corrupted', self.delete_corrupted)
 
-        addEvent('app.migrate', self.migrate)
-        addEvent('app.after_shutdown', self.close)
+        add_event('app.migrate', self.migrate)
+        add_event('app.after_shutdown', self.close)
 
-    def getDB(self):
+    def get_database(self):
 
         if not self.db:
             from couchpotato import get_db
@@ -47,13 +47,13 @@ class Database(object):
         return self.db
 
     def close(self, **kwargs):
-        self.getDB().close()
+        self.get_database().close()
 
-    def setupIndex(self, index_name, klass):
+    def setup_index(self, index_name, klass):
 
         self.indexes[index_name] = klass
 
-        db = self.getDB()
+        db = self.get_database()
 
         # Category index
         index_instance = klass(db.path, index_name)
@@ -91,9 +91,9 @@ class Database(object):
         except:
             log.error('Failed adding index %s: %s', (index_name, traceback.format_exc()))
 
-    def deleteDocument(self, **kwargs):
+    def delete_document(self, **kwargs):
 
-        db = self.getDB()
+        db = self.get_database()
 
         try:
 
@@ -110,9 +110,9 @@ class Database(object):
                 'error': traceback.format_exc()
             }
 
-    def updateDocument(self, **kwargs):
+    def update_document(self, **kwargs):
 
-        db = self.getDB()
+        db = self.get_database()
 
         try:
 
@@ -130,8 +130,8 @@ class Database(object):
                 'error': traceback.format_exc()
             }
 
-    def listDocuments(self, **kwargs):
-        db = self.getDB()
+    def list_documents(self, **kwargs):
+        db = self.get_database()
 
         results = {
             'unknown': []
@@ -149,9 +149,9 @@ class Database(object):
 
         return results
 
-    def deleteCorrupted(self, _id, traceback_error = ''):
+    def delete_corrupted(self, _id, traceback_error=''):
 
-        db = self.getDB()
+        db = self.get_database()
 
         try:
             log.debug('Deleted corrupted document "%s": %s', (_id, traceback_error))
@@ -164,7 +164,7 @@ class Database(object):
 
         success = True
         try:
-            db = self.getDB()
+            db = self.get_database()
             db.reindex()
         except:
             log.error('Failed index: %s', traceback.format_exc())
@@ -177,7 +177,7 @@ class Database(object):
     def compact(self, try_repair = True, **kwargs):
 
         success = False
-        db = self.getDB()
+        db = self.get_database()
 
         # Removing left over compact files
         db_path = sp(db.path)
@@ -200,7 +200,7 @@ class Database(object):
                 log.error('Something wrong with indexes, trying repair')
 
                 # Remove all indexes
-                old_indexes = self.indexes.keys()
+                old_indexes = list(self.indexes.keys())
                 for index_name in old_indexes:
                     try:
                         db.destroy_index(index_name)
@@ -239,7 +239,7 @@ class Database(object):
     def startup_compact(self):
         from couchpotato import Env
 
-        db = self.getDB()
+        db = self.get_database()
 
         # Try fix for migration failures on desktop
         if Env.get('desktop'):
@@ -260,7 +260,7 @@ class Database(object):
                     # Rename .old database to try another migrate
                     os.rename(old_db, old_db[:-4])
 
-                    fireEventAsync('app.restart')
+                    fire_event_async('app.restart')
                 else:
                     log.error('Migration failed and couldn\'t recover database. Please report on GitHub, with this message.')
                     db.reindex()
@@ -348,7 +348,7 @@ class Database(object):
 
                 log.info('Getting data took %s', time.time() - migrate_start)
 
-                db = self.getDB()
+                db = self.get_database()
                 if not db.opened:
                     return
 
@@ -369,11 +369,11 @@ class Database(object):
                     new_c = db.insert({
                         '_t': 'category',
                         'order': c.get('order', 999),
-                        'label': toUnicode(c.get('label', '')),
-                        'ignored': toUnicode(c.get('ignored', '')),
-                        'preferred': toUnicode(c.get('preferred', '')),
-                        'required': toUnicode(c.get('required', '')),
-                        'destination': toUnicode(c.get('destination', '')),
+                        'label': to_unicode(c.get('label', '')),
+                        'ignored': to_unicode(c.get('ignored', '')),
+                        'preferred': to_unicode(c.get('preferred', '')),
+                        'required': to_unicode(c.get('required', '')),
+                        'destination': to_unicode(c.get('destination', '')),
                     })
 
                     category_link[x] = new_c.get('_id')
@@ -400,7 +400,7 @@ class Database(object):
                     # Update existing with order only
                     if exists and p.get('core'):
                         profile = db.get('id', exists)
-                        profile['order'] = tryInt(p.get('order'))
+                        profile['order'] = try_int(p.get('order'))
                         profile['hide'] = p.get('hide') in [1, True, 'true', 'True']
                         db.update(profile)
 
@@ -447,8 +447,8 @@ class Database(object):
 
                     quality = db.get('id', q_id)
                     quality['order'] = q.get('order')
-                    quality['size_min'] = tryInt(q.get('size_min'))
-                    quality['size_max'] = tryInt(q.get('size_max'))
+                    quality['size_min'] = try_int(q.get('size_min'))
+                    quality['size_max'] = try_int(q.get('size_max'))
                     db.update(quality)
 
                     quality_link[x] = quality
@@ -507,7 +507,7 @@ class Database(object):
                     l = libraries.get(m['library_id'])
 
                     # Only migrate wanted movies, Skip if no identifier present
-                    if not l or not getImdb(l.get('identifier')): continue
+                    if not l or not get_imdb(l.get('identifier')): continue
 
                     profile_id = profile_link.get(m['profile_id'])
                     category_id = category_link.get(m['category_id'])
@@ -519,7 +519,7 @@ class Database(object):
                     if not isinstance(files, list):
                         files = [files]
 
-                    added_media = fireEvent('movie.add', {
+                    added_media = fire_event('movie.add', {
                         'info': info,
                         'identifier': l.get('identifier'),
                         'profile_id': profile_id,
@@ -568,7 +568,7 @@ class Database(object):
                         # Add status to keys
                         rel['info']['status'] = release_status
                         if not empty_info:
-                            fireEvent('release.create_from_search', [rel['info']], added_media, quality, single = True)
+                            fire_event('release.create_from_search', [rel['info']], added_media, quality, single=True)
                         else:
                             release = {
                                 '_t': 'release',
@@ -621,7 +621,7 @@ class Database(object):
 
             except OperationalError:
                 log.error('Migrating from faulty database, probably a (too) old version: %s', traceback.format_exc())
-                
+
                 rename_old = True
             except:
                 log.error('Migration failed: %s', traceback.format_exc())
@@ -629,7 +629,7 @@ class Database(object):
 
             # rename old database
             if rename_old:
-                random = randomString()
+                random = random_string()
                 log.info('Renaming old database to %s ', '%s.%s_old' % (old_db, random))
                 os.rename(old_db, '%s.%s_old' % (old_db, random))
 

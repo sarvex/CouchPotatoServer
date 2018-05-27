@@ -1,4 +1,4 @@
-from couchpotato.core.helpers.encoding import toUnicode
+from couchpotato.core.helpers.encoding import to_unicode
 from couchpotato.core.logger import CPLog
 from couchpotato.core.notifications.base import Notification
 
@@ -26,8 +26,8 @@ class Boxcar2(Notification):
 
             data = {
                 'user_credentials': self.conf('token'),
-                'notification[title]': toUnicode('%s - %s' % (self.default_title, message)),
-                'notification[long_message]': toUnicode(long_message),
+                'notification[title]': to_unicode('%s - %s' % (self.default_title, message)),
+                'notification[long_message]': to_unicode(long_message),
                 'notification[icon_url]': self.LOGO_URL,
                 'notification[source_name]': 'CouchPotato',
             }
@@ -40,8 +40,8 @@ class Boxcar2(Notification):
         log.info('Boxcar notification successful.')
         return True
 
-    def isEnabled(self):
-        return super(Boxcar2, self).isEnabled() and self.conf('token')
+    def is_enabled(self):
+        return super(Boxcar2, self).is_enabled() and self.conf('token')
 
 
 config = [{

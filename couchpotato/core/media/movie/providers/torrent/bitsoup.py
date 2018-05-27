@@ -1,4 +1,4 @@
-from couchpotato.core.helpers.encoding import tryUrlencode
+from couchpotato.core.helpers.encoding import try_url_encode
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.torrent.bitsoup import Base
 from couchpotato.core.media.movie.providers.base import MovieProvider
@@ -18,7 +18,7 @@ class Bitsoup(MovieProvider, Base):
     cat_backup_id = 0
 
     def buildUrl(self, title, media, quality):
-        query = tryUrlencode({
+        query = try_url_encode({
             'search': '"%s" %s' % (title, media['info']['year']),
             'cat': self.getCatId(quality)[0],
         })

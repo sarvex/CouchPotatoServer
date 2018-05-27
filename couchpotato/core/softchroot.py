@@ -1,10 +1,10 @@
 import os
-import sys
 
 
 class SoftChrootInitError(IOError):
     """Error during soft-chroot initialization"""
     pass
+
 
 class SoftChroot:
     """Soft Chroot module
@@ -12,6 +12,7 @@ class SoftChroot:
     Provides chroot feature for interation with Web-UI. Since it is not real chroot, so the name is SOFT CHROOT.
     The module prevents access to entire file-system, allowing access only to subdirs of SOFT-CHROOT directory.
     """
+
     def __init__(self):
         self.enabled = None
         self.chdir = None
@@ -38,7 +39,7 @@ class SoftChroot:
             # enabling soft-chroot:
             if not os.path.isdir(chdir):
                 raise SoftChrootInitError(2, 'SOFT-CHROOT is requested, but the folder doesn\'t exist', orig_chdir)
-            
+
             self.enabled = True
             self.chdir = chdir.rstrip(os.path.sep) + os.path.sep
         else:
@@ -68,7 +69,7 @@ class SoftChroot:
         if not self.enabled:
             # if not chroot environment : check, whether parent is the same dir:
             parent = os.path.dirname(abspath.rstrip(os.path.sep))
-            return parent==abspath
+            return parent == abspath
 
         # in soft-chrooted env: check, that path == chroot
         path = abspath.rstrip(os.path.sep) + os.path.sep
@@ -98,7 +99,7 @@ class SoftChroot:
         if not self.enabled:
             return path
 
-        if None == path or len(path)==0:
+        if None == path or len(path) == 0:
             return self.chdir
 
         if not path.startswith(os.path.sep):
@@ -106,7 +107,7 @@ class SoftChroot:
 
         return self.chdir[:-1] + path
 
-    def abs2chroot(self, path, force = False):
+    def abs2chroot(self, path, force=False):
         """ Converts absolute path to chrooted path"""
 
         if None == self.enabled:
@@ -128,7 +129,7 @@ class SoftChroot:
             else:
                 raise ValueError("path must starts with 'chdir': %s" % path)
         else:
-            l = len(self.chdir)-1
+            l = len(self.chdir) - 1
             result = path[l:]
 
         return result

@@ -1,9 +1,8 @@
 import traceback
 
-from couchpotato.core.helpers.encoding import toUnicode
+from couchpotato.core.helpers.encoding import to_unicode
 from couchpotato.core.logger import CPLog
 from couchpotato.core.notifications.base import Notification
-
 
 log = CPLog(__name__)
 
@@ -19,7 +18,7 @@ class AndroidPN(Notification):
             'action': "send",
             'uri': "",
             'title': self.default_title,
-            'message': toUnicode(message),
+            'message': to_unicode(message),
             'broadcast': self.conf('broadcast'),
             'username': self.conf('username'),
         }

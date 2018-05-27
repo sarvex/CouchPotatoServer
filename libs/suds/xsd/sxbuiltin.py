@@ -1,6 +1,6 @@
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the (LGPL) GNU Lesser General Public License as
-# published by the Free Software Foundation; either version 3 of the 
+# published by the Free Software Foundation; either version 3 of the
 # License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
@@ -19,37 +19,37 @@ The I{sxbuiltin} module provides classes that represent
 XSD I{builtin} schema objects.
 """
 
-from logging import getLogger
-from suds import *
-from suds.xsd import *
-from suds.sax.date import *
-from suds.xsd.sxbase import XBuiltin
 import datetime as dt
+from logging import getLogger
 
+from suds import *
+from suds.sax.date import *
+from suds.xsd import *
+from suds.xsd.sxbase import XBuiltin
 
 log = getLogger(__name__)
-    
-    
+
+
 class XString(XBuiltin):
     """
     Represents an (xsd) <xs:string/> node
     """
     pass
 
-  
+
 class XAny(XBuiltin):
     """
     Represents an (xsd) <any/> node
     """
-    
+
     def __init__(self, schema, name):
         XBuiltin.__init__(self, schema, name)
         self.nillable = False
-    
+
     def get_child(self, name):
         child = XAny(self.schema, name)
         return (child, [])
-    
+
     def any(self):
         return True
 
@@ -58,15 +58,15 @@ class XBoolean(XBuiltin):
     """
     Represents an (xsd) boolean builtin type.
     """
-    
+
     translation = (
         { '1':True,'true':True,'0':False,'false':False },
         { True:'true',1:'true',False:'false',0:'false' },
     )
-        
+
     def translate(self, value, topython=True):
         if topython:
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 return XBoolean.translation[0].get(value)
             else:
                 return None
@@ -76,15 +76,15 @@ class XBoolean(XBuiltin):
             else:
                 return value
 
-   
+
 class XInteger(XBuiltin):
     """
     Represents an (xsd) xs:int builtin type.
     """
-        
+
     def translate(self, value, topython=True):
         if topython:
-            if isinstance(value, basestring) and len(value):
+            if isinstance(value, str) and len(value):
                 return int(value)
             else:
                 return None
@@ -93,33 +93,34 @@ class XInteger(XBuiltin):
                 return str(value)
             else:
                 return value
-            
+
+
 class XLong(XBuiltin):
     """
     Represents an (xsd) xs:long builtin type.
     """
-        
+
     def translate(self, value, topython=True):
         if topython:
-            if isinstance(value, basestring) and len(value):
-                return long(value)
+            if isinstance(value, str) and len(value):
+                return int(value)
             else:
                 return None
         else:
-            if isinstance(value, (int,long)):
+            if isinstance(value, int):
                 return str(value)
             else:
                 return value
 
-       
+
 class XFloat(XBuiltin):
     """
     Represents an (xsd) xs:float builtin type.
     """
-        
+
     def translate(self, value, topython=True):
         if topython:
-            if isinstance(value, basestring) and len(value):
+            if isinstance(value, str) and len(value):
                 return float(value)
             else:
                 return None
@@ -128,16 +129,16 @@ class XFloat(XBuiltin):
                 return str(value)
             else:
                 return value
-            
+
 
 class XDate(XBuiltin):
     """
     Represents an (xsd) xs:date builtin type.
     """
-        
+
     def translate(self, value, topython=True):
         if topython:
-            if isinstance(value, basestring) and len(value):
+            if isinstance(value, str) and len(value):
                 return Date(value).date
             else:
                 return None
@@ -152,10 +153,10 @@ class XTime(XBuiltin):
     """
     Represents an (xsd) xs:time builtin type.
     """
-        
+
     def translate(self, value, topython=True):
         if topython:
-            if isinstance(value, basestring) and len(value):
+            if isinstance(value, str) and len(value):
                 return Time(value).time
             else:
                 return None
@@ -173,7 +174,7 @@ class XDateTime(XBuiltin):
 
     def translate(self, value, topython=True):
         if topython:
-            if isinstance(value, basestring) and len(value):
+            if isinstance(value, str) and len(value):
                 return DateTime(value).datetime
             else:
                 return None
@@ -182,8 +183,8 @@ class XDateTime(XBuiltin):
                 return str(DateTime(value))
             else:
                 return value
-            
-            
+
+
 class Factory:
 
     tags =\
@@ -244,7 +245,7 @@ class Factory:
         # boolean
         'boolean' : XBoolean,
     }
-    
+
     @classmethod
     def maptag(cls, tag, fn):
         """
@@ -265,7 +266,7 @@ class Factory:
         @param name: The name.
         @type name: str
         @return: The created object.
-        @rtype: L{XBuiltin} 
+        @rtype: L{XBuiltin}
         """
         fn = cls.tags.get(name)
         if fn is not None:

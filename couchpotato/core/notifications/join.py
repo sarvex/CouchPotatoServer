@@ -1,6 +1,6 @@
-from couchpotato.core.helpers.encoding import toUnicode
-from couchpotato.core.helpers.encoding import tryUrlencode
-from couchpotato.core.helpers.variable import splitString
+from couchpotato.core.helpers.encoding import to_unicode
+from couchpotato.core.helpers.encoding import try_url_encode
+from couchpotato.core.helpers.variable import split_string
 from couchpotato.core.logger import CPLog
 from couchpotato.core.notifications.base import Notification
 
@@ -16,7 +16,8 @@ class Join(Notification):
     url = 'https://joinjoaomgcd.appspot.com/_ah/api/messaging/v1/sendPush?title=%s&text=%s&deviceId=%s&icon=%s'
 
     # URL for notification icon
-    icon = tryUrlencode('https://raw.githubusercontent.com/CouchPotato/CouchPotatoServer/master/couchpotato/static/images/icons/android.png')
+    icon = try_url_encode(
+        'https://raw.githubusercontent.com/CouchPotato/CouchPotatoServer/master/couchpotato/static/images/icons/android.png')
 
     def notify(self, message = '', data = None, listener = None):
         if not data: data = {}
@@ -34,7 +35,8 @@ class Join(Notification):
         devices = self.getDevices() or device_default
         successful = 0
         for device in devices:
-            response = self.urlopen(self.url % (self.default_title, tryUrlencode(toUnicode(message)), device, self.icon))
+            response = self.urlopen(
+                self.url % (self.default_title, try_url_encode(to_unicode(message)), device, self.icon))
 
             if response:
                 successful += 1
@@ -44,7 +46,7 @@ class Join(Notification):
         return successful == len(devices)
 
     def getDevices(self):
-        return splitString(self.conf('devices'))
+        return split_string(self.conf('devices'))
 
 
 config = [{

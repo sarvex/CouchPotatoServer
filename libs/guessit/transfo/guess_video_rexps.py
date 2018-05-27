@@ -18,12 +18,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import unicode_literals
-from guessit import Guess
-from guessit.transfo import SingleNodeGuesser
-from guessit.patterns import video_rexps, sep
-import re
+
 import logging
+import re
+
+from guessit import Guess
+from guessit.patterns import video_rexps, sep
+from guessit.transfo import SingleNodeGuesser
 
 log = logging.getLogger(__name__)
 

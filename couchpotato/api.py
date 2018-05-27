@@ -1,15 +1,17 @@
-from functools import wraps
-from threading import Thread
 import json
 import threading
 import traceback
-import urllib
+import urllib.error
+import urllib.parse
+import urllib.request
+from functools import wraps
+from threading import Thread
 
-from couchpotato.core.helpers.request import getParams
-from couchpotato.core.logger import CPLog
 from tornado.ioloop import IOLoop
 from tornado.web import RequestHandler, asynchronous
 
+from couchpotato.core.helpers.request import get_params
+from couchpotato.core.logger import CPLog
 
 log = CPLog(__name__)
 
@@ -102,10 +104,10 @@ class ApiHandler(RequestHandler):
 
             kwargs = {}
             for x in self.request.arguments:
-                kwargs[x] = urllib.unquote(self.get_argument(x))
+                kwargs[x] = urllib.parse.unquote(self.get_argument(x))
 
             # Split array arguments
-            kwargs = getParams(kwargs)
+            kwargs = get_params(kwargs)
             kwargs['_request'] = self
 
             # Remove t random string

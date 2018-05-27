@@ -1,16 +1,16 @@
 import threading
 import traceback
 
-from axl.axel import Event
-from couchpotato.core.helpers.variable import mergeDicts, natsortKey
-from couchpotato.core.logger import CPLog
+from axel import Event
 
+from couchpotato.core.helpers.variable import merge_dictionaries, nat_sort_key
+from couchpotato.core.logger import CPLog
 
 log = CPLog(__name__)
 events = {}
 
 
-def runHandler(name, handler, *args, **kwargs):
+def run_handler(name, handler, *args, **kwargs):
     try:
         return handler(*args, **kwargs)
     except:
@@ -18,12 +18,12 @@ def runHandler(name, handler, *args, **kwargs):
         log.error('Error in event "%s", that wasn\'t caught: %s%s', (name, traceback.format_exc(), Env.all() if not Env.get('dev') else ''))
 
 
-def addEvent(name, handler, priority = 100):
+def add_event(name, handler, priority=100):
 
     if not events.get(name):
         events[name] = []
 
-    def createHandle(*args, **kwargs):
+    def create_handle(*args, **kwargs):
 
         h = None
         try:
@@ -36,7 +36,7 @@ def addEvent(name, handler, priority = 100):
                 if bc: parent.beforeCall(handler)
 
             # Main event
-            h = runHandler(name, handler, *args, **kwargs)
+            h = run_handler(name, handler, *args, **kwargs)
 
             # Close handler
             if parent and has_parent:
@@ -48,12 +48,12 @@ def addEvent(name, handler, priority = 100):
         return h
 
     events[name].append({
-        'handler': createHandle,
+        'handler': create_handle,
         'priority': priority,
     })
 
 
-def fireEvent(name, *args, **kwargs):
+def fire_event(name, *args, **kwargs):
     if name not in events: return
 
     #log.debug('Firing event %s', name)
@@ -102,8 +102,8 @@ def fireEvent(name, *args, **kwargs):
             # Fire
             result = e(*args, **kwargs)
 
-        result_keys = result.keys()
-        result_keys.sort(key = natsortKey)
+        result_keys = list(result.keys())
+        result_keys.sort(key=nat_sort_key)
 
         if options['single'] and not options['merge']:
             results = None
@@ -115,7 +115,7 @@ def fireEvent(name, *args, **kwargs):
                     results = r[1]
                     break
                 elif r[1]:
-                    errorHandler(r[1])
+                    error_handler(r[1])
                 else:
                     log.debug('Assume disabled eventhandler for: %s', name)
 
@@ -126,7 +126,7 @@ def fireEvent(name, *args, **kwargs):
                 if r[0] == True and r[1]:
                     results.append(r[1])
                 elif r[1]:
-                    errorHandler(r[1])
+                    error_handler(r[1])
 
             # Merge
             if options['merge'] and len(results) > 0:
@@ -137,7 +137,7 @@ def fireEvent(name, *args, **kwargs):
 
                     merged = {}
                     for result in results:
-                        merged = mergeDicts(merged, result, prepend_list = True)
+                        merged = merge_dictionaries(merged, result, prepend_list=True)
 
                     results = merged
                 # Lists
@@ -149,13 +149,13 @@ def fireEvent(name, *args, **kwargs):
 
                     results = merged
 
-        modified_results = fireEvent('result.modify.%s' % name, results, single = True)
+        modified_results = fire_event('result.modify.%s' % name, results, single=True)
         if modified_results:
             log.debug('Return modified results for %s', name)
             results = modified_results
 
         if not options['is_after_event']:
-            fireEvent('%s.after' % name, is_after_event = True)
+            fire_event('%s.after' % name, is_after_event=True)
 
         if options['on_complete']:
             options['on_complete']()
@@ -165,9 +165,9 @@ def fireEvent(name, *args, **kwargs):
         log.error('%s: %s', (name, traceback.format_exc()))
 
 
-def fireEventAsync(*args, **kwargs):
+def fire_event_async(*args, **kwargs):
     try:
-        t = threading.Thread(target = fireEvent, args = args, kwargs = kwargs)
+        t = threading.Thread(target=fire_event, args=args, kwargs=kwargs)
         t.setDaemon(True)
         t.start()
         return True
@@ -175,10 +175,10 @@ def fireEventAsync(*args, **kwargs):
         log.error('%s: %s', (args[0], e))
 
 
-def errorHandler(error):
+def error_handler(error):
     etype, value, tb = error
     log.error(''.join(traceback.format_exception(etype, value, tb)))
 
 
-def getEvent(name):
+def get_event(name):
     return events[name]

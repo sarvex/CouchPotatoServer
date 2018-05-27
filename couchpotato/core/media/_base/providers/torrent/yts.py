@@ -1,8 +1,9 @@
+import random
 from datetime import datetime
-from couchpotato.core.helpers.variable import tryInt, getIdentifier
+
+from couchpotato.core.helpers.variable import try_int, get_identifier
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.torrent.base import TorrentMagnetProvider
-import random
 
 log = CPLog(__name__)
 
@@ -18,10 +19,10 @@ class Base(TorrentMagnetProvider):
     def _search(self, movie, quality, results):
         limit = 10
         page = 1
-        data = self.getJsonData(self.urls['search'] % (getIdentifier(movie), limit, page))
+        data = self.getJsonData(self.urls['search'] % (get_identifier(movie), limit, page))
 
         if data:
-            movie_count = tryInt(data['data']['movie_count'])
+            movie_count = try_int(data['data']['movie_count'])
 
             if movie_count == 0:
                 log.debug('%s - found no results', (self.getName()))
@@ -39,9 +40,9 @@ class Base(TorrentMagnetProvider):
 
                         if t_quality in quality['label']:
                             hash = torrent['hash']
-                            size = tryInt(torrent['size_bytes'] / 1048576)
-                            seeders = tryInt(torrent['seeds'])
-                            leechers = tryInt(torrent['peers'])
+                            size = try_int(torrent['size_bytes'] / 1048576)
+                            seeders = try_int(torrent['seeds'])
+                            leechers = try_int(torrent['peers'])
                             pubdate = torrent['date_uploaded']  # format: 2017-02-17 18:40:03
                             pubdate = datetime.strptime(pubdate, '%Y-%m-%d %H:%M:%S')
                             age = (datetime.now() - pubdate).days

@@ -1,7 +1,7 @@
-import os
+import argparse
 import base64
 import logging
-import argparse
+import os
 
 import requests
 
@@ -124,7 +124,7 @@ def _create_file(tus_endpoint,
         headers.update(extra_headers)
 
     if metadata:
-        l = [k + ' ' + base64.b64encode(v) for k, v in metadata.items()]
+        l = [k + ' ' + base64.b64encode(v) for k, v in list(metadata.items())]
         headers["Upload-Metadata"] = ','.join(l)
 
     response = requests.post(tus_endpoint, headers=headers)

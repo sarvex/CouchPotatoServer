@@ -1,5 +1,5 @@
-from couchpotato.core.event import addEvent
-from couchpotato.core.helpers.variable import getTitle
+from couchpotato.core.event import add_event
+from couchpotato.core.helpers.variable import get_title
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.library.base import LibraryBase
 
@@ -12,13 +12,13 @@ autoload = 'MovieLibraryPlugin'
 class MovieLibraryPlugin(LibraryBase):
 
     def __init__(self):
-        addEvent('library.query', self.query)
+        add_event('library.query', self.query)
 
     def query(self, media, first = True, include_year = True, **kwargs):
         if media.get('type') != 'movie':
             return
 
-        default_title = getTitle(media)
+        default_title = get_title(media)
         titles = media['info'].get('titles', [])
         titles.insert(0, default_title)
 

@@ -1,8 +1,8 @@
 import os
 
 from couchpotato.core.database import Database
-from couchpotato.core.event import fireEvent, addEvent
-from couchpotato.core.helpers.encoding import toUnicode
+from couchpotato.core.event import fire_event, add_event
+from couchpotato.core.helpers.encoding import to_unicode
 from couchpotato.core.loader import Loader
 from couchpotato.core.settings import Settings
 from couchpotato.core.softchroot import SoftChroot
@@ -41,9 +41,9 @@ class Env(object):
         return Env._debug
 
     @staticmethod
-    def get(attr, unicode = False):
-        if unicode:
-            return toUnicode(getattr(Env, '_' + attr))
+    def get(attr, str=False):
+        if str:
+            return to_unicode(getattr(Env, '_' + attr))
         else:
             return getattr(Env, '_' + attr)
 
@@ -69,7 +69,7 @@ class Env(object):
             return s.get(attr, default = default, section = section, type = type)
 
         # Set setting
-        s.addSection(section)
+        s.add_section(section)
         s.set(section, attr, value)
         s.save()
 
@@ -79,10 +79,10 @@ class Env(object):
     def prop(identifier, value = None, default = None):
         s = Env.get('settings')
         if value is None:
-            v = s.getProperty(identifier)
+            v = s.get_property(identifier)
             return v if v else default
 
-        s.setProperty(identifier, value)
+        s.set_property(identifier, value)
 
     @staticmethod
     def getPermission(setting_type):
@@ -94,11 +94,11 @@ class Env(object):
 
     @staticmethod
     def fireEvent(*args, **kwargs):
-        return fireEvent(*args, **kwargs)
+        return fire_event(*args, **kwargs)
 
     @staticmethod
     def addEvent(*args, **kwargs):
-        return addEvent(*args, **kwargs)
+        return add_event(*args, **kwargs)
 
     @staticmethod
     def getPid():
@@ -113,4 +113,4 @@ class Env(object):
 
     @staticmethod
     def getIdentifier():
-        return '%s %s' % (Env.get('appname'), fireEvent('app.version', single = True))
+        return '%s %s' % (Env.get('appname'), fire_event('app.version', single=True))

@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
-# Changed 
-# Removed iso8601 library requirement 
+# Changed
+# Removed iso8601 library requirement
 # Added CP logging
 
-import os
-import json
 import binascii
+import json
+import os
 import webbrowser
+
 try:
-    from urllib import urlencode
+    from urllib.parse import urlencode
 except ImportError:
     from urllib.parse import urlencode
 from datetime import datetime
@@ -335,7 +336,7 @@ class _Transfer(_BaseResource):
 
     @classmethod
     def add_url(cls, url, parent_id=0, extract=False, callback_url=None):
-        log.debug('callback_url is %s', callback_url) 
+        log.debug('callback_url is %s', callback_url)
         d = cls.client.request('/transfers/add', method='POST', data=dict(
             url=url, save_parent_id=parent_id, extract=extract,
             callback_url=callback_url))
@@ -394,14 +395,14 @@ def strptime(date):
         'second': date[17:],
     }
 
-    d = dict((k, int(v)) for k, v in d.iteritems())
+    d = dict((k, int(v)) for k, v in d.items())
     return datetime(**d)
 
 
 def _str(s):
     """Python 3 compatibility function for converting to str."""
     try:
-        if isinstance(s, unicode):
+        if isinstance(s, str):
             return s.encode('utf-8', 'replace')
     except NameError:
         pass

@@ -1,6 +1,6 @@
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the (LGPL) GNU Lesser General Public License as
-# published by the Free Software Foundation; either version 3 of the 
+# published by the Free Software Foundation; either version 3 of the
 # License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
@@ -19,10 +19,10 @@ Contains classes for transport options.
 """
 
 
-from suds.transport import *
 from suds.properties import *
+from suds.transport import *
 
-   
+
 class Options(Skin):
     """
     Options:
@@ -44,14 +44,14 @@ class Options(Skin):
         - B{password} - The password used for http authentication.
                 - type: I{str}
                 - default: None
-    """    
+    """
     def __init__(self, **kwargs):
         domain = __name__
         definitions = [
             Definition('proxy', dict, {}),
             Definition('timeout', (int,float), 90),
             Definition('headers', dict, {}),
-            Definition('username', basestring, None),
-            Definition('password', basestring, None),
+            Definition('username', str, None),
+            Definition('password', str, None),
         ]
         Skin.__init__(self, domain, definitions, kwargs)

@@ -28,12 +28,12 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -81,19 +81,21 @@
 # ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
 # OF THIS SOFTWARE.
 
-import urllib
-import xmlrpclib
+import urllib.error
+import urllib.parse
+import urllib.request
+import xmlrpc.client
 
 from rtorrent.lib.xmlrpc.transports.scgi import SCGITransport
 
 
-class SCGIServerProxy(xmlrpclib.ServerProxy):
+class SCGIServerProxy(xmlrpc.client.ServerProxy):
     def __init__(self, uri, transport=None, encoding=None, verbose=False,
                  allow_none=False, use_datetime=False):
-        type, uri = urllib.splittype(uri)
+        type, uri = urllib.parse.splittype(uri)
         if type not in ('scgi'):
             raise IOError('unsupported XML-RPC protocol')
-        self.__host, self.__handler = urllib.splithost(uri)
+        self.__host, self.__handler = urllib.parse.splithost(uri)
         if not self.__handler:
             self.__handler = '/'
 
@@ -111,8 +113,8 @@ class SCGIServerProxy(xmlrpclib.ServerProxy):
     def __request(self, methodname, params):
         # call a method on the remote server
 
-        request = xmlrpclib.dumps(params, methodname, encoding=self.__encoding,
-                                  allow_none=self.__allow_none)
+        request = xmlrpc.client.dumps(params, methodname, encoding=self.__encoding,
+                                      allow_none=self.__allow_none)
 
         response = self.__transport.request(
             self.__host,
@@ -136,7 +138,7 @@ class SCGIServerProxy(xmlrpclib.ServerProxy):
 
     def __getattr__(self, name):
         # magic method dispatcher
-        return xmlrpclib._Method(self.__request, name)
+        return xmlrpc.client._Method(self.__request, name)
 
     # note: to call a remote object with an non-standard name, use
     # result getattr(server, "strange-python-name")(args)

@@ -1,5 +1,5 @@
-from couchpotato.core.event import addEvent
-from couchpotato.core.helpers.encoding import simplifyString
+from couchpotato.core.event import add_event
+from couchpotato.core.helpers.encoding import simplify_string
 from couchpotato.core.logger import CPLog
 from couchpotato.core.plugins.base import Plugin
 
@@ -11,15 +11,15 @@ class MatcherBase(Plugin):
 
     def __init__(self):
         if self.type:
-            addEvent('%s.matcher.correct' % self.type, self.correct)
+            add_event('%s.matcher.correct' % self.type, self.correct)
 
     def correct(self, chain, release, media, quality):
         raise NotImplementedError()
 
-    def flattenInfo(self, info):
+    def flatten_info(self, info):
         # Flatten dictionary of matches (chain info)
         if isinstance(info, dict):
-            return dict([(key, self.flattenInfo(value)) for key, value in info.items()])
+            return dict([(key, self.flatten_info(value)) for key, value in list(info.items())])
 
         # Flatten matches
         result = None
@@ -29,7 +29,7 @@ class MatcherBase(Plugin):
                 if result is None:
                     result = {}
 
-                for key, value in match.items():
+                for key, value in list(match.items()):
                     if key not in result:
                         result[key] = []
 
@@ -42,7 +42,7 @@ class MatcherBase(Plugin):
 
         return result
 
-    def constructFromRaw(self, match):
+    def construct_from_raw(self, match):
         if not match:
             return None
 
@@ -54,31 +54,31 @@ class MatcherBase(Plugin):
 
         return ''.join(parts)[:-1].strip()
 
-    def simplifyValue(self, value):
+    def simplify_value(self, value):
         if not value:
             return value
 
-        if isinstance(value, basestring):
-            return simplifyString(value)
+        if isinstance(value, str):
+            return simplify_string(value)
 
         if isinstance(value, list):
-            return [self.simplifyValue(x) for x in value]
+            return [self.simplify_value(x) for x in value]
 
         raise ValueError("Unsupported value type")
 
-    def chainMatch(self, chain, group, tags):
-        info = self.flattenInfo(chain.info[group])
+    def chain_match(self, chain, group, tags):
+        info = self.flatten_info(chain.info[group])
 
         found_tags = []
-        for tag, accepted in tags.items():
-            values = [self.simplifyValue(x) for x in info.get(tag, [None])]
+        for tag, accepted in list(tags.items()):
+            values = [self.simplify_value(x) for x in info.get(tag, [None])]
 
             if any([val in accepted for val in values]):
                 found_tags.append(tag)
 
-        log.debug('tags found: %s, required: %s' % (found_tags, tags.keys()))
+        log.debug('tags found: %s, required: %s' % (found_tags, list(tags.keys())))
 
         if set(tags.keys()) == set(found_tags):
             return True
 
-        return all([key in found_tags for key, value in tags.items()])
+        return all([key in found_tags for key, value in list(tags.items())])

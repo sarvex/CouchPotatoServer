@@ -1,4 +1,4 @@
-##   debug.py 
+##   debug.py
 ##
 ##   Copyright (C) 2003 Jacob Lundqvist
 ##
@@ -37,16 +37,12 @@ in this code
     
 """
 
-
-
-import sys
-import traceback
-import time
 import os
+import sys
+import time
+import traceback
 
-import types
-
-if os.environ.has_key('TERM'):
+if 'TERM' in os.environ:
     colors_enabled=True
 else:
     colors_enabled=False
@@ -114,76 +110,76 @@ class NoDebug:
     colors={}
     def active_set( self, active_flags = None ):
         return 0
-    
+
 
 LINE_FEED = '\n'
 
 
-class Debug:      
-    def __init__( self,
-                  #
-                  # active_flags are those that will trigger output
-                  #
-                  active_flags = None,
-                  #
-                  # Log file should be file object or file namne
-                  #
-                  log_file = sys.stderr,
-                  #
-                  # prefix and sufix can either be set globaly or per call.
-                  # personally I use this to color code debug statements
-                  # with prefix = chr(27) + '[34m'
-                  #      sufix = chr(27) + '[37;1m\n'
-                  #
-                  prefix = 'DEBUG: ',
-                  sufix = '\n',
-                  #
-                  # If you want unix style timestamps, 
-                  #  0 disables timestamps
-                  #  1 before prefix, good when prefix is a string
-                  #  2 after prefix, good when prefix is a color
-                  #
-                  time_stamp = 0,
-                  #
-                  # flag_show should normaly be of, but can be turned on to get a
-                  # good view of what flags are actually used for calls,
-                  # if it is not None, it should be a string
-                  # flags for current call will be displayed 
-                  # with flag_show as separator                  
-                  # recomended values vould be '-' or ':', but any string goes
-                  #
-                  flag_show = None,
-                  #
-                  # If you dont want to validate flags on each call to
-                  # show(), set this to 0
-                  #
-                  validate_flags = 1,
-                  #
-                  # If you dont want the welcome message, set to 0
-                  # default is to show welcome if any flags are active
-                  welcome = -1
-                  ):
-        
+class Debug:
+    def __init__(self,
+                 #
+                 # active_flags are those that will trigger output
+                 #
+                 active_flags = None,
+                 #
+                 # Log file should be file object or file namne
+                 #
+                 log_file = sys.stderr,
+                 #
+                 # prefix and sufix can either be set globaly or per call.
+                 # personally I use this to color code debug statements
+                 # with prefix = chr(27) + '[34m'
+                 #      sufix = chr(27) + '[37;1m\n'
+                 #
+                 prefix = 'DEBUG: ',
+                 sufix = '\n',
+                 #
+                 # If you want unix style timestamps,
+                 #  0 disables timestamps
+                 #  1 before prefix, good when prefix is a string
+                 #  2 after prefix, good when prefix is a color
+                 #
+                 time_stamp = 0,
+                 #
+                 # flag_show should normaly be of, but can be turned on to get a
+                 # good view of what flags are actually used for calls,
+                 # if it is not None, it should be a string
+                 # flags for current call will be displayed
+                 # with flag_show as separator
+                 # recomended values vould be '-' or ':', but any string goes
+                 #
+                 flag_show = None,
+                 #
+                 # If you dont want to validate flags on each call to
+                 # show(), set this to 0
+                 #
+                 validate_flags = 1,
+                 #
+                 # If you dont want the welcome message, set to 0
+                 # default is to show welcome if any flags are active
+                 welcome = -1
+                 ):
+
         self.debug_flags = []
         if welcome == -1:
             if active_flags and len(active_flags):
                 welcome = 1
             else:
                 welcome = 0
-            
+
         self._remove_dupe_flags()
         if log_file:
             if type( log_file ) is type(''):
                 try:
                     self._fh = open(log_file,'w')
                 except:
-                    print 'ERROR: can open %s for writing'
+                    print('ERROR: can open %s for writing')
                     sys.exit(0)
             else: ## assume its a stream type object
                 self._fh = log_file
         else:
             self._fh = sys.stdout
-         
+
         if time_stamp not in (0,1,2):
             msg2 = '%s' % time_stamp
             raise 'Invalid time_stamp param', msg2
@@ -204,7 +200,7 @@ class Debug:
             self.show('Debug created for %s%s' % (caller.f_code.co_filename,
                                                    mod_name ))
             self.show(' flags defined: %s' % ','.join( self.active ))
-            
+
         if type(flag_show) in (type(''), type(None)):
             self.flag_show = flag_show
         else:
@@ -212,7 +208,7 @@ class Debug:
             raise 'Invalid type for flag_show!', msg2
 
 
-        
+
 
 
     def show( self, msg, flag = None, prefix = None, sufix = None,
@@ -221,18 +217,18 @@ class Debug:
         flag can be of folowing types:
             None - this msg will always be shown if any debugging is on
             flag - will be shown if flag is active
-            (flag1,flag2,,,) - will be shown if any of the given flags 
+            (flag1,flag2,,,) - will be shown if any of the given flags
                                are active
 
         if prefix / sufix are not given, default ones from init will be used
-        
+
         lf = -1 means strip linefeed if pressent
         lf = 1 means add linefeed if not pressent
         """
-        
+
         if self.validate_flags:
             self._validate_flag( flag )
-            
+
         if not self.is_active(flag):
             return
         if prefix:
@@ -256,7 +252,7 @@ class Debug:
                                  )
         else:
             output = pre
-            
+
         if self.flag_show:
             if flag:
                 output = '%s%s%s' % ( output, flag, self.flag_show )
@@ -277,7 +273,7 @@ class Debug:
             self._fh.write( output )
         except:
             # unicode strikes again ;)
-            s=u''
+            s = ''
             for i in range(len(output)):
                 if ord(output[i]) < 128:
                     c = output[i]
@@ -286,8 +282,7 @@ class Debug:
                 s=s+c
             self._fh.write( '%s%s%s' % ( pre, s, suf ))
         self._fh.flush()
-            
-                
+
     def is_active( self, flag ):
         'If given flag(s) should generate output.'
 
@@ -304,7 +299,6 @@ class Debug:
                         return 1
         return 0
 
-    
     def active_set( self, active_flags = None ):
         "returns 1 if any flags where actually set, otherwise 0."
         r = 0
@@ -312,13 +306,13 @@ class Debug:
         if not active_flags:
             #no debuging at all
             self.active = []
-        elif type( active_flags ) in ( types.TupleType, types.ListType ):
+        elif type(active_flags) in (tuple, list):
             flags = self._as_one_list( active_flags )
             for t in flags:
                 if t not in self.debug_flags:
                     sys.stderr.write('Invalid debugflag given: %s\n' % t )
                 ok_flags.append( t )
-                
+
             self.active = ok_flags
             r = 1
         else:
@@ -331,7 +325,7 @@ class Debug:
                 self.show( '*** please correct your param!' )
                 self.show( '*** due to this, full debuging is enabled' )
                 self.active = self.debug_flags
-            
+
             for f in flags:
                 s = f.strip()
                 ok_flags.append( s )
@@ -339,42 +333,39 @@ class Debug:
 
         self._remove_dupe_flags()
         return r
-    
+
     def active_get( self ):
         "returns currently active flags."
         return self.active
-    
-    
+
     def _as_one_list( self, items ):
         """ init param might contain nested lists, typically from group flags.
-        
+
         This code organises lst and remves dupes
         """
-        if type( items ) <> type( [] ) and type( items ) <> type( () ):
+        if type(items) != type([]) and type(items) != type(()):
             return [ items ]
         r = []
         for l in items:
             if type( l ) == type([]):
                 lst2 = self._as_one_list( l )
-                for l2 in lst2: 
+                for l2 in lst2:
                     self._append_unique_str(r, l2 )
             elif l == None:
                 continue
             else:
                 self._append_unique_str(r, l )
         return r
-    
-    
+
     def _append_unique_str( self, lst, item ):
         """filter out any dupes."""
-        if type(item) <> type(''):
+        if type(item) != type(''):
             msg2 = '%s' % item
             raise 'Invalid item type (should be string)',msg2
         if item not in lst:
             lst.append( item )
         return lst
 
-    
     def _validate_flag( self, flags ):
         'verify that flag is defined.'
         if flags:
@@ -385,7 +376,7 @@ class Debug:
 
     def _remove_dupe_flags( self ):
         """
-        if multiple instances of Debug is used in same app, 
+        if multiple instances of Debug is used in same app,
         some flags might be created multiple time, filter out dupes
         """
         unique_flags = []
@@ -398,17 +389,19 @@ class Debug:
     def Show(self, flag, msg, prefix=''):
         msg=msg.replace('\r','\\r').replace('\n','\\n').replace('><','>\n  <')
         if not colors_enabled: pass
-        elif self.colors.has_key(prefix): msg=self.colors[prefix]+msg+color_none
+        elif prefix in self.colors:
+            msg = self.colors[prefix] + msg + color_none
         else: msg=color_none+msg
         if not colors_enabled: prefixcolor=''
-        elif self.colors.has_key(flag): prefixcolor=self.colors[flag]
+        elif flag in self.colors:
+            prefixcolor = self.colors[flag]
         else: prefixcolor=color_none
-        
+
         if prefix=='error':
             _exception = sys.exc_info()
             if _exception[0]:
                 msg=msg+'\n'+''.join(traceback.format_exception(_exception[0], _exception[1], _exception[2])).rstrip()
-        
+
         prefix= self.prefix+prefixcolor+(flag+' '*12)[:12]+' '+(prefix+' '*6)[:6]
         self.show(msg, flag, prefix)
 

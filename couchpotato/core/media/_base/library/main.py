@@ -1,6 +1,6 @@
 from couchpotato import get_db
 from couchpotato.api import addApiView
-from couchpotato.core.event import addEvent, fireEvent
+from couchpotato.core.event import add_event, fire_event
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.library.base import LibraryBase
 
@@ -9,42 +9,42 @@ log = CPLog(__name__)
 
 class Library(LibraryBase):
     def __init__(self):
-        addEvent('library.title', self.title)
-        addEvent('library.related', self.related)
-        addEvent('library.tree', self.tree)
+        add_event('library.title', self.title)
+        add_event('library.related', self.related)
+        add_event('library.tree', self.tree)
 
-        addEvent('library.root', self.root)
+        add_event('library.root', self.root)
 
-        addApiView('library.query', self.queryView)
-        addApiView('library.related', self.relatedView)
-        addApiView('library.tree', self.treeView)
+        addApiView('library.query', self.query_view)
+        addApiView('library.related', self.related_view)
+        addApiView('library.tree', self.tree_view)
 
-    def queryView(self, media_id, **kwargs):
+    def query_view(self, media_id, **kwargs):
         db = get_db()
         media = db.get('id', media_id)
 
         return {
-            'result': fireEvent('library.query', media, single = True)
+            'result': fire_event('library.query', media, single=True)
         }
 
-    def relatedView(self, media_id, **kwargs):
+    def related_view(self, media_id, **kwargs):
         db = get_db()
         media = db.get('id', media_id)
 
         return {
-            'result': fireEvent('library.related', media, single = True)
+            'result': fire_event('library.related', media, single=True)
         }
 
-    def treeView(self, media_id, **kwargs):
+    def tree_view(self, media_id, **kwargs):
         db = get_db()
         media = db.get('id', media_id)
 
         return {
-            'result': fireEvent('library.tree', media, single = True)
+            'result': fire_event('library.tree', media, single=True)
         }
 
     def title(self, library):
-        return fireEvent(
+        return fire_event(
             'library.query',
             library,
 
@@ -112,14 +112,14 @@ class Library(LibraryBase):
             if key not in keys:
                 keys.append(key)
 
-            result[key][item['_id']] = fireEvent('library.tree', item['doc'], single = True)
+            result[key][item['_id']] = fire_event('library.tree', item['doc'], single=True)
 
         # Unique children
         for key in keys:
-            result[key] = result[key].values()
+            result[key] = list(result[key].values())
 
         # Include releases
-        result['releases'] = fireEvent('release.for_media', result['_id'], single = True)
+        result['releases'] = fire_event('release.for_media', result['_id'], single=True)
 
         return result
 

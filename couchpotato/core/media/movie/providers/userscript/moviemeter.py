@@ -1,4 +1,4 @@
-from couchpotato.core.helpers.variable import getImdb
+from couchpotato.core.helpers.variable import get_imdb
 from couchpotato.core.media._base.providers.userscript.base import UserscriptBase
 
 autoload = 'MovieMeter'
@@ -19,4 +19,4 @@ class MovieMeter(UserscriptBase):
         except:
             return
 
-        return self.getInfo(getImdb(data))
+        return self.getInfo(get_imdb(data))

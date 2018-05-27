@@ -4,13 +4,12 @@ import traceback
 
 from couchpotato import get_db
 from couchpotato.api import addApiView
-from couchpotato.core.event import fireEvent, addEvent, fireEventAsync
+from couchpotato.core.event import fire_event, add_event, fire_event_async
 from couchpotato.core.helpers.encoding import sp
-from couchpotato.core.helpers.variable import splitString, getTitle, tryInt, getIdentifier, getFreeSpace
+from couchpotato.core.helpers.variable import get_title, try_int, get_identifier, get_free_space
 from couchpotato.core.logger import CPLog
 from couchpotato.core.plugins.base import Plugin
 from couchpotato.environment import Env
-
 
 log = CPLog(__name__)
 
@@ -23,16 +22,17 @@ class Manage(Plugin):
 
     def __init__(self):
 
-        fireEvent('scheduler.interval', identifier = 'manage.update_library', handle = self.updateLibrary, hours = 2)
+        fire_event('scheduler.interval', identifier='manage.update_library', handle=self.updateLibrary, hours=2)
 
-        addEvent('manage.update', self.updateLibrary)
-        addEvent('manage.diskspace', self.getDiskSpace)
+        add_event('manage.update', self.updateLibrary)
+        add_event('manage.diskspace', self.getDiskSpace)
 
         # Add files after renaming
         def after_rename(message = None, group = None):
             if not group: group = {}
             return self.scanFilesToLibrary(folder = group['destination_dir'], files = group['renamed_files'], release_download = group['release_download'])
-        addEvent('renamer.after', after_rename, priority = 110)
+
+        add_event('renamer.after', after_rename, priority=110)
 
         addApiView('manage.update', self.updateLibraryView, docs = {
             'desc': 'Update the library by scanning for new movies',
@@ -49,19 +49,19 @@ class Manage(Plugin):
         })
 
         if not Env.get('dev') and self.conf('startup_scan'):
-            addEvent('app.load', self.updateLibraryQuick)
+            add_event('app.load', self.updateLibraryQuick)
 
-        addEvent('app.load', self.setCrons)
+        add_event('app.load', self.setCrons)
 
         # Enable / disable interval
-        addEvent('setting.save.manage.library_refresh_interval.after', self.setCrons)
+        add_event('setting.save.manage.library_refresh_interval.after', self.setCrons)
 
     def setCrons(self):
 
-        fireEvent('schedule.remove', 'manage.update_library')
-        refresh = tryInt(self.conf('library_refresh_interval'))
+        fire_event('schedule.remove', 'manage.update_library')
+        refresh = try_int(self.conf('library_refresh_interval'))
         if refresh > 0:
-            fireEvent('schedule.interval', 'manage.update_library', self.updateLibrary, hours = refresh, single = True)
+            fire_event('schedule.interval', 'manage.update_library', self.updateLibrary, hours=refresh, single=True)
 
         return True
 
@@ -72,7 +72,7 @@ class Manage(Plugin):
 
     def updateLibraryView(self, full = 1, **kwargs):
 
-        fireEventAsync('manage.update', full = True if full == '1' else False)
+        fire_event_async('manage.update', full=True if full == '1' else False)
 
         return {
             'progress': self.in_progress,
@@ -89,11 +89,11 @@ class Manage(Plugin):
         if self.in_progress:
             log.info('Already updating library: %s', self.in_progress)
             return
-        elif self.isDisabled() or (last_update > time.time() - 20):
+        elif self.is_disabled() or (last_update > time.time() - 20):
             return
 
         self.in_progress = {}
-        fireEvent('notify.frontend', type = 'manage.updating', data = True)
+        fire_event('notify.frontend', type='manage.updating', data=True)
 
         try:
 
@@ -112,7 +112,7 @@ class Manage(Plugin):
 
             for directory in directories:
                 folder = os.path.normpath(directory)
-                self.in_progress[os.path.normpath(directory)]['started'] = tryInt(time.time())
+                self.in_progress[os.path.normpath(directory)]['started'] = try_int(time.time())
 
                 if not os.path.isdir(folder):
                     if len(directory) > 0:
@@ -120,10 +120,12 @@ class Manage(Plugin):
                     continue
 
                 log.info('Updating manage library: %s', folder)
-                fireEvent('notify.frontend', type = 'manage.update', data = True, message = 'Scanning for movies in "%s"' % folder)
+                fire_event('notify.frontend', type='manage.update', data=True,
+                           message='Scanning for movies in "%s"' % folder)
 
                 onFound = self.createAddToLibrary(folder, added_identifiers)
-                fireEvent('scanner.scan', folder = folder, simple = True, newer_than = last_update if not full else 0, check_file_date = False, on_found = onFound, single = True)
+                fire_event('scanner.scan', folder=folder, simple=True, newer_than=last_update if not full else 0,
+                           check_file_date=False, on_found=onFound, single=True)
 
                 # Break if CP wants to shut down
                 if self.shuttingDown():
@@ -133,12 +135,13 @@ class Manage(Plugin):
             if self.conf('cleanup') and full and not self.shuttingDown():
 
                 # Get movies with done status
-                total_movies, done_movies = fireEvent('media.list', types = 'movie', status = 'done', release_status = 'done', status_or = True, single = True)
+                total_movies, done_movies = fire_event('media.list', types='movie', status='done',
+                                                       release_status='done', status_or=True, single=True)
 
                 deleted_releases = []
                 for done_movie in done_movies:
-                    if getIdentifier(done_movie) not in added_identifiers:
-                        fireEvent('media.delete', media_id = done_movie['_id'], delete_from = 'all')
+                    if get_identifier(done_movie) not in added_identifiers:
+                        fire_event('media.delete', media_id=done_movie['_id'], delete_from='all')
                     else:
 
                         releases = done_movie.get('releases', [])
@@ -150,7 +153,7 @@ class Manage(Plugin):
                                     for release_file in release['files'][file_type]:
                                         # Remove release not available anymore
                                         if not os.path.isfile(sp(release_file)):
-                                            fireEvent('release.clean', release['_id'])
+                                            fire_event('release.clean', release['_id'])
                                             brk = True
                                             break
                                     if brk:
@@ -167,7 +170,7 @@ class Manage(Plugin):
                                         if already_used:
                                             release_id = release['_id'] if already_used.get('last_edit', 0) > release.get('last_edit', 0) else already_used['_id']
                                             if release_id not in deleted_releases:
-                                                fireEvent('release.delete', release_id, single = True)
+                                                fire_event('release.delete', release_id, single=True)
                                                 deleted_releases.append(release_id)
                                             break
                                         else:
@@ -200,7 +203,7 @@ class Manage(Plugin):
 
             time.sleep(1)
 
-        fireEvent('notify.frontend', type = 'manage.updating', data = False)
+        fire_event('notify.frontend', type='manage.updating', data=False)
         self.in_progress = False
 
     # noinspection PyDefaultArgument
@@ -219,8 +222,9 @@ class Manage(Plugin):
                 added_identifiers.append(group['identifier'])
 
                 # Add it to release and update the info
-                fireEvent('release.add', group = group, update_info = False)
-                fireEvent('movie.update', identifier = group['identifier'], on_complete = self.createAfterUpdate(folder, group['identifier']))
+                fire_event('release.add', group=group, update_info=False)
+                fire_event('movie.update', identifier=group['identifier'],
+                           on_complete=self.createAfterUpdate(folder, group['identifier']))
 
         return addToLibrary
 
@@ -232,10 +236,11 @@ class Manage(Plugin):
                 return
 
             total = self.in_progress[folder]['total']
-            movie_dict = fireEvent('media.get', identifier, single = True)
+            movie_dict = fire_event('media.get', identifier, single=True)
 
             if movie_dict:
-                fireEvent('notify.frontend', type = 'movie.added', data = movie_dict, message = None if total > 5 else 'Added "%s" to manage.' % getTitle(movie_dict))
+                fire_event('notify.frontend', type='movie.added', data=movie_dict,
+                           message=None if total > 5 else 'Added "%s" to manage.' % get_title(movie_dict))
 
         return afterUpdate
 
@@ -246,7 +251,7 @@ class Manage(Plugin):
             pr['to_go'] = to_go
 
         avg = (time.time() - pr['started']) / (pr['total'] - pr['to_go'])
-        pr['eta'] = tryInt(avg * pr['to_go'])
+        pr['eta'] = try_int(avg * pr['to_go'])
 
 
     def directories(self):
@@ -261,18 +266,18 @@ class Manage(Plugin):
 
         folder = os.path.normpath(folder)
 
-        groups = fireEvent('scanner.scan', folder = folder, files = files, single = True)
+        groups = fire_event('scanner.scan', folder=folder, files=files, single=True)
 
         if groups:
-            for group in groups.values():
+            for group in list(groups.values()):
                 if group.get('media'):
                     if release_download and release_download.get('release_id'):
-                        fireEvent('release.add', group = group, update_id = release_download.get('release_id'))
+                        fire_event('release.add', group=group, update_id=release_download.get('release_id'))
                     else:
-                        fireEvent('release.add', group = group)
+                        fire_event('release.add', group=group)
 
     def getDiskSpace(self):
-        return getFreeSpace(self.directories())
+        return get_free_space(self.directories())
 
 
 config = [{

@@ -1,16 +1,14 @@
-import traceback
 import time
+import traceback
 
 from CodernityDB.database import RecordNotFound
+
 from couchpotato import get_db
 from couchpotato.api import addApiView
-from couchpotato.core.event import fireEvent, fireEventAsync, addEvent
-from couchpotato.core.helpers.encoding import toUnicode
-from couchpotato.core.helpers.variable import splitString, getTitle, getImdb, getIdentifier
+from couchpotato.core.event import fire_event, fire_event_async, add_event
+from couchpotato.core.helpers.variable import split_string, get_title, get_imdb, get_identifier
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media.movie import MovieTypeBase
-import six
-
 
 log = CPLog(__name__)
 
@@ -49,35 +47,35 @@ class MovieBase(MovieTypeBase):
             }
         })
 
-        addEvent('movie.add', self.add)
-        addEvent('movie.update', self.update)
-        addEvent('movie.update_release_dates', self.updateReleaseDate)
+        add_event('movie.add', self.add)
+        add_event('movie.update', self.update)
+        add_event('movie.update_release_dates', self.updateReleaseDate)
 
     def add(self, params = None, force_readd = True, search_after = True, update_after = True, notify_after = True, status = None):
         if not params: params = {}
 
         # Make sure it's a correct zero filled imdb id
-        params['identifier'] = getImdb(params.get('identifier', ''))
+        params['identifier'] = get_imdb(params.get('identifier', ''))
 
         if not params.get('identifier'):
             msg = 'Can\'t add movie without imdb identifier.'
             log.error(msg)
-            fireEvent('notify.frontend', type = 'movie.is_tvshow', message = msg)
+            fire_event('notify.frontend', type='movie.is_tvshow', message=msg)
             return False
         elif not params.get('info'):
             try:
-                is_movie = fireEvent('movie.is_movie', identifier = params.get('identifier'), adding = True, single = True)
+                is_movie = fire_event('movie.is_movie', identifier=params.get('identifier'), adding=True, single=True)
                 if not is_movie:
                     msg = 'Can\'t add movie, seems to be a TV show.'
                     log.error(msg)
-                    fireEvent('notify.frontend', type = 'movie.is_tvshow', message = msg)
+                    fire_event('notify.frontend', type='movie.is_tvshow', message=msg)
                     return False
             except:
                 pass
 
         info = params.get('info')
         if not info or (info and len(info.get('titles', [])) == 0):
-            info = fireEvent('movie.info', merge = True, extended = False, identifier = params.get('identifier'))
+            info = fire_event('movie.info', merge=True, extended=False, identifier=params.get('identifier'))
 
         # Allow force re-add overwrite from param
         if 'force_readd' in params:
@@ -90,7 +88,7 @@ class MovieBase(MovieTypeBase):
         # Default profile and category
         default_profile = {}
         if (not params.get('profile_id') and status != 'done') or params.get('ignore_previous', False):
-            default_profile = fireEvent('profile.default', single = True)
+            default_profile = fire_event('profile.default', single=True)
         cat_id = params.get('category_id')
 
         try:
@@ -146,12 +144,12 @@ class MovieBase(MovieTypeBase):
             elif force_readd:
 
                 # Clean snatched history
-                for release in fireEvent('release.for_media', m['_id'], single = True):
+                for release in fire_event('release.for_media', m['_id'], single=True):
                     if release.get('status') in ['downloaded', 'snatched', 'seeding', 'done']:
                         if params.get('ignore_previous', False):
-                            fireEvent('release.update_status', release['_id'], status = 'ignored')
+                            fire_event('release.update_status', release['_id'], status='ignored')
                         else:
-                            fireEvent('release.delete', release['_id'], single = True)
+                            fire_event('release.delete', release['_id'], single=True)
 
                 m['profile_id'] = (params.get('profile_id') or default_profile.get('_id')) if not previous_profile else previous_profile
                 m['category_id'] = cat_id if cat_id is not None and len(cat_id) > 0 else (m.get('category_id') or None)
@@ -169,14 +167,14 @@ class MovieBase(MovieTypeBase):
             # Trigger update info
             if added and update_after:
                 # Do full update to get images etc
-                fireEventAsync('movie.update', m['_id'], default_title = params.get('title'), on_complete = onComplete)
+                fire_event_async('movie.update', m['_id'], default_title=params.get('title'), on_complete=onComplete)
 
             # Remove releases
-            for rel in fireEvent('release.for_media', m['_id'], single = True):
+            for rel in fire_event('release.for_media', m['_id'], single=True):
                 if rel['status'] is 'available':
                     db.delete(rel)
 
-            movie_dict = fireEvent('media.get', m['_id'], single = True)
+            movie_dict = fire_event('media.get', m['_id'], single=True)
             if not movie_dict:
                 log.debug('Failed adding media, can\'t find it anymore')
                 return False
@@ -190,12 +188,12 @@ class MovieBase(MovieTypeBase):
                 if params.get('title'):
                     message = 'Successfully added "%s" to your wanted list.' % params.get('title', '')
                 else:
-                    title = getTitle(m)
+                    title = get_title(m)
                     if title:
                         message = 'Successfully added "%s" to your wanted list.' % title
                     else:
                         message = 'Successfully added to your wanted list.'
-                fireEvent('notify.frontend', type = 'movie.added', data = movie_dict, message = message)
+                fire_event('notify.frontend', type='movie.added', data=movie_dict, message=message)
 
             return movie_dict
         except:
@@ -214,7 +212,7 @@ class MovieBase(MovieTypeBase):
         try:
             db = get_db()
 
-            ids = splitString(id)
+            ids = split_string(id)
             for media_id in ids:
 
                 try:
@@ -226,7 +224,7 @@ class MovieBase(MovieTypeBase):
                         m['category_id'] = cat_id if len(cat_id) > 0 else m['category_id']
 
                     # Remove releases
-                    for rel in fireEvent('release.for_media', m['_id'], single = True):
+                    for rel in fire_event('release.for_media', m['_id'], single=True):
                         if rel['status'] is 'available':
                             db.delete(rel)
 
@@ -236,15 +234,15 @@ class MovieBase(MovieTypeBase):
 
                     db.update(m)
 
-                    fireEvent('media.restatus', m['_id'], single = True)
+                    fire_event('media.restatus', m['_id'], single=True)
 
                     m = db.get('id', media_id)
 
-                    movie_dict = fireEvent('media.get', m['_id'], single = True)
-                    fireEventAsync('movie.searcher.single', movie_dict, on_complete = self.createNotifyFront(media_id))
+                    movie_dict = fire_event('media.get', m['_id'], single=True)
+                    fire_event_async('movie.searcher.single', movie_dict, on_complete=self.createNotifyFront(media_id))
 
                 except:
-                    print traceback.format_exc()
+                    print((traceback.format_exc()))
                     log.error('Can\'t edit non-existing media')
 
             return {
@@ -282,7 +280,7 @@ class MovieBase(MovieTypeBase):
             else:
                 media = db.get('media', 'imdb-%s' % identifier, with_doc = True)['doc']
 
-            info = fireEvent('movie.info', merge = True, extended = extended, identifier = getIdentifier(media))
+            info = fire_event('movie.info', merge=True, extended=extended, identifier=get_identifier(media))
 
             # Don't need those here
             try: del info['in_wanted']
@@ -336,7 +334,7 @@ class MovieBase(MovieTypeBase):
                 dates = media.get('info').get('release_date')
 
             if dates and (dates.get('expires', 0) < time.time() or dates.get('expires', 0) > time.time() + (604800 * 4)) or not dates:
-                dates = fireEvent('movie.info.release_date', identifier = getIdentifier(media), merge = True)
+                dates = fire_event('movie.info.release_date', identifier=get_identifier(media), merge=True)
                 media['info'].update({'release_date': dates})
                 db.update(media)
 

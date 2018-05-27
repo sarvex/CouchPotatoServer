@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
+
 
 """
 oauthlib.common
@@ -10,30 +10,31 @@ to all implementations of OAuth.
 """
 
 import re
-import urllib
-import urlparse
+import urllib.error
+import urllib.parse
+import urllib.parse
+import urllib.request
+
+always_safe = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+               'abcdefghijklmnopqrstuvwxyz'
+               '0123456789' '_.-')
 
 
-always_safe = (u'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-               u'abcdefghijklmnopqrstuvwxyz'
-               u'0123456789' u'_.-')
-
-
-def quote(s, safe=u'/'):
+def quote(s, safe='/'):
     encoded = s.encode("utf-8")
-    quoted = urllib.quote(encoded, safe)
+    quoted = urllib.parse.quote(encoded, safe)
     return quoted.decode("utf-8")
 
 
 def unquote(s):
     encoded = s.encode("utf-8")
-    unquoted = urllib.unquote(encoded)
+    unquoted = urllib.parse.unquote(encoded)
     return unquoted.decode("utf-8")
 
 
 def urlencode(params):
     utf8_params = encode_params_utf8(params)
-    urlencoded = urllib.urlencode(utf8_params)
+    urlencoded = urllib.parse.urlencode(utf8_params)
     return urlencoded.decode("utf-8")
 
 
@@ -44,8 +45,8 @@ def encode_params_utf8(params):
     encoded = []
     for k, v in params:
         encoded.append((
-            k.encode('utf-8') if isinstance(k, unicode) else k,
-            v.encode('utf-8') if isinstance(v, unicode) else v))
+            k.encode('utf-8') if isinstance(k, str) else k,
+            v.encode('utf-8') if isinstance(v, str) else v))
     return encoded
 
 
@@ -61,7 +62,7 @@ def decode_params_utf8(params):
     return decoded
 
 
-urlencoded = set(always_safe) | set(u'=&;%+~')
+urlencoded = set(always_safe) | set('=&;%+~')
 
 
 def urldecode(query):
@@ -81,14 +82,14 @@ def urldecode(query):
     # All encoded values begin with % followed by two hex characters
     # correct = %00, %A0, %0A, %FF
     # invalid = %G0, %5H, %PO
-    invalid_hex = u'%[^0-9A-Fa-f]|%[0-9A-Fa-f][^0-9A-Fa-f]'
+    invalid_hex = '%[^0-9A-Fa-f]|%[0-9A-Fa-f][^0-9A-Fa-f]'
     if len(re.findall(invalid_hex, query)):
         raise ValueError('Invalid hex encoding in query string.')
 
     query = query.decode('utf-8') if isinstance(query, str) else query
     # We want to allow queries such as "c2" whereas urlparse.parse_qsl
     # with the strict_parsing flag will not.
-    params = urlparse.parse_qsl(query, keep_blank_values=True)
+    params = urllib.parse.parse_qsl(query, keep_blank_values=True)
 
     # unicode all the things
     return decode_params_utf8(params)
@@ -102,7 +103,7 @@ def extract_params(raw):
     empty list of parameters. Any other input will result in a return
     value of None.
     """
-    if isinstance(raw, basestring):
+    if isinstance(raw, str):
         try:
             params = urldecode(raw)
         except ValueError:
@@ -115,7 +116,7 @@ def extract_params(raw):
         except TypeError:
             params = None
         else:
-            params = list(raw.items() if isinstance(raw, dict) else raw)
+            params = list(list(raw.items()) if isinstance(raw, dict) else raw)
             params = decode_params_utf8(params)
     else:
         params = None
@@ -137,7 +138,7 @@ class Request(object):
     unmolested.
     """
 
-    def __init__(self, uri, http_method=u'GET', body=None, headers=None):
+    def __init__(self, uri, http_method='GET', body=None, headers=None):
         self.uri = uri
         self.http_method = http_method
         self.headers = headers or {}
@@ -147,9 +148,9 @@ class Request(object):
 
     @property
     def uri_query(self):
-        return urlparse.urlparse(self.uri).query
+        return urllib.parse.urlparse(self.uri).query
 
     @property
     def uri_query_params(self):
-        return urlparse.parse_qsl(self.uri_query, keep_blank_values=True,
-                                  strict_parsing=True)
+        return urllib.parse.parse_qsl(self.uri_query, keep_blank_values=True,
+                                      strict_parsing=True)

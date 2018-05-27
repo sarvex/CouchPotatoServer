@@ -1,14 +1,14 @@
 import random as rndm
 import time
+
 from CodernityDB.database import RecordDeleted, RecordNotFound
 
 from couchpotato import get_db
 from couchpotato.api import addApiView
-from couchpotato.core.event import fireEvent
-from couchpotato.core.helpers.variable import splitString, tryInt
+from couchpotato.core.event import fire_event
+from couchpotato.core.helpers.variable import split_string, try_int
 from couchpotato.core.logger import CPLog
 from couchpotato.core.plugins.base import Plugin
-
 
 log = CPLog(__name__)
 
@@ -26,8 +26,8 @@ class Dashboard(Plugin):
         now = time.time()
 
         # Get profiles first, determine pre or post theater
-        profiles = fireEvent('profile.all', single = True)
-        pre_releases = fireEvent('quality.pre_releases', single = True)
+        profiles = fire_event('profile.all', single=True)
+        pre_releases = fire_event('quality.pre_releases', single=True)
 
         # See what the profile contain and cache it
         profile_pre = {}
@@ -41,11 +41,11 @@ class Dashboard(Plugin):
         # Add limit
         limit = 12
         if limit_offset:
-            splt = splitString(limit_offset) if isinstance(limit_offset, (str, unicode)) else limit_offset
-            limit = tryInt(splt[0])
+            splt = split_string(limit_offset) if isinstance(limit_offset, str) else limit_offset
+            limit = try_int(splt[0])
 
         # Get all active medias
-        active_ids = [x['_id'] for x in fireEvent('media.with_status', 'active', with_doc = False, single = True)]
+        active_ids = [x['_id'] for x in fire_event('media.with_status', 'active', with_doc=False, single=True)]
 
         medias = []
 
@@ -76,9 +76,11 @@ class Dashboard(Plugin):
                 coming_soon = False
 
                 # Theater quality
-                if pp.get('theater') and fireEvent('movie.searcher.could_be_released', True, eta, media['info']['year'], single = True):
+                if pp.get('theater') and fire_event('movie.searcher.could_be_released', True, eta,
+                                                    media['info']['year'], single=True):
                     coming_soon = 'theater'
-                elif pp.get('dvd') and fireEvent('movie.searcher.could_be_released', False, eta, media['info']['year'], single = True):
+                elif pp.get('dvd') and fire_event('movie.searcher.could_be_released', False, eta, media['info']['year'],
+                                                  single=True):
                     coming_soon = 'dvd'
 
                 if coming_soon:
@@ -94,7 +96,7 @@ class Dashboard(Plugin):
 
                         # Check if it doesn't have any releases
                         if late:
-                            media['releases'] = fireEvent('release.for_media', media['_id'], single = True)
+                            media['releases'] = fire_event('release.for_media', media['_id'], single=True)
 
                             for release in media.get('releases', []):
                                 if release.get('status') in ['snatched', 'available', 'seeding', 'downloaded']:

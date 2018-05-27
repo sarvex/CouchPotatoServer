@@ -1,11 +1,11 @@
 import traceback
 
 from bs4 import BeautifulSoup
-from couchpotato.core.helpers.encoding import tryUrlencode, toUnicode
-from couchpotato.core.helpers.variable import tryInt
+
+from couchpotato.core.helpers.encoding import try_url_encode, to_unicode
+from couchpotato.core.helpers.variable import try_int
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.torrent.base import TorrentProvider
-
 
 log = CPLog(__name__)
 
@@ -37,7 +37,8 @@ class Base(TorrentProvider):
 
     def _searchOnTitle(self, title, movie, quality, results):
 
-        url = self.urls['search'] % (tryUrlencode('%s %s' % (title.replace(':', ''), movie['info']['year'])), self.getCatId(quality)[0])
+        url = self.urls['search'] % (
+        try_url_encode('%s %s' % (title.replace(':', ''), movie['info']['year'])), self.getCatId(quality)[0])
         data = self.getHTMLData(url)
 
         if data:
@@ -57,7 +58,7 @@ class Base(TorrentProvider):
 
                     full_id = link['href'].replace('details.php?id=', '')
                     torrent_id = full_id[:7]
-                    name = toUnicode(link.get('title', link.contents[0]).encode('ISO-8859-1')).strip()
+                    name = to_unicode(link.get('title', link.contents[0]).encode('ISO-8859-1')).strip()
 
                     results.append({
                         'id': torrent_id,
@@ -65,8 +66,8 @@ class Base(TorrentProvider):
                         'url': self.urls['download'] % (torrent_id, name),
                         'detail_url': self.urls['detail'] % torrent_id,
                         'size': self.parseSize(cells[6].contents[0] + cells[6].contents[2]),
-                        'seeders': tryInt(cells[8].find('span').contents[0]),
-                        'leechers': tryInt(cells[9].find('span').contents[0]),
+                        'seeders': try_int(cells[8].find('span').contents[0]),
+                        'leechers': try_int(cells[9].find('span').contents[0]),
                     })
 
             except:

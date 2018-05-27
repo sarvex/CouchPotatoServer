@@ -1,11 +1,10 @@
-import re
 import json
+import re
 import traceback
 
-from couchpotato.core.helpers.variable import tryInt, getIdentifier
+from couchpotato.core.helpers.variable import try_int, get_identifier
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.torrent.base import TorrentProvider
-
 
 log = CPLog(__name__)
 
@@ -51,7 +50,7 @@ class Base(TorrentProvider):
 
     def _search(self, movie, quality, results):
 
-        match = re.match(r'tt(\d{7})', getIdentifier(movie))
+        match = re.match(r'tt(\d{7})', get_identifier(movie))
 
         data = self._post_query(imdb = {'id': match.group(1)})
 
@@ -63,9 +62,9 @@ class Base(TorrentProvider):
                         'name': result['name'],
                         'url': self.urls['download'] % (result['id'], self.conf('passkey')),
                         'detail_url': self.urls['detail'] % result['id'],
-                        'size': tryInt(result['size']) / 1024 / 1024,
-                        'seeders': tryInt(result['seeders']),
-                        'leechers': tryInt(result['leechers'])
+                        'size': try_int(result['size']) / 1024 / 1024,
+                        'seeders': try_int(result['seeders']),
+                        'leechers': try_int(result['leechers'])
                     })
             except:
                 log.error('Failed getting results from %s: %s', (self.getName(), traceback.format_exc()))

@@ -1,8 +1,8 @@
-import time
 import logging
-from pyasn1.compat.octets import octs2ints
-from pyasn1 import error
+
 from pyasn1 import __version__
+from pyasn1 import error
+from pyasn1.compat.octets import octs2ints
 
 flagNone     = 0x0000
 flagEncoder  = 0x0001
@@ -48,7 +48,7 @@ class Debug:
             self._printer = options.get('printer')
         elif self.defaultPrinter is not None:
             self._printer = self.defaultPrinter
-        if 'loggerName' in options: 
+        if 'loggerName' in options:
             # route our logs to parent logger
             self._printer = Printer(
                 logger=logging.getLogger(options['loggerName']),
@@ -68,12 +68,12 @@ class Debug:
                     self._flags |= flagMap[f]
             except KeyError:
                 raise error.PyAsn1Error('bad debug flag %s' % f)
-  
+
             self('debug category \'%s\' %s' % (f, inverse and 'disabled' or 'enabled'))
 
     def __str__(self):
         return 'logger %s, flags %x' % (self._printer, self._flags)
-    
+
     def __call__(self, msg):
         self._printer(msg)
 
@@ -91,8 +91,8 @@ def setLogger(l):
 
 def hexdump(octets):
     return ' '.join(
-            [ '%s%.2X' % (n%16 == 0 and ('\n%.5d: ' % n) or '', x) 
-              for n,x in zip(range(len(octets)), octs2ints(octets)) ]
+        ['%s%.2X' % (n % 16 == 0 and ('\n%.5d: ' % n) or '', x)
+         for n, x in zip(list(range(len(octets))), octs2ints(octets))]
         )
 
 class Scope:

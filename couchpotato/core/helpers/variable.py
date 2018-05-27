@@ -9,36 +9,37 @@ import string
 import sys
 import traceback
 
-from couchpotato.core.helpers.encoding import simplifyString, toSafeString, ss, sp, toUnicode
-from couchpotato.core.logger import CPLog
-import six
-from six.moves import map, zip, filter
+from six.moves import map
 
+from couchpotato.core.helpers.encoding import simplify_string, to_safe_string, ss, sp, to_unicode
+from couchpotato.core.logger import CPLog
 
 log = CPLog(__name__)
 
 
-def fnEscape(pattern):
+def fn_escape(pattern):
     return pattern.replace('[', '[[').replace(']', '[]]').replace('[[', '[[]')
 
 
 def link(src, dst):
     if os.name == 'nt':
         import ctypes
-        if ctypes.windll.kernel32.CreateHardLinkW(toUnicode(dst), toUnicode(src), 0) == 0: raise ctypes.WinError()
+        if ctypes.windll.kernel32.CreateHardLinkW(to_unicode(dst), to_unicode(src), 0) == 0: raise ctypes.WinError()
     else:
-        os.link(toUnicode(src), toUnicode(dst))
+        os.link(to_unicode(src), to_unicode(dst))
 
 
 def symlink(src, dst):
     if os.name == 'nt':
         import ctypes
-        if ctypes.windll.kernel32.CreateSymbolicLinkW(toUnicode(dst), toUnicode(src), 1 if os.path.isdir(src) else 0) in [0, 1280]: raise ctypes.WinError()
+        if ctypes.windll.kernel32.CreateSymbolicLinkW(to_unicode(dst), to_unicode(src),
+                                                      1 if os.path.isdir(src) else 0) in [0,
+                                                                                          1280]: raise ctypes.WinError()
     else:
-        os.symlink(toUnicode(src), toUnicode(dst))
+        os.symlink(to_unicode(src), to_unicode(dst))
 
 
-def getUserDir():
+def get_user_directory():
     try:
         import pwd
         if not os.environ['HOME']:
@@ -49,8 +50,8 @@ def getUserDir():
     return sp(os.path.expanduser('~'))
 
 
-def getDownloadDir():
-    user_dir = getUserDir()
+def get_download_directory():
+    user_dir = get_user_directory()
 
     # OSX
     if 'darwin' in platform.platform().lower():
@@ -62,13 +63,13 @@ def getDownloadDir():
     return user_dir
 
 
-def getDataDir():
+def get_data_directory():
 
     # Windows
     if os.name == 'nt':
         return os.path.join(os.environ['APPDATA'], 'CouchPotato')
 
-    user_dir = getUserDir()
+    user_dir = get_user_directory()
 
     # OSX
     if 'darwin' in platform.platform().lower():
@@ -82,12 +83,12 @@ def getDataDir():
     return os.path.join(user_dir, '.couchpotato')
 
 
-def isDict(obj):
+def is_dictionary(obj):
     return isinstance(obj, dict)
 
 
-def mergeDicts(a, b, prepend_list = False):
-    assert isDict(a), isDict(b)
+def merge_dictionaries(a, b, prepend_list=False):
+    assert is_dictionary(a), is_dictionary(b)
     dst = a.copy()
 
     stack = [(dst, b)]
@@ -97,17 +98,17 @@ def mergeDicts(a, b, prepend_list = False):
             if key not in current_dst:
                 current_dst[key] = current_src[key]
             else:
-                if isDict(current_src[key]) and isDict(current_dst[key]):
+                if is_dictionary(current_src[key]) and is_dictionary(current_dst[key]):
                     stack.append((current_dst[key], current_src[key]))
                 elif isinstance(current_src[key], list) and isinstance(current_dst[key], list):
                     current_dst[key] = current_src[key] + current_dst[key] if prepend_list else current_dst[key] + current_src[key]
-                    current_dst[key] = removeListDuplicates(current_dst[key])
+                    current_dst[key] = remove_list_duplicates(current_dst[key])
                 else:
                     current_dst[key] = current_src[key]
     return dst
 
 
-def removeListDuplicates(seq):
+def remove_list_duplicates(seq):
     checked = []
     for e in seq:
         if e not in checked:
@@ -115,9 +116,9 @@ def removeListDuplicates(seq):
     return checked
 
 
-def flattenList(l):
+def flatten_list(l):
     if isinstance(l, list):
-        return sum(map(flattenList, l))
+        return sum(map(flatten_list, l))
     else:
         return l
 
@@ -130,31 +131,31 @@ def sha1(text):
     return hashlib.sha1(text).hexdigest()
 
 
-def isLocalIP(ip):
+def is_local_ip(ip):
     ip = ip.lstrip('htps:/')
     regex = '/(^127\.)|(^192\.168\.)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^::1)$/'
     return re.search(regex, ip) is not None or 'localhost' in ip or ip[:4] == '127.'
 
 
-def getExt(filename):
+def get_extension(filename):
     return os.path.splitext(filename)[1][1:]
 
 
-def cleanHost(host, protocol = True, ssl = False, username = None, password = None):
+def clean_host(host, protocol=True, ssl=False, username=None, password=None):
     """Return a cleaned up host with given url options set
 
     Changes protocol to https if ssl is set to True and http if ssl is set to false.
-    >>> cleanHost("localhost:80", ssl=True)
+    >>> clean_host("localhost:80", ssl=True)
     'https://localhost:80/'
-    >>> cleanHost("localhost:80", ssl=False)
+    >>> clean_host("localhost:80", ssl=False)
     'http://localhost:80/'
 
     Username and password is managed with the username and password variables
-    >>> cleanHost("localhost:80", username="user", password="passwd")
+    >>> clean_host("localhost:80", username="user", password="passwd")
     'http://user:passwd@localhost:80/'
 
     Output without scheme (protocol) can be forced with protocol=False
-    >>> cleanHost("localhost:80", protocol=False)
+    >>> clean_host("localhost:80", protocol=False)
     'localhost:80'
     """
 
@@ -181,10 +182,10 @@ def cleanHost(host, protocol = True, ssl = False, username = None, password = No
     return host
 
 
-def getImdb(txt, check_inside = False, multiple = False):
+def get_imdb(txt, check_inside=False, multiple=False):
 
     if not check_inside:
-        txt = simplifyString(txt)
+        txt = simplify_string(txt)
     else:
         txt = ss(txt)
 
@@ -197,45 +198,45 @@ def getImdb(txt, check_inside = False, multiple = False):
         ids = re.findall('(tt\d{4,7})', txt)
 
         if multiple:
-            return removeDuplicate(['tt%07d' % tryInt(x[2:]) for x in ids]) if len(ids) > 0 else []
+            return remove_duplicate(['tt%07d' % try_int(x[2:]) for x in ids]) if len(ids) > 0 else []
 
-        return 'tt%07d' % tryInt(ids[0][2:])
+        return 'tt%07d' % try_int(ids[0][2:])
     except IndexError:
         pass
 
     return False
 
 
-def tryInt(s, default = 0):
+def try_int(s, default=0):
     try: return int(s)
     except: return default
 
 
-def tryFloat(s):
+def try_float(s):
     try:
         if isinstance(s, str):
-            return float(s) if '.' in s else tryInt(s)
+            return float(s) if '.' in s else try_int(s)
         else:
             return float(s)
     except: return 0
 
 
-def natsortKey(string_):
+def nat_sort_key(string_):
     """See http://www.codinghorror.com/blog/archives/001018.html"""
     return [int(s) if s.isdigit() else s for s in re.split(r'(\d+)', string_)]
 
 
-def toIterable(value):
+def to_iterable(value):
     if isinstance(value, collections.Iterable):
         return value
     return [value]
 
 
-def getIdentifier(media):
+def get_identifier(media):
     return media.get('identifier') or media.get('identifiers', {}).get('imdb')
 
 
-def getTitle(media_dict):
+def get_title(media_dict):
     try:
         try:
             return media_dict['title']
@@ -249,52 +250,52 @@ def getTitle(media_dict):
                     try:
                         return media_dict['media']['info']['titles'][0]
                     except:
-                        log.error('Could not get title for %s', getIdentifier(media_dict))
+                        log.error('Could not get title for %s', get_identifier(media_dict))
                         return None
     except:
         log.error('Could not get title for library item: %s', media_dict)
         return None
 
 
-def possibleTitles(raw_title):
+def possible_titles(raw_title):
 
     titles = [
-        toSafeString(raw_title).lower(),
+        to_safe_string(raw_title).lower(),
         raw_title.lower(),
-        simplifyString(raw_title)
+        simplify_string(raw_title)
     ]
 
     # replace some chars
     new_title = raw_title.replace('&', 'and')
-    titles.append(simplifyString(new_title))
+    titles.append(simplify_string(new_title))
 
-    return removeDuplicate(titles)
+    return remove_duplicate(titles)
 
 
-def randomString(size = 8, chars = string.ascii_uppercase + string.digits):
+def random_string(size=8, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for x in range(size))
 
 
-def splitString(str, split_on = ',', clean = True):
+def split_string(str, split_on=',', clean=True):
     l = [x.strip() for x in str.split(split_on)] if str else []
-    return removeEmpty(l) if clean else l
+    return remove_empty(l) if clean else l
 
 
-def removeEmpty(l):
-    return list(filter(None, l))
+def remove_empty(l):
+    return list([_f for _f in l if _f])
 
 
-def removeDuplicate(l):
+def remove_duplicate(l):
     seen = set()
     return [x for x in l if x not in seen and not seen.add(x)]
 
 
-def dictIsSubset(a, b):
-    return all([k in b and b[k] == v for k, v in a.items()])
+def dictionary_is_subset(a, b):
+    return all([k in b and b[k] == v for k, v in list(a.items())])
 
 
 # Returns True if sub_folder is the same as or inside base_folder
-def isSubFolder(sub_folder, base_folder):
+def is_sub_folder(sub_folder, base_folder):
     if base_folder and sub_folder:
         base = sp(os.path.realpath(base_folder)) + os.path.sep
         subfolder = sp(os.path.realpath(sub_folder)) + os.path.sep
@@ -307,7 +308,7 @@ def isSubFolder(sub_folder, base_folder):
 re_password = [re.compile(r'(.+){{([^{}]+)}}$'), re.compile(r'(.+)\s+password\s*=\s*(.+)$', re.I)]
 
 
-def scanForPassword(name):
+def scan_for_password(name):
     m = None
     for reg in re_password:
         m = reg.search(name)
@@ -319,19 +320,21 @@ def scanForPassword(name):
 
 under_pat = re.compile(r'_([a-z])')
 
-def underscoreToCamel(name):
+
+def snake_to_camel(name):
     return under_pat.sub(lambda x: x.group(1).upper(), name)
 
 
-def removePyc(folder, only_excess = True, show_logs = True):
+def remove_pyc(folder, only_excess=True, show_logs=True):
 
     folder = sp(folder)
 
     for root, dirs, files in os.walk(folder):
 
-        pyc_files = filter(lambda filename: filename.endswith('.pyc'), files)
-        py_files = set(filter(lambda filename: filename.endswith('.py'), files))
-        excess_pyc_files = filter(lambda pyc_filename: pyc_filename[:-1] not in py_files, pyc_files) if only_excess else pyc_files
+        pyc_files = [filename for filename in files if filename.endswith('.pyc')]
+        py_files = set([filename for filename in files if filename.endswith('.py')])
+        excess_pyc_files = [pyc_filename for pyc_filename in pyc_files if
+                            pyc_filename[:-1] not in py_files] if only_excess else pyc_files
 
         for excess_pyc_file in excess_pyc_files:
             full_path = os.path.join(root, excess_pyc_file)
@@ -350,7 +353,7 @@ def removePyc(folder, only_excess = True, show_logs = True):
                     log.error('Couldn\'t remove empty directory %s: %s', (full_path, traceback.format_exc()))
 
 
-def getFreeSpace(directories):
+def get_free_space(directories):
 
     single = not isinstance(directories, (tuple, list))
     if single:
@@ -364,7 +367,7 @@ def getFreeSpace(directories):
             if os.name == 'nt':
                 _, total, free = ctypes.c_ulonglong(), ctypes.c_ulonglong(), \
                                    ctypes.c_ulonglong()
-                if sys.version_info >= (3,) or isinstance(folder, unicode):
+                if sys.version_info >= (3,) or isinstance(folder, str):
                     fun = ctypes.windll.kernel32.GetDiskFreeSpaceExW #@UndefinedVariable
                 else:
                     fun = ctypes.windll.kernel32.GetDiskFreeSpaceExA #@UndefinedVariable
@@ -383,7 +386,7 @@ def getFreeSpace(directories):
     return free_space
 
 
-def getSize(paths):
+def get_size(paths):
 
     single = not isinstance(paths, (tuple, list))
     if single:
@@ -413,7 +416,7 @@ def find(func, iterable):
     return None
 
 
-def compareVersions(version1, version2):
+def compare_versions(version1, version2):
     def normalize(v):
         return [int(x) for x in re.sub(r'(\.0+)*$','', v).split(".")]
     return cmp(normalize(version1), normalize(version2))

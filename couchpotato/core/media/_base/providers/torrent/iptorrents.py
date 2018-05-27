@@ -1,12 +1,12 @@
 import traceback
 
+import six
 from bs4 import BeautifulSoup
-from couchpotato.core.helpers.encoding import tryUrlencode
-from couchpotato.core.helpers.variable import tryInt
+
+from couchpotato.core.helpers.encoding import try_url_encode
+from couchpotato.core.helpers.variable import try_int
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.torrent.base import TorrentProvider
-import six
-
 
 log = CPLog(__name__)
 
@@ -37,8 +37,8 @@ class Base(TorrentProvider):
             return None
 
         query = query.replace('"', '')
-        
-        return self.urls['search'] % ("&".join(("%d=" % x) for x in cat_ids), tryUrlencode(query).replace('%', '%%'))
+
+        return self.urls['search'] % ("&".join(("%d=" % x) for x in cat_ids), try_url_encode(query).replace('%', '%%'))
 
     def _searchOnTitle(self, title, media, quality, results):
 
@@ -83,8 +83,8 @@ class Base(TorrentProvider):
                         torrent_download_url = self.urls['base_url'] + (result.find_all('td')[3].find('a'))['href'].replace(' ', '.')
                         torrent_details_url = self.urls['base_url'] + torrent['href']
                         torrent_size = self.parseSize(result.find_all('td')[5].string)
-                        torrent_seeders = tryInt(result.find('td', attrs = {'class': 'ac t_seeders'}).string)
-                        torrent_leechers = tryInt(result.find('td', attrs = {'class': 'ac t_leechers'}).string)
+                        torrent_seeders = try_int(result.find('td', attrs={'class': 'ac t_seeders'}).string)
+                        torrent_leechers = try_int(result.find('td', attrs={'class': 'ac t_leechers'}).string)
 
                         results.append({
                             'id': torrent_id,

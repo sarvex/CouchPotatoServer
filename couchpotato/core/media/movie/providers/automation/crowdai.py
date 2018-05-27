@@ -1,10 +1,9 @@
 import re
 
 from couchpotato.core.helpers.rss import RSS
-from couchpotato.core.helpers.variable import tryInt, splitString
+from couchpotato.core.helpers.variable import try_int, split_string
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media.movie.providers.automation.base import Automation
-
 
 log = CPLog(__name__)
 
@@ -19,7 +18,8 @@ class CrowdAI(Automation, RSS):
 
         movies = []
 
-        urls = dict(zip(splitString(self.conf('automation_urls')), [tryInt(x) for x in splitString(self.conf('automation_urls_use'))]))
+        urls = dict(list(zip(split_string(self.conf('automation_urls')),
+                             [try_int(x) for x in split_string(self.conf('automation_urls_use'))])))
 
         for url in urls:
 
@@ -30,7 +30,7 @@ class CrowdAI(Automation, RSS):
 
             for movie in rss_movies:
 
-                description = self.getTextElement(movie, 'description')
+                description = self.get_text_element(movie, 'description')
                 grabs = 0
 
                 for item in movie:
@@ -38,7 +38,7 @@ class CrowdAI(Automation, RSS):
                         grabs = item.attrib.get('value')
                         break
 
-                if int(grabs) > tryInt(self.conf('number_grabs')):
+                if int(grabs) > try_int(self.conf('number_grabs')):
                     title = re.match(r'.*Title: .a href.*/">(.*) \(\d{4}\).*', description).group(1)
                     log.info2('%s grabs for movie: %s, enqueue...', (grabs, title))
                     year = re.match(r'.*Year: (\d{4}).*', description).group(1)

@@ -15,6 +15,13 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with subliminal.  If not, see <http://www.gnu.org/licenses/>.
+import logging
+import urllib.error
+import urllib.parse
+import urllib.request
+
+from bs4 import BeautifulSoup
+
 from . import ServiceBase
 from ..cache import cachedmethod
 from ..exceptions import ServiceError
@@ -22,11 +29,9 @@ from ..language import language_set
 from ..subtitles import get_subtitle_path, ResultSubtitle, EXTENSIONS
 from ..utils import to_unicode
 from ..videos import Episode
-from bs4 import BeautifulSoup
-import logging
-import urllib
+
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 
@@ -45,18 +50,18 @@ class BierDopje(ServiceBase):
 
     @cachedmethod
     def get_show_id(self, series):
-        r = self.session.get('%sGetShowByName/%s' % (self.server_url, urllib.quote(series.lower())))
+        r = self.session.get('%sGetShowByName/%s' % (self.server_url, urllib.parse.quote(series.lower())))
         if r.status_code != 200:
-            logger.error(u'Request %s returned status code %d' % (r.url, r.status_code))
+            logger.error('Request %s returned status code %d' % (r.url, r.status_code))
             return None
         soup = BeautifulSoup(r.content, self.required_features)
         if soup.status.contents[0] == 'false':
-            logger.debug(u'Could not find show %s' % series)
+            logger.debug('Could not find show %s' % series)
             return None
         return int(soup.showid.contents[0])
 
     def load_cache(self):
-        logger.debug(u'Loading showids from cache...')
+        logger.debug('Loading showids from cache...')
         with self.lock:
             with open(self.showids_cache, 'r') as f:
                 self.showids = pickle.load(f)
@@ -77,14 +82,16 @@ class BierDopje(ServiceBase):
             raise ServiceError('One or more parameter missing')
         subtitles = []
         for language in languages:
-            logger.debug(u'Getting subtitles for %s %d season %d episode %d with language %s' % (request_source, request_id, season, episode, language.alpha2))
+            logger.debug('Getting subtitles for %s %d season %d episode %d with language %s' % (
+            request_source, request_id, season, episode, language.alpha2))
             r = self.session.get('%sGetAllSubsFor/%s/%s/%s/%s/%s' % (self.server_url, request_id, season, episode, language.alpha2, request_is_tvdbid))
             if r.status_code != 200:
-                logger.error(u'Request %s returned status code %d' % (r.url, r.status_code))
+                logger.error('Request %s returned status code %d' % (r.url, r.status_code))
                 return []
             soup = BeautifulSoup(r.content, self.required_features)
             if soup.status.contents[0] == 'false':
-                logger.debug(u'Could not find subtitles for %s %d season %d episode %d with language %s' % (request_source, request_id, season, episode, language.alpha2))
+                logger.debug('Could not find subtitles for %s %d season %d episode %d with language %s' % (
+                request_source, request_id, season, episode, language.alpha2))
                 continue
             path = get_subtitle_path(filepath, language, self.config.multi)
             for result in soup.results('result'):

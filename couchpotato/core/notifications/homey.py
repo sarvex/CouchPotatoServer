@@ -1,7 +1,7 @@
 import traceback
 
-from couchpotato.core.helpers.encoding import toUnicode
-from couchpotato.core.helpers.variable import getIdentifier, getTitle
+from couchpotato.core.helpers.encoding import to_unicode
+from couchpotato.core.helpers.variable import get_title
 from couchpotato.core.logger import CPLog
 from couchpotato.core.notifications.base import Notification
 
@@ -27,8 +27,8 @@ class Homey(Notification):
 
         post_data = {
             'type': listener,
-            'movie': getTitle(data) if listener != 'test' else 'Test Movie Title (2016)',
-            'message': toUnicode(message)
+            'movie': get_title(data) if listener != 'test' else 'Test Movie Title (2016)',
+            'message': to_unicode(message)
         }
 
         try:

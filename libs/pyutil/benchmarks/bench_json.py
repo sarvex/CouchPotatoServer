@@ -1,6 +1,7 @@
-from pyutil import randutil
 import random
 from decimal import Decimal
+
+from pyutil import randutil
 
 l = []
 s = None
@@ -47,9 +48,9 @@ from pyutil import benchutil
 for i in (data_strings, data_floats, data_Decimals):
     for e in (ud, ue, jd, je):
     # for e in (ue,):
-        print "i: %s, e: %s" % (i, e,)
+    print("i: %s, e: %s" % (i, e,))
         try:
             benchutil.bench(e, initfunc=i, TOPXP=5, profile=False)
-        except TypeError, e:
-            print "skipping due to %s" % (e,)
+        except TypeError as e:
+            print("skipping due to %s" % (e,))
 benchutil.print_bench_footer()

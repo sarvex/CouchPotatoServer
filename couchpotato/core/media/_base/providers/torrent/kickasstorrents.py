@@ -2,10 +2,10 @@ import re
 import traceback
 
 from bs4 import BeautifulSoup
-from couchpotato.core.helpers.variable import tryInt, getIdentifier
+
+from couchpotato.core.helpers.variable import try_int, get_identifier
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.torrent.base import TorrentMagnetProvider
-
 
 log = CPLog(__name__)
 
@@ -56,7 +56,7 @@ class Base(TorrentMagnetProvider):
 
     def _search(self, media, quality, results):
 
-        data = self.getHTMLData(self.urls['search'] % (self.getDomain(), 'm', getIdentifier(media).replace('tt', '')))
+        data = self.getHTMLData(self.urls['search'] % (self.getDomain(), 'm', get_identifier(media).replace('tt', '')))
 
         if data:
 
@@ -95,9 +95,9 @@ class Base(TorrentMagnetProvider):
                                     elif column_name is 'age':
                                         new['age'] = self.ageToDays(td.text)
                                     elif column_name is 'seeds':
-                                        new['seeders'] = tryInt(td.text)
+                                        new['seeders'] = try_int(td.text)
                                     elif column_name is 'leechers':
-                                        new['leechers'] = tryInt(td.text)
+                                        new['leechers'] = try_int(td.text)
 
                                 nr += 1
 
@@ -128,12 +128,12 @@ class Base(TorrentMagnetProvider):
             elif size == 'year':
                 mult = 365
 
-            age += tryInt(nr) * mult
+            age += try_int(nr) * mult
 
-        return tryInt(age)
+        return try_int(age)
 
-    def isEnabled(self):
-        return super(Base, self).isEnabled() and self.getDomain()
+    def is_enabled(self):
+        return super(Base, self).is_enabled() and self.getDomain()
 
     def correctProxy(self, data):
         return 'search query' in data.lower()

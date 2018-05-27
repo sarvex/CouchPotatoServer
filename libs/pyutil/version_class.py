@@ -97,14 +97,14 @@ class Version(object):
         if vstring:
             try:
                 self.parse(vstring)
-            except ValueError, le:
+            except ValueError as le:
                 le.args = tuple(le.args + ('vstring:', vstring,))
                 raise
 
     def parse(self, vstring):
         mo = VERSION_RE.search(vstring)
         if not mo:
-            raise ValueError, "Not a valid version string for pyutil.version_class.Version(): %r" % (vstring,)
+            raise ValueError("Not a valid version string for pyutil.version_class.Version(): %r" % (vstring,))
 
         self.major = int(mo.group(1))
         self.minor = mo.group(3) and int(mo.group(3)) or 0

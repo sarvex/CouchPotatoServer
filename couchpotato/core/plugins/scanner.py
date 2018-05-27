@@ -4,18 +4,18 @@ import threading
 import time
 import traceback
 
+import enzyme
+from guessit import guess_movie_info
+from six.moves import filter, map
+from subliminal.videos import Video
+
 from couchpotato import get_db
-from couchpotato.core.event import fireEvent, addEvent
-from couchpotato.core.helpers.encoding import toUnicode, simplifyString, sp, ss
-from couchpotato.core.helpers.variable import getExt, getImdb, tryInt, \
-    splitString, getIdentifier
+from couchpotato.core.event import fire_event, add_event
+from couchpotato.core.helpers.encoding import to_unicode, simplify_string, sp, ss
+from couchpotato.core.helpers.variable import get_extension, get_imdb, try_int, \
+    split_string, get_identifier
 from couchpotato.core.logger import CPLog
 from couchpotato.core.plugins.base import Plugin
-from guessit import guess_movie_info
-from subliminal.videos import Video
-import enzyme
-from six.moves import filter, map, zip
-
 
 log = CPLog(__name__)
 
@@ -126,12 +126,12 @@ class Scanner(Plugin):
 
     def __init__(self):
 
-        addEvent('scanner.create_file_identifier', self.createStringIdentifier)
-        addEvent('scanner.remove_cptag', self.removeCPTag)
+        add_event('scanner.create_file_identifier', self.createStringIdentifier)
+        add_event('scanner.remove_cptag', self.removeCPTag)
 
-        addEvent('scanner.scan', self.scan)
-        addEvent('scanner.name_year', self.getReleaseNameYear)
-        addEvent('scanner.partnumber', self.getPartNumber)
+        add_event('scanner.scan', self.scan)
+        add_event('scanner.name_year', self.getReleaseNameYear)
+        add_event('scanner.partnumber', self.getPartNumber)
 
     def scan(self, folder = None, files = None, release_download = None, simple = False, newer_than = 0, return_ignored = True, check_file_date = True, on_found = None):
 
@@ -184,7 +184,8 @@ class Scanner(Plugin):
                 identifiers = [identifier]
 
                 # Identifier with quality
-                quality = fireEvent('quality.guess', files = [file_path], size = self.getFileSize(file_path), single = True) if not is_dvd_file else {'identifier':'dvdr'}
+                quality = fire_event('quality.guess', files=[file_path], size=self.getFileSize(file_path),
+                                     single=True) if not is_dvd_file else {'identifier': 'dvdr'}
                 if quality:
                     identifier_with_quality = '%s %s' % (identifier, quality.get('identifier', ''))
                     identifiers = [identifier_with_quality, identifier]
@@ -213,14 +214,14 @@ class Scanner(Plugin):
 
         # Group files minus extension
         ignored_identifiers = []
-        for identifier, group in movie_files.items():
+        for identifier, group in list(movie_files.items()):
             if identifier not in group['identifiers'] and len(identifier) > 0: group['identifiers'].append(identifier)
 
             log.debug('Grouping files: %s', identifier)
 
             has_ignored = 0
             for file_path in list(group['unsorted_files']):
-                ext = getExt(file_path)
+                ext = get_extension(file_path)
                 wo_ext = file_path[:-(len(ext) + 1)]
                 found_files = set([i for i in leftovers if wo_ext in i])
                 group['unsorted_files'].extend(found_files)
@@ -230,7 +231,7 @@ class Scanner(Plugin):
 
             if has_ignored == 0:
                 for file_path in list(group['unsorted_files']):
-                    ext = getExt(file_path)
+                    ext = get_extension(file_path)
                     has_ignored += 1 if ext in self.ignored_extensions else 0
 
             if has_ignored > 0:
@@ -254,7 +255,7 @@ class Scanner(Plugin):
 
         # Group the files based on the identifier
         delete_identifiers = []
-        for identifier, found_files in path_identifiers.items():
+        for identifier, found_files in list(path_identifiers.items()):
             log.debug('Grouping files on identifier: %s', identifier)
 
             group = movie_files.get(identifier)
@@ -277,7 +278,7 @@ class Scanner(Plugin):
 
         # Group based on folder
         delete_identifiers = []
-        for identifier, found_files in path_identifiers.items():
+        for identifier, found_files in list(path_identifiers.items()):
             log.debug('Grouping files on foldername: %s', identifier)
 
             for ff in found_files:
@@ -425,7 +426,7 @@ class Scanner(Plugin):
             if not group['media']:
                 log.error('Unable to determine media: %s', group['identifiers'])
             else:
-                group['identifier'] = getIdentifier(group['media']) or group['media']['info'].get('imdb')
+                group['identifier'] = get_identifier(group['media']) or group['media']['info'].get('imdb')
 
             processed_movies[identifier] = group
 
@@ -474,11 +475,11 @@ class Scanner(Plugin):
             data['size'] = data.get('size', 0) + self.getFileSize(cur_file)
 
         data['quality'] = None
-        quality = fireEvent('quality.guess', size = data.get('size'), files = files, extra = data, single = True)
+        quality = fire_event('quality.guess', size=data.get('size'), files=files, extra=data, single=True)
 
         # Use the quality that we snatched but check if it matches our guess
         if release_download and release_download.get('quality'):
-            data['quality'] = fireEvent('quality.single', release_download.get('quality'), single = True)
+            data['quality'] = fire_event('quality.single', release_download.get('quality'), single=True)
             data['quality']['is_3d'] = release_download.get('is_3d', 0)
             if data['quality']['identifier'] != quality['identifier']:
                 log.info('Different quality snatched than detected for %s: %s vs. %s. Assuming snatched quality is correct.', (files[0], data['quality']['identifier'], quality['identifier']))
@@ -489,7 +490,7 @@ class Scanner(Plugin):
             data['quality'] = quality
 
             if not data['quality']:
-                data['quality'] = fireEvent('quality.single', 'dvdr' if group['is_dvd'] else 'dvdrip', single = True)
+                data['quality'] = fire_event('quality.single', 'dvdr' if group['is_dvd'] else 'dvdrip', single=True)
 
         data['quality_type'] = 'HD' if data.get('resolution_width', 0) >= 1280 or data['quality'].get('hd') else 'SD'
 
@@ -509,7 +510,8 @@ class Scanner(Plugin):
             tags = self.threed_types.get(key, [])
 
             for tag in tags:
-                if (isinstance(tag, tuple) and '.'.join(tag) in '.'.join(words)) or (isinstance(tag, (str, unicode)) and ss(tag.lower()) in words):
+                if (isinstance(tag, tuple) and '.'.join(tag) in '.'.join(words)) or (
+                    isinstance(tag, str) and ss(tag.lower()) in words):
                     log.debug('Found %s in %s', (tag, filename))
                     return key
 
@@ -548,8 +550,8 @@ class Scanner(Plugin):
                 'titles': list(set(titles)),
                 'video': vc,
                 'audio': ac,
-                'resolution_width': tryInt(p.video[0].width),
-                'resolution_height': tryInt(p.video[0].height),
+                'resolution_width': try_int(p.video[0].width),
+                'resolution_height': try_int(p.video[0].height),
                 'audio_channels': p.audio[0].channels,
             }
         except enzyme.exceptions.ParseError:
@@ -571,7 +573,7 @@ class Scanner(Plugin):
             scan_result = []
             for p in paths:
                 if not group['is_dvd']:
-                    video = Video.from_path(toUnicode(sp(p)))
+                    video = Video.from_path(to_unicode(sp(p)))
                     video_result = [(video, video.scan())]
                     scan_result.extend(video_result)
 
@@ -622,7 +624,7 @@ class Scanner(Plugin):
         if not imdb_id:
             try:
                 for nf in files['nfo']:
-                    imdb_id = getImdb(nf, check_inside = True)
+                    imdb_id = get_imdb(nf, check_inside=True)
                     if imdb_id:
                         log.debug('Found movie via nfo file: %s', nf)
                         nfo_file = nf
@@ -635,7 +637,7 @@ class Scanner(Plugin):
             try:
                 for filetype in files:
                     for filetype_file in files[filetype]:
-                        imdb_id = getImdb(filetype_file)
+                        imdb_id = get_imdb(filetype_file)
                         if imdb_id:
                             log.debug('Found movie via imdb in filename: %s', nfo_file)
                             break
@@ -653,13 +655,13 @@ class Scanner(Plugin):
                     name_year = self.getReleaseNameYear(identifier, file_name = filename if not group['is_dvd'] else None)
                     if name_year.get('name') and name_year.get('year'):
                         search_q = '%(name)s %(year)s' % name_year
-                        movie = fireEvent('movie.search', q = search_q, merge = True, limit = 1)
+                        movie = fire_event('movie.search', q=search_q, merge=True, limit=1)
 
                         # Try with other
                         if len(movie) == 0 and name_year.get('other') and name_year['other'].get('name') and name_year['other'].get('year'):
                             search_q2 = '%(name)s %(year)s' % name_year.get('other')
                             if search_q2 != search_q:
-                                movie = fireEvent('movie.search', q = search_q2, merge = True, limit = 1)
+                                movie = fire_event('movie.search', q=search_q2, merge=True, limit=1)
 
                         if len(movie) > 0:
                             imdb_id = movie[0].get('imdb')
@@ -676,7 +678,7 @@ class Scanner(Plugin):
                 log.debug('Movie "%s" not in library, just getting info', imdb_id)
                 return {
                     'identifier': imdb_id,
-                    'info': fireEvent('movie.info', identifier = imdb_id, merge = True, extended = False)
+                    'info': fire_event('movie.info', identifier=imdb_id, merge=True, extended=False)
                 }
 
         log.error('No imdb_id found for %s. Add a NFO file with IMDB id or add the year to the filename.', group['identifiers'])
@@ -701,17 +703,18 @@ class Scanner(Plugin):
         return name
 
     def getSamples(self, files):
-        return set(filter(lambda s: self.isSampleFile(s), files))
+        return set([s for s in files if self.isSampleFile(s)])
 
     def getMediaFiles(self, files):
 
         def test(s):
-            return self.filesizeBetween(s, self.file_sizes['movie']) and getExt(s.lower()) in self.extensions['movie'] and not self.isSampleFile(s)
+            return self.filesizeBetween(s, self.file_sizes['movie']) and get_extension(s.lower()) in self.extensions[
+                'movie'] and not self.isSampleFile(s)
 
         return set(filter(test, files))
 
     def getMovieExtras(self, files):
-        return set(filter(lambda s: getExt(s.lower()) in self.extensions['movie_extra'], files))
+        return set([s for s in files if get_extension(s.lower()) in self.extensions['movie_extra']])
 
     def getDVDFiles(self, files):
         def test(s):
@@ -720,13 +723,13 @@ class Scanner(Plugin):
         return set(filter(test, files))
 
     def getSubtitles(self, files):
-        return set(filter(lambda s: getExt(s.lower()) in self.extensions['subtitle'], files))
+        return set([s for s in files if get_extension(s.lower()) in self.extensions['subtitle']])
 
     def getSubtitlesExtras(self, files):
-        return set(filter(lambda s: getExt(s.lower()) in self.extensions['subtitle_extra'], files))
+        return set([s for s in files if get_extension(s.lower()) in self.extensions['subtitle_extra']])
 
     def getNfo(self, files):
-        return set(filter(lambda s: getExt(s.lower()) in self.extensions['nfo'], files))
+        return set([s for s in files if get_extension(s.lower()) in self.extensions['nfo']])
 
     def getTrailers(self, files):
 
@@ -738,11 +741,14 @@ class Scanner(Plugin):
     def getImages(self, files):
 
         def test(s):
-            return getExt(s.lower()) in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'tbn']
+            return get_extension(s.lower()) in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'tbn']
         files = set(filter(test, files))
 
         images = {
-            'backdrop': set(filter(lambda s: re.search('(^|[\W_])fanart|backdrop\d*[\W_]', s.lower()) and self.filesizeBetween(s, self.file_sizes['backdrop']), files))
+            'backdrop': set([s for s in files if
+                             re.search('(^|[\W_])fanart|backdrop\d*[\W_]', s.lower()) and self.filesizeBetween(s,
+                                                                                                               self.file_sizes[
+                                                                                                                   'backdrop'])])
         }
 
         # Rest
@@ -807,7 +813,7 @@ class Scanner(Plugin):
         identifier = identifier.lower()
 
         try:
-            path_split = splitString(identifier, os.path.sep)
+            path_split = split_string(identifier, os.path.sep)
             identifier = path_split[-2] if len(path_split) > 1 and len(path_split[-2]) > len(path_split[-1]) else path_split[-1] # Only get filename
         except: pass
 
@@ -818,7 +824,7 @@ class Scanner(Plugin):
         identifier = self.removeCPTag(identifier)
 
         # simplify the string
-        identifier = simplifyString(identifier)
+        identifier = simplify_string(identifier)
 
         year = self.findYear(file_path)
 
@@ -840,7 +846,7 @@ class Scanner(Plugin):
 
         identifier = ' '.join(out)
 
-        return simplifyString(identifier)
+        return simplify_string(identifier)
 
 
     def removeMultipart(self, name):
@@ -865,7 +871,7 @@ class Scanner(Plugin):
         return 1
 
     def getCodec(self, filename, codecs):
-        codecs = map(re.escape, codecs)
+        codecs = list(map(re.escape, codecs))
         try:
             codec = re.search('[^A-Z0-9](?P<codec>' + '|'.join(codecs) + ')[^A-Z0-9]', filename, re.I)
             return (codec and codec.group('codec')) or ''
@@ -919,7 +925,7 @@ class Scanner(Plugin):
         guess = {}
         if file_name:
             try:
-                guessit = guess_movie_info(toUnicode(file_name))
+                guessit = guess_movie_info(to_unicode(file_name))
                 if guessit.get('title') and guessit.get('year'):
                     guess = {
                         'name': guessit.get('title'),
@@ -930,7 +936,7 @@ class Scanner(Plugin):
 
         # Backup to simple
         release_name = os.path.basename(release_name.replace('\\', '/'))
-        cleaned = ' '.join(re.split('\W+', simplifyString(release_name)))
+        cleaned = ' '.join(re.split('\W+', simplify_string(release_name)))
         cleaned = re.sub(self.clean, ' ', cleaned)
 
         year = None

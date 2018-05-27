@@ -1,8 +1,14 @@
 #!/usr/bin/env python
 
-import binascii, codecs, encodings, locale, os, sys, zlib
-
 import argparse
+import binascii
+import codecs
+import encodings
+import locale
+import os
+import sys
+import zlib
+
 
 def listcodecs(dir):
     names = []
@@ -38,7 +44,7 @@ def _canonical_encoding(encoding):
     # sometimes Python returns an encoding name that it doesn't support for conversion
     # fail early if this happens
     try:
-        u"test".encode(encoding)
+        "test".encode(encoding)
     except (LookupError, AttributeError):
         raise AssertionError("The character encoding '%s' is not supported for conversion." % (encoding,))
 
@@ -77,20 +83,20 @@ def main():
         except (UnicodeDecodeError, IOError, TypeError, IndexError, UnicodeError, ValueError, zlib.error, binascii.Error):
             pass
         else:
-            if isinstance(u, unicode):
+            if isinstance(u, str):
                 if args.target:
                     if args.target != u:
                         continue
-                print "%19s" % codec,
-                print ':',
-                print u.encode(output_encoding)
+                print("%19s" % codec, end=' ')
+                print(':', end=' ')
+                print(u.encode(output_encoding))
             else:
                 if not args.accept_bytes:
                     continue
-                print "%19s" % codec,
-                print "!!! ",
-                print ':',
-                print u
+                print("%19s" % codec, end=' ')
+                print("!!! ", end=' ')
+                print(':', end=' ')
+                print(u)
 
 if __name__ == "__main__":
     main()

@@ -1,20 +1,20 @@
-from uuid import uuid4
 import os
 import platform
 import signal
+import sys
 import time
 import traceback
 import webbrowser
-import sys
+from uuid import uuid4
+
+from tornado.ioloop import IOLoop
 
 from couchpotato.api import addApiView
-from couchpotato.core.event import fireEvent, addEvent
-from couchpotato.core.helpers.variable import cleanHost, md5, isSubFolder, compareVersions
+from couchpotato.core.event import fire_event, add_event
+from couchpotato.core.helpers.variable import clean_host, md5, is_sub_folder, compare_versions
 from couchpotato.core.logger import CPLog
 from couchpotato.core.plugins.base import Plugin
 from couchpotato.environment import Env
-from tornado.ioloop import IOLoop
-
 
 log = CPLog(__name__)
 
@@ -41,26 +41,26 @@ class Core(Plugin):
         addApiView('app.available', self.available, docs = {
             'desc': 'Check if app available.'
         })
-        addApiView('app.version', self.versionView, docs = {
+        addApiView('app.version', self.version_view, docs={
             'desc': 'Get version.'
         })
 
-        addEvent('app.shutdown', self.shutdown)
-        addEvent('app.restart', self.restart)
-        addEvent('app.load', self.launchBrowser, priority = 1)
-        addEvent('app.base_url', self.createBaseUrl)
-        addEvent('app.api_url', self.createApiUrl)
-        addEvent('app.version', self.version)
-        addEvent('app.load', self.checkDataDir)
-        addEvent('app.load', self.cleanUpFolders)
-        addEvent('app.load.after', self.dependencies)
+        add_event('app.shutdown', self.shutdown)
+        add_event('app.restart', self.restart)
+        add_event('app.load', self.launch_browser, priority=1)
+        add_event('app.base_url', self.create_base_url)
+        add_event('app.api_url', self.create_api_url)
+        add_event('app.version', self.version)
+        add_event('app.load', self.check_data_directory)
+        add_event('app.load', self.clean_up_folders)
+        add_event('app.load.after', self.dependencies)
 
-        addEvent('setting.save.core.password', self.md5Password)
-        addEvent('setting.save.core.api_key', self.checkApikey)
+        add_event('setting.save.core.password', self.md5_password)
+        add_event('setting.save.core.api_key', self.check_api_key)
 
         # Make sure we can close-down with ctrl+c properly
         if not Env.get('desktop'):
-            self.signalHandler()
+            self.signal_handler()
 
         # Set default urlopen timeout
         import socket
@@ -84,7 +84,7 @@ class Core(Plugin):
             import OpenSSL
             v = OpenSSL.__version__
             v_needed = '0.15'
-            if compareVersions(OpenSSL.__version__, v_needed) < 0:
+            if compare_versions(OpenSSL.__version__, v_needed) < 0:
                 log.error('OpenSSL installed but %s is needed while %s is installed. Run `pip install pyopenssl --upgrade`', (v_needed, v))
 
             try:
@@ -95,19 +95,19 @@ class Core(Plugin):
         except:
             log.error('OpenSSL not available, please install for better requests validation: `https://pyopenssl.readthedocs.org/en/latest/install.html`: %s', traceback.format_exc())
 
-    def md5Password(self, value):
+    def md5_password(self, value):
         return md5(value) if value else ''
 
-    def checkApikey(self, value):
+    def check_api_key(self, value):
         return value if value and len(value) > 3 else uuid4().hex
 
-    def checkDataDir(self):
-        if isSubFolder(Env.get('data_dir'), Env.get('app_dir')):
+    def check_data_directory(self):
+        if is_sub_folder(Env.get('data_dir'), Env.get('app_dir')):
             log.error('You should NOT use your CouchPotato directory to save your settings in. Files will get overwritten or be deleted.')
 
         return True
 
-    def cleanUpFolders(self):
+    def clean_up_folders(self):
         only_clean = ['couchpotato', 'libs', 'init']
         self.deleteEmptyFolder(Env.get('app_dir'), show_error = False, only_clean = only_clean)
 
@@ -121,7 +121,7 @@ class Core(Plugin):
             return False
 
         def shutdown():
-            self.initShutdown()
+            self.init_shutdown()
 
         if IOLoop.current()._closing:
             shutdown()
@@ -135,12 +135,12 @@ class Core(Plugin):
             return False
 
         def restart():
-            self.initShutdown(restart = True)
+            self.init_shutdown(restart=True)
         IOLoop.current().add_callback(restart)
 
         return 'restarting'
 
-    def initShutdown(self, restart = False):
+    def init_shutdown(self, restart=False):
         if self.shutdown_started:
             log.info('Already shutting down')
             return
@@ -149,14 +149,14 @@ class Core(Plugin):
 
         self.shutdown_started = True
 
-        fireEvent('app.do_shutdown', restart = restart)
+        fire_event('app.do_shutdown', restart=restart)
         log.debug('Every plugin got shutdown event')
 
         loop = True
         starttime = time.time()
         while loop:
             log.debug('Asking who is running')
-            still_running = fireEvent('plugin.running', merge = True)
+            still_running = fire_event('plugin.running', merge=True)
             log.debug('Still running: %s', still_running)
 
             if len(still_running) == 0:
@@ -184,14 +184,14 @@ class Core(Plugin):
         except:
             log.error('Failed shutting down the server: %s', traceback.format_exc())
 
-        fireEvent('app.after_shutdown', restart = restart)
+        fire_event('app.after_shutdown', restart=restart)
 
-    def launchBrowser(self):
+    def launch_browser(self):
 
         if Env.setting('launch_browser'):
             log.info('Launching browser')
 
-            url = self.createBaseUrl()
+            url = self.create_base_url()
             try:
                 webbrowser.open(url, 2, 1)
             except:
@@ -200,20 +200,20 @@ class Core(Plugin):
                 except:
                     log.error('Could not launch a browser.')
 
-    def createBaseUrl(self):
+    def create_base_url(self):
         host = Env.setting('host')
         if host == '0.0.0.0' or host == '':
             host = 'localhost'
         port = Env.setting('port')
         ssl = Env.setting('ssl_cert') and Env.setting('ssl_key')
 
-        return '%s:%d%s' % (cleanHost(host, ssl = ssl).rstrip('/'), int(port), Env.get('web_base'))
+        return '%s:%d%s' % (clean_host(host, ssl=ssl).rstrip('/'), int(port), Env.get('web_base'))
 
-    def createApiUrl(self):
-        return '%sapi/%s' % (self.createBaseUrl(), Env.setting('api_key'))
+    def create_api_url(self):
+        return '%sapi/%s' % (self.create_base_url(), Env.setting('api_key'))
 
     def version(self):
-        ver = fireEvent('updater.info', single = True) or {'version': {}}
+        ver = fire_event('updater.info', single=True) or {'version': {}}
 
         if os.name == 'nt': platf = 'windows'
         elif 'Darwin' in platform.platform(): platf = 'osx'
@@ -221,16 +221,16 @@ class Core(Plugin):
 
         return '%s - %s-%s - v2' % (platf, ver.get('version').get('type') or 'unknown', ver.get('version').get('hash') or 'unknown')
 
-    def versionView(self, **kwargs):
+    def version_view(self, **kwargs):
         return {
             'version': self.version()
         }
 
-    def signalHandler(self):
+    def signal_handler(self):
         if Env.get('daemonized'): return
 
         def signal_handler(*args, **kwargs):
-            fireEvent('app.shutdown', single = True)
+            fire_event('app.shutdown', single=True)
 
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)

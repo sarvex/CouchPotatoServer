@@ -1,8 +1,8 @@
-from __future__ import absolute_import, division, unicode_literals
 
-from xml.dom import Node
 
 import gettext
+from xml.dom import Node
+
 _ = gettext.gettext
 
 from . import _base

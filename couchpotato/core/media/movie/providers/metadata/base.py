@@ -2,13 +2,12 @@ import os
 import shutil
 import traceback
 
-from couchpotato.core.event import addEvent, fireEvent
-from couchpotato.core.helpers.encoding import sp, toUnicode
-from couchpotato.core.helpers.variable import getIdentifier, underscoreToCamel
+from couchpotato.core.event import add_event, fire_event
+from couchpotato.core.helpers.encoding import sp, to_unicode
+from couchpotato.core.helpers.variable import get_identifier, snake_to_camel
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.metadata.base import MetaDataBase
 from couchpotato.environment import Env
-
 
 log = CPLog(__name__)
 
@@ -18,23 +17,24 @@ class MovieMetaData(MetaDataBase):
     enabled_option = 'meta_enabled'
 
     def __init__(self):
-        addEvent('renamer.after', self.create)
+        add_event('renamer.after', self.create)
 
     def create(self, message = None, group = None):
-        if self.isDisabled(): return
+        if self.is_disabled(): return
         if not group: group = {}
 
         log.info('Creating %s metadata.', self.getName())
 
         # Update library to get latest info
         try:
-            group['media'] = fireEvent('movie.update', group['media'].get('_id'), identifier = getIdentifier(group['media']), extended = True, single = True)
+            group['media'] = fire_event('movie.update', group['media'].get('_id'),
+                                        identifier=get_identifier(group['media']), extended=True, single=True)
         except:
             log.error('Failed to update movie, before creating metadata: %s', traceback.format_exc())
 
-        root_name = toUnicode(self.getRootName(group))
-        meta_name = toUnicode(os.path.basename(root_name))
-        root = toUnicode(os.path.dirname(root_name))
+        root_name = to_unicode(self.getRootName(group))
+        meta_name = to_unicode(os.path.basename(root_name))
+        root = to_unicode(os.path.dirname(root_name))
 
         movie_info = group['media'].get('info')
 
@@ -59,7 +59,7 @@ class MovieMetaData(MetaDataBase):
                 log.error('Unable to create %s file: %s', (file_type, traceback.format_exc()))
 
     def _createType(self, meta_name, root, movie_info, group, file_type, i):  # Get file path
-        camelcase_method = underscoreToCamel(file_type.capitalize())
+        camelcase_method = snake_to_camel(file_type.capitalize())
         name = getattr(self, 'get' + camelcase_method + 'Name')(meta_name, root, i)
 
         if name and (self.conf('meta_' + file_type) or self.conf('meta_' + file_type) is None):
@@ -141,7 +141,7 @@ class MovieMetaData(MetaDataBase):
         # Download using existing info
         try:
             images = movie_info['images'][wanted_file_type]
-            file_path = fireEvent('file.download', url = images[i], single = True)
+            file_path = fire_event('file.download', url=images[i], single=True)
             return file_path
         except:
             pass

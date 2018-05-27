@@ -1,13 +1,12 @@
-from __future__ import with_statement
+
 import os
 import traceback
 
 from couchpotato.core._base.downloader.main import DownloaderBase
 from couchpotato.core.helpers.encoding import sp
-from couchpotato.core.helpers.variable import getDownloadDir
+from couchpotato.core.helpers.variable import get_download_directory
 from couchpotato.core.logger import CPLog
 from couchpotato.environment import Env
-
 
 log = CPLog(__name__)
 
@@ -48,7 +47,7 @@ class Blackhole(DownloaderBase):
                 if not filedata or len(filedata) < 50:
                     try:
                         if data.get('protocol') == 'torrent_magnet':
-                            filedata = self.magnetToTorrent(data.get('url'))
+                            filedata = self.magnet_to_torrent(data.get('url'))
                             data['protocol'] = 'torrent'
                     except:
                         log.error('Failed download torrent via magnet url: %s', traceback.format_exc())
@@ -84,10 +83,10 @@ class Blackhole(DownloaderBase):
                         with open(full_path, 'wb') as f:
                             f.write(filedata)
                         os.chmod(full_path, Env.getPermission('file'))
-                        return self.downloadReturnId('')
+                        return self.download_return_id('')
                     else:
                         log.info('File %s already exists.', full_path)
-                        return self.downloadReturnId('')
+                        return self.download_return_id('')
 
                 except:
                     log.error('Failed to download to blackhole %s', traceback.format_exc())
@@ -117,19 +116,19 @@ class Blackhole(DownloaderBase):
 
         return False
 
-    def getEnabledProtocol(self):
+    def get_enabled_protocol(self):
         """ What protocols is this downloaded used for
         :return: list with protocols
         """
 
         if self.conf('use_for') == 'both':
-            return super(Blackhole, self).getEnabledProtocol()
+            return super(Blackhole, self).get_enabled_protocol()
         elif self.conf('use_for') == 'torrent':
             return ['torrent', 'torrent_magnet']
         else:
             return ['nzb']
 
-    def isEnabled(self, manual = False, data = None):
+    def is_enabled(self, manual=False, data=None):
         """ Check if protocol is used (and enabled)
         :param manual: The user has clicked to download a link through the webUI
         :param data: dict returned from provider
@@ -143,8 +142,8 @@ class Blackhole(DownloaderBase):
         elif data:
             for_protocol.append(data.get('protocol'))
 
-        return super(Blackhole, self).isEnabled(manual, data) and \
-            ((self.conf('use_for') in for_protocol))
+        return super(Blackhole, self).is_enabled(manual, data) and \
+               ((self.conf('use_for') in for_protocol))
 
 
 config = [{
@@ -169,7 +168,7 @@ config = [{
                     'name': 'directory',
                     'type': 'directory',
                     'description': 'Directory where the .nzb (or .torrent) file is saved to.',
-                    'default': getDownloadDir()
+                    'default': get_download_directory()
                 },
                 {
                     'name': 'use_for',

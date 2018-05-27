@@ -1,29 +1,31 @@
-from logging import handlers
-from uuid import uuid4
 import locale
 import logging
 import os.path
+import re
+import shutil
 import sys
+import tarfile
 import time
 import traceback
 import warnings
-import re
-import tarfile
-import shutil
-
-from CodernityDB.database_super_thread_safe import SuperThreadSafeDatabase
 from argparse import ArgumentParser
-from cache import FileSystemCache
-from couchpotato import KeyHandler, LoginHandler, LogoutHandler
-from couchpotato.api import NonBlockHandler, ApiHandler
-from couchpotato.core.event import fireEventAsync, fireEvent
-from couchpotato.core.helpers.encoding import sp
-from couchpotato.core.helpers.variable import getDataDir, tryInt, getFreeSpace
+from logging import handlers
+from uuid import uuid4
+
 import requests
+from CodernityDB.database_super_thread_safe import SuperThreadSafeDatabase
+from cache import FileSystemCache
 from requests.packages.urllib3 import disable_warnings
 from tornado.httpserver import HTTPServer
 from tornado.web import Application, StaticFileHandler, RedirectHandler
+
+from couchpotato import KeyHandler, LoginHandler, LogoutHandler
+from couchpotato.api import NonBlockHandler, ApiHandler
+from couchpotato.core.event import fire_event_async, fire_event
+from couchpotato.core.helpers.encoding import sp
+from couchpotato.core.helpers.variable import get_data_directory, try_int, get_free_space
 from couchpotato.core.softchroot import SoftChrootInitError
+
 try: from tornado.netutil import bind_unix_socket
 except: pass
 
@@ -48,7 +50,7 @@ def getOptions(args):
 
     options = parser.parse_args(args)
 
-    data_dir = os.path.expanduser(options.data_dir if options.data_dir else getDataDir())
+    data_dir = os.path.expanduser(options.data_dir if options.data_dir else get_data_directory())
 
     if not options.config_file:
         options.config_file = os.path.join(data_dir, 'settings.conf')
@@ -233,7 +235,7 @@ def runCouchPotato(options, base_path, args, data_dir = None, log_dir = None, En
 
     # Check available space
     try:
-        total_space, available_space = getFreeSpace(data_dir)
+        total_space, available_space = get_free_space(data_dir)
         if available_space < 100:
             log.error('Shutting down as CP needs some space to work. You\'ll get corrupted data otherwise. Only %sMB left', available_space)
             return
@@ -263,7 +265,7 @@ def runCouchPotato(options, base_path, args, data_dir = None, log_dir = None, En
 
     config = {
         'use_reloader': reloader,
-        'port': tryInt(Env.setting('port', default = 5050)),
+        'port': try_int(Env.setting('port', default=5050)),
         'host': host if host and len(host) > 0 else '0.0.0.0',
         'host6': host6 if host6 and len(host6) > 0 else '::',
         'ssl_cert': Env.setting('ssl_cert', default = None),
@@ -313,10 +315,10 @@ def runCouchPotato(options, base_path, args, data_dir = None, log_dir = None, En
     loader.run()
 
     # Fill database with needed stuff
-    fireEvent('database.setup')
+    fire_event('database.setup')
     if not db_exists:
-        fireEvent('app.initialize', in_order = True)
-    fireEvent('app.migrate')
+        fire_event('app.initialize', in_order=True)
+    fire_event('app.migrate')
 
     # Go go go!
     from tornado.ioloop import IOLoop
@@ -325,13 +327,13 @@ def runCouchPotato(options, base_path, args, data_dir = None, log_dir = None, En
 
     # Reload hook
     def reload_hook():
-        fireEvent('app.shutdown')
+        fire_event('app.shutdown')
     add_reload_hook(reload_hook)
 
     # Some logging and fire load event
     try: log.info('Starting server on port %(port)s', config)
     except: pass
-    fireEventAsync('app.load')
+    fire_event_async('app.load')
 
     ssl_options = None
     if config['ssl_cert'] and config['ssl_key']:

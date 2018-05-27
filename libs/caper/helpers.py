@@ -38,7 +38,7 @@ def clean_dict(target, remove=None):
         raise ValueError("Target is required to be a dict")
 
     remove_keys = []
-    for key in target.keys():
+    for key in list(target.keys()):
         if type(target[key]) is not dict:
             if target[key] == remove:
                 remove_keys.append(key)
@@ -52,7 +52,7 @@ def clean_dict(target, remove=None):
 
 
 def update_dict(a, b):
-    for key, value in b.items():
+    for key, value in list(b.items()):
         if key not in a:
             a[key] = value
         elif isinstance(a[key], dict) and isinstance(value, dict):
@@ -66,14 +66,14 @@ def update_dict(a, b):
 def xrange_six(start, stop=None, step=None):
     if stop is not None and step is not None:
         if PY3:
-            return range(start, stop, step)
+            return list(range(start, stop, step))
         else:
-            return xrange(start, stop, step)
+            return range(start, stop, step)
     else:
         if PY3:
-            return range(start)
+            return list(range(start))
         else:
-            return xrange(start)
+            return range(start)
 
 
 def delta_seconds(td):

@@ -8,10 +8,9 @@ XML or HTML to reflect a new encoding; that's the tree builder's job.
 """
 
 import codecs
-from htmlentitydefs import codepoint2name
-import re
 import logging
-import string
+import re
+from html.entities import codepoint2name
 
 # Import a library to autodetect character encodings.
 chardet_type = None
@@ -56,7 +55,7 @@ class EntitySubstitution(object):
         reverse_lookup = {}
         characters_for_re = []
         for codepoint, name in list(codepoint2name.items()):
-            character = unichr(codepoint)
+            character = chr(codepoint)
             if codepoint != 34:
                 # There's no point in turning the quotation mark into
                 # &quot;, unless it happens within an attribute value, which
@@ -299,7 +298,7 @@ class EncodingDetector:
         else:
             xml_endpos = 1024
             html_endpos = max(2048, int(len(markup) * 0.05))
-            
+
         declared_encoding = None
         declared_encoding_match = xml_encoding_re.search(markup, endpos=xml_endpos)
         if not declared_encoding_match and is_html:
@@ -340,9 +339,9 @@ class UnicodeDammit:
         self.detector = EncodingDetector(markup, override_encodings, is_html)
 
         # Short-circuit if the data is in Unicode to begin with.
-        if isinstance(markup, unicode) or markup == '':
+        if isinstance(markup, str) or markup == '':
             self.markup = markup
-            self.unicode_markup = unicode(markup)
+            self.unicode_markup = str(markup)
             self.original_encoding = None
             return
 
@@ -425,7 +424,7 @@ class UnicodeDammit:
     def _to_unicode(self, data, encoding, errors="strict"):
         '''Given a string and its encoding, decodes the string into Unicode.
         %encoding is a string recognized by encodings.aliases'''
-        return unicode(data, encoding, errors)
+        return str(data, encoding, errors)
 
     @property
     def declared_html_encoding(self):

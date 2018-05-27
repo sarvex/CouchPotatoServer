@@ -1,14 +1,14 @@
-from __future__ import absolute_import, division, unicode_literals
-from six import text_type
 
 from bisect import bisect_left
+
+from six import text_type
 
 from ._base import Trie as ABCTrie
 
 
 class Trie(ABCTrie):
     def __init__(self, data):
-        if not all(isinstance(x, text_type) for x in data.keys()):
+        if not all(isinstance(x, text_type) for x in list(data.keys())):
             raise TypeError("All keys must be strings")
 
         self._data = data

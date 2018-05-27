@@ -1,20 +1,21 @@
-from urlparse import urlparse
 import json
 import re
-from requests import HTTPError
 import time
 import traceback
 import xml.etree.ElementTree as XMLTree
+from urllib.parse import urlparse
+
+from requests import HTTPError
 
 try:
     from xml.etree.ElementTree import ParseError as XmlParseError
 except ImportError:
     from xml.parsers.expat import ExpatError as XmlParseError
 
-from couchpotato.core.event import addEvent, fireEvent
+from couchpotato.core.event import add_event, fire_event
 from couchpotato.core.helpers.encoding import ss
-from couchpotato.core.helpers.variable import tryFloat, mergeDicts, md5, \
-    possibleTitles
+from couchpotato.core.helpers.variable import try_float, merge_dictionaries, md5, \
+    possible_titles
 from couchpotato.core.logger import CPLog
 from couchpotato.core.plugins.base import Plugin
 from couchpotato.environment import Env
@@ -130,12 +131,12 @@ class YarrProvider(Provider):
     login_fail_msg = None
 
     def __init__(self):
-        addEvent('provider.enabled_protocols', self.getEnabledProtocol)
-        addEvent('provider.belongs_to', self.belongsTo)
-        addEvent('provider.search.%s.%s' % (self.protocol, self.type), self.search)
+        add_event('provider.enabled_protocols', self.getEnabledProtocol)
+        add_event('provider.belongs_to', self.belongsTo)
+        add_event('provider.search.%s.%s' % (self.protocol, self.type), self.search)
 
     def getEnabledProtocol(self):
-        if self.isEnabled():
+        if self.is_enabled():
             return self.protocol
         else:
             return []
@@ -212,7 +213,7 @@ class YarrProvider(Provider):
 
     def search(self, media, quality):
 
-        if self.isDisabled():
+        if self.is_disabled():
             return []
 
         # Login if needed
@@ -229,9 +230,9 @@ class YarrProvider(Provider):
             self._search(media, quality, results)
         # Search possible titles
         else:
-            media_title = fireEvent('library.query', media, include_year = False, single = True)
+            media_title = fire_event('library.query', media, include_year=False, single=True)
 
-            for title in possibleTitles(media_title):
+            for title in possible_titles(media_title):
                 self._searchOnTitle(title, media, quality, results)
 
         return results
@@ -257,7 +258,7 @@ class YarrProvider(Provider):
     def parseSize(self, size):
 
         size_raw = size.lower()
-        size = tryFloat(re.sub(r'[^0-9.]', '', size).strip())
+        size = try_float(re.sub(r'[^0-9.]', '', size).strip())
 
         for s in self.size_gb:
             if s in size_raw:
@@ -324,13 +325,13 @@ class ResultList(list):
 
         new_result = self.fillResult(result)
 
-        is_correct = fireEvent('searcher.correct_release', new_result, self.media, self.quality,
-                               imdb_results = self.kwargs.get('imdb_results', False), single = True)
+        is_correct = fire_event('searcher.correct_release', new_result, self.media, self.quality,
+                                imdb_results=self.kwargs.get('imdb_results', False), single=True)
 
         if is_correct and new_result['id'] not in self.result_ids:
             is_correct_weight = float(is_correct)
 
-            new_result['score'] += fireEvent('score.calculate', new_result, self.media, single = True)
+            new_result['score'] += fire_event('score.calculate', new_result, self.media, single=True)
 
             old_score = new_result['score']
             new_result['score'] = int(old_score * is_correct_weight)
@@ -364,7 +365,7 @@ class ResultList(list):
             'score': 0
         }
 
-        return mergeDicts(defaults, result)
+        return merge_dictionaries(defaults, result)
 
     def found(self, new_result):
         if not new_result.get('provider_extra'):

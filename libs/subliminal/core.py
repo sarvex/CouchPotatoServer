@@ -15,18 +15,19 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with subliminal.  If not, see <http://www.gnu.org/licenses/>.
+import logging
+from collections import defaultdict
+from itertools import groupby
+
+import bs4
+import guessit
+
 from .exceptions import DownloadFailedError
+from .language import Language
 from .services import ServiceConfig
 from .tasks import DownloadTask, ListTask
 from .utils import get_keywords
 from .videos import Episode, Movie, scan
-from .language import Language
-from collections import defaultdict
-from itertools import groupby
-import bs4
-import guessit
-import logging
-
 
 __all__ = ['SERVICES', 'LANGUAGE_INDEX', 'SERVICE_INDEX', 'SERVICE_CONFIDENCE', 'MATCHING_CONFIDENCE',
            'create_list_tasks', 'create_download_tasks', 'consume_task', 'matching_confidence',
@@ -34,7 +35,7 @@ __all__ = ['SERVICES', 'LANGUAGE_INDEX', 'SERVICE_INDEX', 'SERVICE_CONFIDENCE', 
 logger = logging.getLogger(__name__)
 SERVICES = ['opensubtitles', 'bierdopje', 'subswiki', 'subtitulos', 'thesubdb', 'addic7ed', 'tvsubtitles',
             'subscenter', 'wizdom']
-LANGUAGE_INDEX, SERVICE_INDEX, SERVICE_CONFIDENCE, MATCHING_CONFIDENCE = range(4)
+LANGUAGE_INDEX, SERVICE_INDEX, SERVICE_CONFIDENCE, MATCHING_CONFIDENCE = list(range(4))
 
 
 def create_list_tasks(paths, languages, services, force, multi, cache_dir, max_depth, scan_filter):
@@ -56,7 +57,7 @@ def create_list_tasks(paths, languages, services, force, multi, cache_dir, max_d
     scan_result = []
     for p in paths:
         scan_result.extend(scan(p, max_depth, scan_filter))
-    logger.debug(u'Found %d videos in %r with maximum depth %d' % (len(scan_result), paths, max_depth))
+    logger.debug('Found %d videos in %r with maximum depth %d' % (len(scan_result), paths, max_depth))
     tasks = []
     config = ServiceConfig(multi, cache_dir)
     services = filter_services(services)
@@ -66,19 +67,20 @@ def create_list_tasks(paths, languages, services, force, multi, cache_dir, max_d
         if not force and multi:
             wanted_languages -= detected_languages
             if not wanted_languages:
-                logger.debug(u'No need to list multi subtitles %r for %r because %r detected' % (languages, video, detected_languages))
+                logger.debug('No need to list multi subtitles %r for %r because %r detected' % (
+                languages, video, detected_languages))
                 continue
         if not force and not multi and Language('Undetermined') in detected_languages:
-            logger.debug(u'No need to list single subtitles %r for %r because one detected' % (languages, video))
+            logger.debug('No need to list single subtitles %r for %r because one detected' % (languages, video))
             continue
-        logger.debug(u'Listing subtitles %r for %r with services %r' % (wanted_languages, video, services))
+        logger.debug('Listing subtitles %r for %r with services %r' % (wanted_languages, video, services))
         for service_name in services:
             mod = __import__('services.' + service_name, globals=globals(), locals=locals(), fromlist=['Service'], level=-1)
             service = mod.Service
             if not service.check_validity(video, wanted_languages):
                 continue
             task = ListTask(video, wanted_languages & service.languages, service_name, config)
-            logger.debug(u'Created task %r' % task)
+            logger.debug('Created task %r' % task)
             tasks.append(task)
     return tasks
 
@@ -96,17 +98,17 @@ def create_download_tasks(subtitles_by_video, languages, multi):
 
     """
     tasks = []
-    for video, subtitles in subtitles_by_video.iteritems():
+    for video, subtitles in subtitles_by_video.items():
         if not subtitles:
             continue
         if not multi:
             task = DownloadTask(video, list(subtitles))
-            logger.debug(u'Created task %r' % task)
+            logger.debug('Created task %r' % task)
             tasks.append(task)
             continue
         for _, by_language in groupby(subtitles, lambda s: languages.index(s.language)):
             task = DownloadTask(video, list(by_language))
-            logger.debug(u'Created task %r' % task)
+            logger.debug('Created task %r' % task)
             tasks.append(task)
     return tasks
 
@@ -125,7 +127,7 @@ def consume_task(task, services=None):
     """
     if services is None:
         services = {}
-    logger.info(u'Consuming %r' % task)
+    logger.info('Consuming %r' % task)
     result = None
     if isinstance(task, ListTask):
         service = get_service(services, task.service, config=task.config)
@@ -138,10 +140,10 @@ def consume_task(task, services=None):
                 result = [subtitle]
                 break
             except DownloadFailedError:
-                logger.warning(u'Could not download subtitle %r, trying next' % subtitle)
+                logger.warning('Could not download subtitle %r, trying next' % subtitle)
                 continue
         if result is None:
-            logger.error(u'No subtitles could be downloaded for video %r' % task.video)
+            logger.error('No subtitles could be downloaded for video %r' % task.video)
     return result
 
 
@@ -159,7 +161,7 @@ def matching_confidence(video, subtitle):
     guess = guessit.guess_file_info(subtitle.release, 'autodetect')
     video_keywords = get_keywords(video.guess)
     subtitle_keywords = get_keywords(guess) | subtitle.keywords
-    logger.debug(u'Video keywords %r - Subtitle keywords %r' % (video_keywords, subtitle_keywords))
+    logger.debug('Video keywords %r - Subtitle keywords %r' % (video_keywords, subtitle_keywords))
     replacement = {'keywords': len(video_keywords & subtitle_keywords)}
     if isinstance(video, Episode):
         replacement.update({'series': 0, 'season': 0, 'episode': 0})
@@ -182,11 +184,11 @@ def matching_confidence(video, subtitle):
             if 'year' in guess and guess['year'] == video.year:
                 replacement['year'] = 1
     else:
-        logger.debug(u'Not able to compute confidence for %r' % video)
+        logger.debug('Not able to compute confidence for %r' % video)
         return 0.0
-    logger.debug(u'Found %r' % replacement)
+    logger.debug('Found %r' % replacement)
     confidence = float(int(matching_format.format(**replacement), 2)) / float(int(best, 2))
-    logger.info(u'Computed confidence %.4f for %r and %r' % (confidence, video, subtitle))
+    logger.info('Computed confidence %.4f for %r and %r' % (confidence, video, subtitle))
     return confidence
 
 
@@ -271,6 +273,7 @@ def filter_services(services):
         mod = __import__('services.' + service_name, globals=globals(), locals=locals(), fromlist=['Service'], level=-1)
         service = mod.Service
         if service.required_features is not None and bs4.builder_registry.lookup(*service.required_features) is None:
-            logger.warning(u'Service %s not available: none of available features could be used. One of %r required' % (service_name, service.required_features))
+            logger.warning('Service %s not available: none of available features could be used. One of %r required' % (
+            service_name, service.required_features))
             filtered_services.remove(service_name)
     return filtered_services

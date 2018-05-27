@@ -63,7 +63,7 @@ def unicode_to_str(s, encoding=None):
     charset, replacing unknown characters. If the given object is no
     unicode string, this function will return the given object.
     """
-    if not type(s) == unicode:
+    if not type(s) == str:
         return s
 
     if not encoding:

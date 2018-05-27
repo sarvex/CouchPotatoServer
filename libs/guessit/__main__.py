@@ -18,15 +18,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import unicode_literals
-from __future__ import print_function
-from guessit import u
-from guessit import slogging, guess_file_info
-from optparse import OptionParser
-import logging
-import sys
-import os
+
 import locale
+import logging
+import os
+import sys
+from optparse import OptionParser
+
+from guessit import slogging, guess_file_info
+from guessit import u
 
 
 def detect_filename(filename, filetype, info=['filename'], advanced = False):
@@ -87,10 +87,10 @@ def main():
     slogging.setupLogging()
 
     # see http://bugs.python.org/issue2128
-    if sys.version_info.major < 3 and os.name == 'nt':        
+    if sys.version_info.major < 3 and os.name == 'nt':
         for i, a in enumerate(sys.argv):
             sys.argv[i] = a.decode(locale.getpreferredencoding())
-        
+
     parser = OptionParser(usage = 'usage: %prog [options] file1 [file2...]')
     parser.add_option('-v', '--verbose', action='store_true', dest='verbose', default=False,
                       help = 'display debug output')

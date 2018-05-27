@@ -99,7 +99,7 @@ class NormalizedVersion(object):
 
     def _parse(self, s, error_on_huge_major_num=True):
         """Parses a string version into parts."""
-        if not isinstance(s, basestring):
+        if not isinstance(s, str):
             raise PreconditionViolationException("s is required to be a string: %s :: %s" % (s, type(s)))
 
         match = VERSION_RE.search(s)

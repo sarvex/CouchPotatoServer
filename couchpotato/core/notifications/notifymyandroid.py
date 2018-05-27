@@ -1,8 +1,9 @@
-from couchpotato.core.helpers.variable import splitString
-from couchpotato.core.logger import CPLog
-from couchpotato.core.notifications.base import Notification
 import pynma
 import six
+
+from couchpotato.core.helpers.variable import split_string
+from couchpotato.core.logger import CPLog
+from couchpotato.core.notifications.base import Notification
 
 log = CPLog(__name__)
 
@@ -15,7 +16,7 @@ class NotifyMyAndroid(Notification):
         if not data: data = {}
 
         nma = pynma.PyNMA()
-        keys = splitString(self.conf('api_key'))
+        keys = split_string(self.conf('api_key'))
         nma.addkey(keys)
         nma.developerkey(self.conf('dev_key'))
 

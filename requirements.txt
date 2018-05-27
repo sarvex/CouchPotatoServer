@@ -1,0 +1,13 @@
+apscheduler
+axel
+bencode
+CodernityDB
+deluge-client
+python-dateutil
+GitPython
+mock
+putio.py
+qbittorrent
+requests
+rtorrent-python
+tornado

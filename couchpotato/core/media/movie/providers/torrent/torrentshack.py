@@ -1,5 +1,5 @@
-from couchpotato.core.event import fireEvent
-from couchpotato.core.helpers.encoding import tryUrlencode
+from couchpotato.core.event import fire_event
+from couchpotato.core.helpers.encoding import try_url_encode
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.torrent.torrentshack import Base
 from couchpotato.core.media.movie.providers.base import MovieProvider
@@ -30,7 +30,7 @@ class TorrentShack(MovieProvider, Base):
     cat_backup_id = 400
 
     def buildUrl(self, media, quality):
-        query = (tryUrlencode(fireEvent('library.query', media, single = True)),
+        query = (try_url_encode(fire_event('library.query', media, single=True)),
                  self.getSceneOnly(),
                  self.getCatId(quality)[0])
         return query

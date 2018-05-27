@@ -1,4 +1,4 @@
-from couchpotato.core.helpers.encoding import tryUrlencode
+from couchpotato.core.helpers.encoding import try_url_encode
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.torrent.torrentleech import Base
 from couchpotato.core.media.movie.providers.base import MovieProvider
@@ -24,6 +24,6 @@ class TorrentLeech(MovieProvider, Base):
 
     def buildUrl(self, title, media, quality):
         return (
-            tryUrlencode(title.replace(':', '')),
+            try_url_encode(title.replace(':', '')),
             ','.join([str(x) for x in self.getCatId(quality)])
         )

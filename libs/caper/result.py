@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import copy
-from logr import Logr
 
+from logr import Logr
 
 GROUP_MATCHES = ['identifier']
 
@@ -38,7 +38,7 @@ class CaperNode(object):
         #: :type: list of CaptureGroup
         self.finished_groups = []
 
-    def next(self):
+    def __next__(self):
         raise NotImplementedError()
 
     def captured(self):
@@ -61,7 +61,7 @@ class CaperRootNode(CaperNode):
         """
         super(CaperRootNode, self).__init__(closure)
 
-    def next(self):
+    def __next__(self):
         return self.closure
 
 
@@ -72,7 +72,7 @@ class CaperClosureNode(CaperNode):
         """
         super(CaperClosureNode, self).__init__(closure, parent, match)
 
-    def next(self):
+    def __next__(self):
         if not self.closure:
             return None
 
@@ -103,7 +103,7 @@ class CaperFragmentNode(CaperNode):
         #: :type: caper.objects.CaperFragment or list of caper.objects.CaperFragment
         self.fragments = fragments
 
-    def next(self):
+    def __next__(self):
         if len(self.fragments) > 0 and self.fragments[-1] and self.fragments[-1].right:
             return self.fragments[-1].right
 

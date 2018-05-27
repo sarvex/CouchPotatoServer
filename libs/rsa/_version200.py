@@ -16,12 +16,11 @@ __version__ = '2.0'
 import math
 import os
 import random
-import sys
-import types
-from rsa._compat import byte
-
 # Display a warning that this insecure version is imported.
 import warnings
+
+from rsa._compat import byte
+
 warnings.warn('Insecure version of the RSA module is imported as %s' % __name__)
 
 
@@ -40,7 +39,7 @@ def gcd(p, q):
         if p < q: (p,q) = (q,p)
         (p,q) = (q, p % q)
     return p
-    
+
 
 def bytes2int(bytes):
     """Converts a list of bytes or a string to an integer
@@ -52,14 +51,14 @@ def bytes2int(bytes):
     8405007
     """
 
-    if not (type(bytes) is types.ListType or type(bytes) is types.StringType):
+    if not (type(bytes) is list or type(bytes) is bytes):
         raise TypeError("You must pass a string or a list")
 
     # Convert byte stream to integer
     integer = 0
     for byte in bytes:
         integer *= 256
-        if type(byte) is types.StringType: byte = ord(byte)
+        if type(byte) is bytes: byte = ord(byte)
         integer += byte
 
     return integer
@@ -69,7 +68,7 @@ def int2bytes(number):
     Converts a number to a string of bytes
     """
 
-    if not (type(number) is types.LongType or type(number) is types.IntType):
+    if not (type(number) is int or type(number) is int):
         raise TypeError("You must pass a long or an int")
 
     string = ""
@@ -77,18 +76,18 @@ def int2bytes(number):
     while number > 0:
         string = "%s%s" % (byte(number & 0xFF), string)
         number /= 256
-    
+
     return string
 
 def to64(number):
     """Converts a number in the range of 0 to 63 into base 64 digit
     character in the range of '0'-'9', 'A'-'Z', 'a'-'z','-','_'.
-    
+
     >>> to64(10)
     'A'
     """
 
-    if not (type(number) is types.LongType or type(number) is types.IntType):
+    if not (type(number) is int or type(number) is int):
         raise TypeError("You must pass a long or an int")
 
     if 0 <= number <= 9:            #00-09 translates to '0' - '9'
@@ -112,12 +111,12 @@ def to64(number):
 def from64(number):
     """Converts an ordinal character value in the range of
     0-9,A-Z,a-z,-,_ to a number in the range of 0-63.
-    
+
     >>> from64(49)
     1
     """
 
-    if not (type(number) is types.LongType or type(number) is types.IntType):
+    if not (type(number) is int or type(number) is int):
         raise TypeError("You must pass a long or an int")
 
     if 48 <= number <= 57:         #ord('0') - ord('9') translates to 0-9
@@ -141,12 +140,12 @@ def from64(number):
 def int2str64(number):
     """Converts a number to a string of base64 encoded characters in
     the range of '0'-'9','A'-'Z,'a'-'z','-','_'.
-    
+
     >>> int2str64(123456789)
     '7MyqL'
     """
 
-    if not (type(number) is types.LongType or type(number) is types.IntType):
+    if not (type(number) is int or type(number) is int):
         raise TypeError("You must pass a long or an int")
 
     string = ""
@@ -161,18 +160,18 @@ def int2str64(number):
 def str642int(string):
     """Converts a base64 encoded string into an integer.
     The chars of this string in in the range '0'-'9','A'-'Z','a'-'z','-','_'
-    
+
     >>> str642int('7MyqL')
     123456789
     """
 
-    if not (type(string) is types.ListType or type(string) is types.StringType):
+    if not (type(string) is list or type(string) is bytes):
         raise TypeError("You must pass a string or a list")
 
     integer = 0
     for byte in string:
         integer *= 64
-        if type(byte) is types.StringType: byte = ord(byte)
+        if type(byte) is bytes: byte = ord(byte)
         integer += from64(byte)
 
     return integer
@@ -200,10 +199,10 @@ def randint(minvalue, maxvalue):
 
     # Convert to bits, but make sure it's always at least min_nbits*2
     rangebits = max(rangebytes * 8, min_nbits * 2)
-    
+
     # Take a random number of bits between min_nbits and rangebits
     nbits = random.randint(min_nbits, rangebits)
-    
+
     return (read_random_int(nbits) % range) + minvalue
 
 def jacobi(a, b):
@@ -249,7 +248,7 @@ def randomized_primality_testing(n, k):
     for i in range(k):
         x = randint(1, n-1)
         if jacobi_witness(x, n): return False
-    
+
     return True
 
 def is_prime(number):
@@ -264,11 +263,11 @@ def is_prime(number):
     if randomized_primality_testing(number, 6):
         # Prime, according to Jacobi
         return True
-    
+
     # Not prime
     return False
 
-    
+
 def getprime(nbits):
     """Returns a prime number of max. 'math.ceil(nbits/8)*8' bits. In
     other words: nbits is rounded up to whole bytes.
@@ -330,11 +329,11 @@ def extended_gcd(a, b):
     y = 1
     lx = 1
     ly = 0
-    oa = a                             #Remember original a/b to remove 
-    ob = b                             #negative values from return results
+    oa = a  # Remember original a/b to remove
+    ob = b  #negative values from return results
     while b != 0:
-        q = long(a/b)
-        (a, b)  = (b, a % b)
+        q = int(a / b)
+        (a, b) = (b, a % b)
         (x, lx) = ((lx - (q * x)),x)
         (y, ly) = ((ly - (q * y)),y)
     if (lx < 0): lx += ob              #If neg wrap modulo orignal b
@@ -393,10 +392,10 @@ def newkeys(nbits):
 def encrypt_int(message, ekey, n):
     """Encrypts a message using encryption key 'ekey', working modulo n"""
 
-    if type(message) is types.IntType:
-        message = long(message)
+    if type(message) is int:
+        message = int(message)
 
-    if not type(message) is types.LongType:
+    if not type(message) is int:
         raise TypeError("You must pass a long or int")
 
     if message < 0 or message > n:
@@ -467,7 +466,7 @@ def chopstring(message, key, n, funcref):
         blocks += 1
 
     cypher = []
-    
+
     for bindex in range(blocks):
         offset = bindex * nbytes
         block = message[offset:offset+nbytes]
@@ -485,11 +484,11 @@ def gluechops(string, key, n, funcref):
     message = ""
 
     chops = decode64chops(string)  #Decode base64 strings into integer chops
-    
+
     for cpart in chops:
         mpart = funcref(cpart, key, n) #Decrypt each chop
         message += int2bytes(mpart)    #Combine decrypted strings into a msg
-    
+
     return message
 
 def encrypt(message, key):

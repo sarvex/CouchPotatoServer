@@ -1,7 +1,6 @@
-from couchpotato.core.event import fireEvent
-from couchpotato.core.helpers.encoding import toUnicode, tryUrlencode
+from couchpotato.core.helpers.encoding import to_unicode, try_url_encode
 from couchpotato.core.helpers.rss import RSS
-from couchpotato.core.helpers.variable import tryInt
+from couchpotato.core.helpers.variable import try_int
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.nzb.base import NZBProvider
 
@@ -28,13 +27,13 @@ class Base(NZBProvider, RSS):
     def _searchOnTitle(self, title, movie, quality, results):
 
         q = '%s %s' % (title, movie['info']['year'])
-        params = tryUrlencode({
+        params = try_url_encode({
             'search': q,
             'catid': ','.join([str(x) for x in self.getCatId(quality)]),
             'user': self.conf('username', default = ''),
             'api': self.conf('api_key', default = ''),
         })
-        
+
         if len(self.conf('custom_tag')) > 0:
             params = '%s&%s' % (params, self.conf('custom_tag'))
 
@@ -45,9 +44,9 @@ class Base(NZBProvider, RSS):
 
                 results.append({
                     'id': nzb.get('nzbid'),
-                    'name': toUnicode(nzb.get('release')),
-                    'age': self.calculateAge(tryInt(nzb.get('usenetage'))),
-                    'size': tryInt(nzb.get('sizebytes')) / 1024 / 1024,
+                    'name': to_unicode(nzb.get('release')),
+                    'age': self.calculateAge(try_int(nzb.get('usenetage'))),
+                    'size': try_int(nzb.get('sizebytes')) / 1024 / 1024,
                     'url': nzb.get('getnzb'),
                     'detail_url': nzb.get('details'),
                     'description': nzb.get('weblink')

@@ -1,13 +1,12 @@
 import traceback
 
-from couchpotato import get_db, tryInt
+from couchpotato import get_db, try_int
 from couchpotato.api import addApiView
-from couchpotato.core.event import addEvent, fireEvent
-from couchpotato.core.helpers.encoding import toUnicode
+from couchpotato.core.event import add_event, fire_event
+from couchpotato.core.helpers.encoding import to_unicode
 from couchpotato.core.logger import CPLog
 from couchpotato.core.plugins.base import Plugin
 from .index import ProfileIndex
-
 
 log = CPLog(__name__)
 
@@ -19,8 +18,8 @@ class ProfilePlugin(Plugin):
     }
 
     def __init__(self):
-        addEvent('profile.all', self.all)
-        addEvent('profile.default', self.default)
+        add_event('profile.all', self.all)
+        add_event('profile.default', self.default)
 
         addApiView('profile.save', self.save)
         addApiView('profile.save_order', self.saveOrder)
@@ -33,8 +32,8 @@ class ProfilePlugin(Plugin):
 }"""}
         })
 
-        addEvent('app.initialize', self.fill, priority = 90)
-        addEvent('app.load', self.forceDefaults, priority = 110)
+        add_event('app.initialize', self.fill, priority=90)
+        add_event('app.load', self.forceDefaults, priority=110)
 
     def forceDefaults(self):
 
@@ -44,13 +43,13 @@ class ProfilePlugin(Plugin):
         if db.count(db.all, 'profile') == 0:
 
             if db.count(db.all, 'quality') == 0:
-                fireEvent('quality.fill', single = True)
+                fire_event('quality.fill', single=True)
 
             self.fill()
 
         # Get all active movies without profile
         try:
-            medias = fireEvent('media.with_status', 'active', single = True)
+            medias = fire_event('media.with_status', 'active', single=True)
 
             profile_ids = [x.get('_id') for x in self.all()]
             default_id = profile_ids[0]
@@ -95,10 +94,10 @@ class ProfilePlugin(Plugin):
 
             profile = {
                 '_t': 'profile',
-                'label': toUnicode(kwargs.get('label')),
-                'order': tryInt(kwargs.get('order', 999)),
+                'label': to_unicode(kwargs.get('label')),
+                'order': try_int(kwargs.get('order', 999)),
                 'core': kwargs.get('core', False),
-                'minimum_score': tryInt(kwargs.get('minimum_score', 1)),
+                'minimum_score': try_int(kwargs.get('minimum_score', 1)),
                 'qualities': [],
                 'wait_for': [],
                 'stop_after': [],
@@ -110,16 +109,16 @@ class ProfilePlugin(Plugin):
             order = 0
             for type in kwargs.get('types', []):
                 profile['qualities'].append(type.get('quality'))
-                profile['wait_for'].append(tryInt(kwargs.get('wait_for', 0)))
-                profile['stop_after'].append(tryInt(kwargs.get('stop_after', 0)))
-                profile['finish'].append((tryInt(type.get('finish')) == 1) if order > 0 else True)
-                profile['3d'].append(tryInt(type.get('3d')))
+                profile['wait_for'].append(try_int(kwargs.get('wait_for', 0)))
+                profile['stop_after'].append(try_int(kwargs.get('stop_after', 0)))
+                profile['finish'].append((try_int(type.get('finish')) == 1) if order > 0 else True)
+                profile['3d'].append(try_int(type.get('3d')))
                 order += 1
 
             id = kwargs.get('id')
             try:
                 p = db.get('id', id)
-                profile['order'] = tryInt(kwargs.get('order', p.get('order', 999)))
+                profile['order'] = try_int(kwargs.get('order', p.get('order', 999)))
             except:
                 p = db.insert(profile)
 
@@ -150,7 +149,7 @@ class ProfilePlugin(Plugin):
 
             for profile_id in kwargs.get('ids', []):
                 p = db.get('id', profile_id)
-                p['hide'] = tryInt(kwargs.get('hidden')[order]) == 1
+                p['hide'] = try_int(kwargs.get('hidden')[order]) == 1
                 p['order'] = order
                 db.update(p)
 
@@ -230,7 +229,7 @@ class ProfilePlugin(Plugin):
 
                 pro = {
                     '_t': 'profile',
-                    'label': toUnicode(profile.get('label')),
+                    'label': to_unicode(profile.get('label')),
                     'order': order,
                     'qualities': profile.get('qualities'),
                     'minimum_score': 1,

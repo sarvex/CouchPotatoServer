@@ -1,4 +1,4 @@
-from couchpotato.core.helpers.variable import tryInt, splitString
+from couchpotato.core.helpers.variable import try_int, split_string
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media.movie.providers.automation.base import Automation
 
@@ -15,7 +15,7 @@ class Flixster(Automation):
 
     def getIMDBids(self):
 
-        ids = splitString(self.conf('automation_ids'))
+        ids = split_string(self.conf('automation_ids'))
 
         if len(ids) == 0:
             return []
@@ -30,8 +30,8 @@ class Flixster(Automation):
 
     def getWatchlist(self):
 
-        enablers = [tryInt(x) for x in splitString(self.conf('automation_ids_use'))]
-        ids = splitString(self.conf('automation_ids'))
+        enablers = [try_int(x) for x in split_string(self.conf('automation_ids_use'))]
+        ids = split_string(self.conf('automation_ids'))
 
         index = -1
         movies = []

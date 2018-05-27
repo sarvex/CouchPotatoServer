@@ -15,17 +15,18 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with subliminal.  If not, see <http://www.gnu.org/licenses/>.
-from . import subtitles
-from .language import Language
-from .utils import to_unicode
-import enzyme.core
-import guessit
 import hashlib
 import logging
 import mimetypes
 import os
 import struct
 
+import enzyme.core
+import guessit
+
+from . import subtitles
+from .language import Language
+from .utils import to_unicode
 
 __all__ = ['EXTENSIONS', 'MIMETYPES', 'Video', 'Episode', 'Movie', 'UnknownVideo',
            'scan', 'hash_opensubtitles', 'hash_thesubdb']
@@ -126,9 +127,9 @@ class Video(object):
         video_infos = None
         try:
             video_infos = enzyme.parse(self.path)
-            logger.debug(u'Succeeded parsing %s with enzyme: %r' % (self.path, video_infos))
+            logger.debug('Succeeded parsing %s with enzyme: %r' % (self.path, video_infos))
         except:
-            logger.debug(u'Failed parsing %s with enzyme' % self.path)
+            logger.debug('Failed parsing %s with enzyme' % self.path)
         if isinstance(video_infos, enzyme.core.AVContainer):
             results.extend([subtitles.EmbeddedSubtitle.from_enzyme(self.path, s) for s in video_infos.subtitles])
         # cannot use glob here because it chokes if there are any square
@@ -149,7 +150,7 @@ class Video(object):
         return to_unicode(self.path or self.release)
 
     def __str__(self):
-        return unicode(self).encode('utf-8')
+        return str(self).encode('utf-8')
 
     def __repr__(self):
         return '%s(%s)' % (self.__class__.__name__, self)
@@ -217,13 +218,13 @@ def scan(entry, max_depth=3, scan_filter=None, depth=0):
     if depth > max_depth and max_depth != 0:  # we do not want to search the whole file system except if max_depth = 0
         return []
     if os.path.isdir(entry):  # a dir? recurse
-        logger.debug(u'Scanning directory %s with depth %d/%d' % (entry, depth, max_depth))
+        logger.debug('Scanning directory %s with depth %d/%d' % (entry, depth, max_depth))
         result = []
         for e in os.listdir(entry):
             result.extend(scan(os.path.join(entry, e), max_depth, scan_filter, depth + 1))
         return result
     if os.path.isfile(entry) or depth == 0:
-        logger.debug(u'Scanning file %s with depth %d/%d' % (entry, depth, max_depth))
+        logger.debug('Scanning file %s with depth %d/%d' % (entry, depth, max_depth))
         if depth != 0:  # trust the user: only check for valid format if recursing
             if mimetypes.guess_type(entry)[0] not in MIMETYPES and os.path.splitext(entry)[1] not in EXTENSIONS:
                 return []
@@ -231,7 +232,7 @@ def scan(entry, max_depth=3, scan_filter=None, depth=0):
                 return []
         video = Video.from_path(entry)
         return [(video, video.scan())]
-    logger.warning(u'Scanning entry %s failed with depth %d/%d' % (entry, depth, max_depth))
+    logger.warning('Scanning entry %s failed with depth %d/%d' % (entry, depth, max_depth))
     return []  # anything else
 
 
@@ -262,7 +263,7 @@ def hash_opensubtitles(path):
             filehash += l_value
             filehash = filehash & 0xFFFFFFFFFFFFFFFF
     returnedhash = '%016x' % filehash
-    logger.debug(u'Computed OpenSubtitle hash %s for %s' % (returnedhash, path))
+    logger.debug('Computed OpenSubtitle hash %s for %s' % (returnedhash, path))
     return returnedhash
 
 
@@ -282,5 +283,5 @@ def hash_thesubdb(path):
         f.seek(-readsize, os.SEEK_END)
         data += f.read(readsize)
     returnedhash = hashlib.md5(data).hexdigest()
-    logger.debug(u'Computed TheSubDB hash %s for %s' % (returnedhash, path))
+    logger.debug('Computed TheSubDB hash %s for %s' % (returnedhash, path))
     return returnedhash

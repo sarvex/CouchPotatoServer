@@ -1,16 +1,11 @@
-import traceback
 import subprocess
 import os
+import subprocess
 
-from couchpotato.core.helpers.encoding import toUnicode
-from couchpotato.core.helpers.variable import getIdentifier
 from couchpotato.api import addApiView
-from couchpotato.core.event import addEvent
+from couchpotato.core.event import add_event
 from couchpotato.core.logger import CPLog
 from couchpotato.core.notifications.base import Notification
-
-
-
 
 log = CPLog(__name__)
 
@@ -21,10 +16,10 @@ class Script(Notification):
     def __init__(self):
         addApiView(self.testNotifyName(), self.test)
 
-        addEvent('renamer.after', self.runScript)
+        add_event('renamer.after', self.runScript)
 
     def runScript(self, message = None, group = None):
-        if self.isDisabled(): return
+        if self.is_disabled(): return
         if not group: group = {}
 
         command = [self.conf('path'), group.get('destination_dir')]

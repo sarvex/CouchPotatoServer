@@ -1,10 +1,9 @@
 import os
 
-from couchpotato.core.event import addEvent
+from couchpotato.core.event import add_event
 from couchpotato.core.logger import CPLog
 from couchpotato.core.plugins.base import Plugin
 from couchpotato.environment import Env
-
 
 log = CPLog(__name__)
 
@@ -14,7 +13,7 @@ autoload = 'Custom'
 class Custom(Plugin):
 
     def __init__(self):
-        addEvent('app.load', self.createStructure)
+        add_event('app.load', self.createStructure)
 
     def createStructure(self):
 

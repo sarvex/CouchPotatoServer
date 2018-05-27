@@ -1,11 +1,11 @@
 import traceback
 
-from couchpotato import tryInt
-from couchpotato.core.event import addEvent
-from couchpotato.core.logger import CPLog
-from couchpotato.core.media.movie.providers.base import MovieProvider
 from requests import HTTPError
 
+from couchpotato import try_int
+from couchpotato.core.event import add_event
+from couchpotato.core.logger import CPLog
+from couchpotato.core.media.movie.providers.base import MovieProvider
 
 log = CPLog(__name__)
 
@@ -22,7 +22,7 @@ class FanartTV(MovieProvider):
     http_time_between_calls = 0
 
     def __init__(self):
-        addEvent('movie.info', self.getArt, priority = 1)
+        add_event('movie.info', self.getArt, priority=1)
 
     def getArt(self, identifier = None, extended = True, **kwargs):
 
@@ -94,8 +94,8 @@ class FanartTV(MovieProvider):
         image_url = None
         highscore = -1
         for image in images:
-            if tryInt(image.get('likes')) > highscore:
-                highscore = tryInt(image.get('likes'))
+            if try_int(image.get('likes')) > highscore:
+                highscore = try_int(image.get('likes'))
                 image_url = image.get('url') or image.get('href')
 
         return image_url
@@ -116,8 +116,8 @@ class FanartTV(MovieProvider):
             best = None
             highscore = -1
             for image in pool:
-                if tryInt(image.get('likes')) > highscore:
-                    highscore = tryInt(image.get('likes'))
+                if try_int(image.get('likes')) > highscore:
+                    highscore = try_int(image.get('likes'))
                     best = image
             url = best.get('url') or best.get('href')
             if url:
@@ -126,7 +126,7 @@ class FanartTV(MovieProvider):
 
         return image_urls
 
-    def isDisabled(self):
+    def is_disabled(self):
         if self.conf('api_key') == '':
             log.error('No API key provided.')
             return True

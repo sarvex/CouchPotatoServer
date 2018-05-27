@@ -2,6 +2,7 @@ from unittest import TestCase
 
 from pyutil import jsonutil as json
 
+
 class JSONTestObject:
     pass
 
@@ -57,7 +58,7 @@ class TestRecursion(TestCase):
 
     def test_defaultrecursion(self):
         enc = RecursiveJSONEncoder()
-        self.assertEquals(enc.encode(JSONTestObject), '"JSONTestObject"')
+        self.assertEqual(enc.encode(JSONTestObject), '"JSONTestObject"')
         enc.recurse = True
         try:
             enc.encode(JSONTestObject)

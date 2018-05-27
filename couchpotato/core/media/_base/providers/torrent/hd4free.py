@@ -1,12 +1,10 @@
 
 import re
-import json
 import traceback
 
-from couchpotato.core.helpers.variable import tryInt, getIdentifier
+from couchpotato.core.helpers.variable import try_int, get_identifier
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.torrent.base import TorrentProvider
-
 
 log = CPLog(__name__)
 
@@ -24,7 +22,8 @@ class Base(TorrentProvider):
     login_fail_msg = 'Your apikey is not valid! Go to HD4Free and reset your apikey.'
 
     def _search(self, movie, quality, results):
-        data = self.getJsonData(self.urls['search'] % (self.conf('apikey'), self.conf('username'), getIdentifier(movie), self.conf('internal_only')))
+        data = self.getJsonData(self.urls['search'] % (
+        self.conf('apikey'), self.conf('username'), get_identifier(movie), self.conf('internal_only')))
 
         if data:
             if 'error' in data:
@@ -36,15 +35,15 @@ class Base(TorrentProvider):
 
             try:
                 #for result in data[]:
-                for key, result in data.iteritems():
-                    if tryInt(result['total_results']) == 0:
+                for key, result in list(data.items()):
+                    if try_int(result['total_results']) == 0:
                         return
                     torrentscore = self.conf('extra_score')
                     releasegroup = result['releasegroup']
                     resolution = result['resolution']
                     encoding = result['encoding']
-                    freeleech = tryInt(result['freeleech'])
-                    seeders = tryInt(result['seeders'])
+                    freeleech = try_int(result['freeleech'])
+                    seeders = try_int(result['seeders'])
                     torrent_desc = '/ %s / %s / %s / %s seeders' % (releasegroup, resolution, encoding, seeders)
 
                     if freeleech > 0 and self.conf('prefer_internal'):
@@ -55,17 +54,17 @@ class Base(TorrentProvider):
                         torrentscore = 0
 
                     name = result['release_name']
-                    year = tryInt(result['year'])
+                    year = try_int(result['year'])
 
                     results.append({
-                        'id': tryInt(result['torrentid']),
+                        'id': try_int(result['torrentid']),
                         'name': re.sub('[^A-Za-z0-9\-_ \(\).]+', '', '%s (%s) %s' % (name, year, torrent_desc)),
                         'url': self.urls['download'] % (result['torrentid'], result['torrentpass']),
                         'detail_url': self.urls['detail'] % result['torrentid'],
-                        'size': tryInt(result['size']),
-                        'seeders': tryInt(result['seeders']),
-                        'leechers': tryInt(result['leechers']),
-                        'age': tryInt(result['age']),
+                        'size': try_int(result['size']),
+                        'seeders': try_int(result['seeders']),
+                        'leechers': try_int(result['leechers']),
+                        'age': try_int(result['age']),
                         'score': torrentscore
                     })
             except:

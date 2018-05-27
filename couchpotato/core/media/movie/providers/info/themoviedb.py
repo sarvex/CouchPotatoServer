@@ -1,11 +1,11 @@
+import itertools
 import random
 import traceback
-import itertools
 from base64 import b64decode as bd
 
-from couchpotato.core.event import addEvent, fireEvent
-from couchpotato.core.helpers.encoding import toUnicode, ss, tryUrlencode
-from couchpotato.core.helpers.variable import tryInt, splitString
+from couchpotato.core.event import add_event, fire_event
+from couchpotato.core.helpers.encoding import to_unicode, ss, try_url_encode
+from couchpotato.core.helpers.variable import try_int, split_string
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media.movie.providers.base import MovieProvider
 from couchpotato.environment import Env
@@ -32,11 +32,11 @@ class TheMovieDb(MovieProvider):
     default_language = 'en'
 
     def __init__(self):
-        addEvent('info.search', self.search, priority = 3)
-        addEvent('movie.search', self.search, priority = 3)
-        addEvent('movie.info', self.getInfo, priority = 3)
-        addEvent('movie.info_by_tmdb', self.getInfo)
-        addEvent('app.load', self.config)
+        add_event('info.search', self.search, priority=3)
+        add_event('movie.search', self.search, priority=3)
+        add_event('movie.info', self.getInfo, priority=3)
+        add_event('movie.info_by_tmdb', self.getInfo)
+        add_event('app.load', self.config)
 
     def config(self):
 
@@ -66,14 +66,14 @@ class TheMovieDb(MovieProvider):
     def search(self, q, limit = 3):
         """ Find movie by name """
 
-        if self.isDisabled():
+        if self.is_disabled():
             return False
 
         log.debug('Searching for movie: %s', q)
 
         raw = None
         try:
-            name_year = fireEvent('scanner.name_year', q, single = True)
+            name_year = fire_event('scanner.name_year', q, single=True)
             raw = self.request('search/movie', {
                 'query': name_year.get('name', q),
                 'year': name_year.get('year'),
@@ -173,8 +173,9 @@ class TheMovieDb(MovieProvider):
 
             for cast_item in cast:
                 try:
-                    actors[toUnicode(cast_item.get('name'))] = toUnicode(cast_item.get('character'))
-                    images['actors'][toUnicode(cast_item.get('name'))] = self.getImage(cast_item, type = 'profile', size = 'original')
+                    actors[to_unicode(cast_item.get('name'))] = to_unicode(cast_item.get('character'))
+                    images['actors'][to_unicode(cast_item.get('name'))] = self.getImage(cast_item, type='profile',
+                                                                                        size='original')
                 except:
                     log.debug('Error getting cast info for %s: %s', (cast_item, traceback.format_exc()))
 
@@ -182,20 +183,20 @@ class TheMovieDb(MovieProvider):
             'type': 'movie',
             'via_tmdb': True,
             'tmdb_id': movie.get('id'),
-            'titles': [toUnicode(movie_default.get('title') or movie.get('title'))],
+            'titles': [to_unicode(movie_default.get('title') or movie.get('title'))],
             'original_title': movie.get('original_title'),
             'images': images,
             'imdb': movie.get('imdb_id'),
             'runtime': movie.get('runtime'),
             'released': str(movie.get('release_date')),
-            'year': tryInt(year, None),
+            'year': try_int(year, None),
             'plot': movie_default.get('overview') or movie.get('overview'),
             'genres': genres,
             'collection': getattr(movie.get('belongs_to_collection'), 'name', None),
             'actor_roles': actors
         }
 
-        movie_data = dict((k, v) for k, v in movie_data.items() if v)
+        movie_data = dict((k, v) for k, v in list(movie_data.items()) if v)
 
         # Add alternative names
         movies = [ movie ] + movie_others if movie == movie_default else [ movie, movie_default ] + movie_others
@@ -238,8 +239,8 @@ class TheMovieDb(MovieProvider):
 
     def request(self, call = '', params = {}, return_key = None):
 
-        params = dict((k, v) for k, v in params.items() if v)
-        params = tryUrlencode(params)
+        params = dict((k, v) for k, v in list(params.items()) if v)
+        params = try_url_encode(params)
 
         try:
             url = 'https://api.themoviedb.org/3/%s?api_key=%s%s' % (call, self.getApiKey(), '&%s' % params if params else '')
@@ -253,7 +254,7 @@ class TheMovieDb(MovieProvider):
 
         return data
 
-    def isDisabled(self):
+    def is_disabled(self):
         if self.getApiKey() == '':
             log.error('No API key provided.')
             return True
@@ -264,7 +265,7 @@ class TheMovieDb(MovieProvider):
         return bd(random.choice(self.ak)) if key == '' else key
 
     def getLanguages(self):
-        languages = splitString(Env.setting('languages', section = 'core'))
+        languages = split_string(Env.setting('languages', section='core'))
         if len(languages):
             return languages
 
@@ -272,12 +273,12 @@ class TheMovieDb(MovieProvider):
 
     def getTitles(self, movie):
         # add the title to the list
-        title = toUnicode(movie.get('title'))
+        title = to_unicode(movie.get('title'))
 
         titles = [title] if title else []
 
         # add the original_title to the list
-        alternate_title = toUnicode(movie.get('original_title'))
+        alternate_title = to_unicode(movie.get('original_title'))
 
         if alternate_title and alternate_title not in titles:
             titles.append(alternate_title)
@@ -286,7 +287,7 @@ class TheMovieDb(MovieProvider):
         alternate_titles = movie.get('alternative_titles', {}).get('titles', [])
 
         for alt in alternate_titles:
-            alt_name = toUnicode(alt.get('title'))
+            alt_name = to_unicode(alt.get('title'))
             if alt_name and alt_name not in titles and alt_name.lower() != 'none' and alt_name is not None:
                 titles.append(alt_name)
 

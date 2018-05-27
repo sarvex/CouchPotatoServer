@@ -5,7 +5,7 @@ class TagMap:
         self.__posMap = posMap.copy()
         self.__negMap = negMap.copy()
         self.__defType = defType
-        
+
     def __contains__(self, tagSet):
         return tagSet in self.__posMap or \
                self.__defType is not None and tagSet not in self.__negMap
@@ -33,9 +33,9 @@ class TagMap:
     def __str__(self):
         s = self.__class__.__name__ + ':\n'
         if self.__posMap:
-            s = s + 'posMap:\n%s, ' % ',\n '.join([ x.prettyPrintType() for x in self.__posMap.values()])
+            s = s + 'posMap:\n%s, ' % ',\n '.join([x.prettyPrintType() for x in list(self.__posMap.values())])
         if self.__negMap:
-            s = s + 'negMap:\n%s, ' % ',\n '.join([ x.prettyPrintType() for x in self.__negMap.values()])
+            s = s + 'negMap:\n%s, ' % ',\n '.join([x.prettyPrintType() for x in list(self.__negMap.values())])
         if self.__defType is not None:
             s = s + 'defType:\n%s, ' % self.__defType.prettyPrintType()
         return s
@@ -47,7 +47,7 @@ class TagMap:
             defType = tagMap.getDef()
         else:
             defType = self.__defType
-            
+
         posMap = self.__posMap.copy()
         for k in tagMap.getPosMap():
             if uniq and k in posMap:
@@ -56,7 +56,7 @@ class TagMap:
 
         negMap = self.__negMap.copy()
         negMap.update(tagMap.getNegMap())
-        
+
         return self.__class__(
             posMap, negMap, defType,
             )

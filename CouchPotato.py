@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-from __future__ import print_function
-from logging import handlers
-from os.path import dirname
+
 import logging
 import os
 import select
@@ -10,6 +8,8 @@ import socket
 import subprocess
 import sys
 import traceback
+from logging import handlers
+from os.path import dirname
 
 # Root path
 base_path = dirname(os.path.abspath(__file__))
@@ -18,11 +18,11 @@ base_path = dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(base_path, 'libs'))
 
 from couchpotato.environment import Env
-from couchpotato.core.helpers.variable import getDataDir, removePyc
+from couchpotato.core.helpers.variable import get_data_directory, remove_pyc
 
 
 # Remove pyc files before dynamic load (sees .pyc files regular .py modules)
-removePyc(base_path)
+remove_pyc(base_path)
 
 
 class Loader(object):
@@ -37,7 +37,7 @@ class Loader(object):
 
         # Load settings
         settings = Env.get('settings')
-        settings.setFile(self.options.config_file)
+        settings.set_file(self.options.config_file)
 
         # Create data dir if needed
         if self.options.data_dir:
@@ -46,7 +46,7 @@ class Loader(object):
             self.data_dir = os.path.expanduser(Env.setting('data_dir'))
 
         if self.data_dir == '':
-            self.data_dir = getDataDir()
+            self.data_dir = get_data_directory()
 
         if not os.path.isdir(self.data_dir):
             os.makedirs(self.data_dir)
@@ -66,24 +66,24 @@ class Loader(object):
         hdlr.setFormatter(formatter)
         self.log.logger.addHandler(hdlr)
 
-    def addSignals(self):
-        signal.signal(signal.SIGINT, self.onExit)
+    def add_signals(self):
+        signal.signal(signal.SIGINT, self.on_exit)
         signal.signal(signal.SIGTERM, lambda signum, stack_frame: sys.exit(1))
 
-        from couchpotato.core.event import addEvent
-        addEvent('app.do_shutdown', self.setRestart)
+        from couchpotato.core.event import add_event
+        add_event('app.do_shutdown', self.set_restart)
 
-    def setRestart(self, restart):
+    def set_restart(self, restart):
         self.do_restart = restart
         return True
 
-    def onExit(self, signal, frame):
-        from couchpotato.core.event import fireEvent
-        fireEvent('app.shutdown', single=True)
+    def on_exit(self, signal, frame):
+        from couchpotato.core.event import fire_event
+        fire_event('app.shutdown', single=True)
 
     def run(self):
 
-        self.addSignals()
+        self.add_signals()
 
         from couchpotato.runner import runCouchPotato
         runCouchPotato(self.options, base_path, sys.argv[1:], data_dir = self.data_dir, log_dir = self.log_dir, Env = Env)
@@ -147,7 +147,7 @@ if __name__ == '__main__':
             try:
                 l.log.critical(traceback.format_exc())
             except:
-                print(traceback.format_exc())
+                print((traceback.format_exc()))
             raise
     except:
         try:
@@ -156,7 +156,7 @@ if __name__ == '__main__':
             if l:
                 l.log.critical(traceback.format_exc())
             else:
-                print(traceback.format_exc())
+                print((traceback.format_exc()))
         except:
-            print(traceback.format_exc())
+            print((traceback.format_exc()))
         raise

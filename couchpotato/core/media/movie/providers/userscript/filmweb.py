@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup
-from couchpotato import fireEvent
 
+from couchpotato import fire_event
 from couchpotato.core.media._base.providers.userscript.base import UserscriptBase
 
 autoload = 'Filmweb'
@@ -23,7 +23,7 @@ class Filmweb(UserscriptBase):
 
         html = BeautifulSoup(data)
         name = html.find('meta', {'name': 'title'})['content'][:-9].strip()
-        name_year = fireEvent('scanner.name_year', name, single = True)
+        name_year = fire_event('scanner.name_year', name, single=True)
         name = name_year.get('name')
         year = name_year.get('year')
 

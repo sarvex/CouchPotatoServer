@@ -1,9 +1,8 @@
 import traceback
 
-from couchpotato.core.helpers.encoding import toUnicode
+from couchpotato.core.helpers.encoding import to_unicode
 from couchpotato.core.logger import CPLog
 from couchpotato.core.notifications.base import Notification
-
 
 log = CPLog(__name__)
 
@@ -22,11 +21,11 @@ class Pushalot(Notification):
         data = {
             'AuthorizationToken': self.conf('auth_token'),
             'Title': self.default_title,
-            'Body': toUnicode(message),
+            'Body': to_unicode(message),
             'IsImportant': self.conf('important'),
             'IsSilent': self.conf('silent'),
-            'Image': toUnicode(self.getNotificationImage('medium') + '?1'),
-            'Source': toUnicode(self.default_title)
+            'Image': to_unicode(self.getNotificationImage('medium') + '?1'),
+            'Source': to_unicode(self.default_title)
         }
 
         headers = {

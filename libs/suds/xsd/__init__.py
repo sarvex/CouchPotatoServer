@@ -1,6 +1,6 @@
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the (LGPL) GNU Lesser General Public License as
-# published by the Free Software Foundation; either version 3 of the 
+# published by the Free Software Foundation; either version 3 of the
 # License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
@@ -23,6 +23,7 @@ tranparent referenced type resolution and targeted denormalization.
 """
 
 from logging import getLogger
+
 from suds import *
 from suds.sax import Namespace, splitPrefix
 
@@ -66,11 +67,11 @@ def isqref(object):
     @rtype: boolean
     @see: L{qualify}
     """
-    return (\
-        isinstance(object, tuple) and \
-        len(object) == 2 and \
-        isinstance(object[0], basestring) and \
-        isinstance(object[1], basestring))
+    return ( \
+            isinstance(object, tuple) and \
+            len(object) == 2 and \
+            isinstance(object[0], str) and \
+            isinstance(object[1], str))
 
 
 class Filter:

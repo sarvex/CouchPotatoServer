@@ -1,10 +1,10 @@
 import re
 
 from bs4 import BeautifulSoup
-from couchpotato.core.helpers.variable import tryInt, splitString, removeEmpty
+
+from couchpotato.core.helpers.variable import try_int, split_string
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media.movie.providers.automation.base import Automation
-
 
 log = CPLog(__name__)
 
@@ -20,7 +20,7 @@ class Letterboxd(Automation):
 
     def getIMDBids(self):
 
-        urls = splitString(self.conf('automation_urls'))
+        urls = split_string(self.conf('automation_urls'))
 
         if len(urls) == 0:
             return []
@@ -35,8 +35,8 @@ class Letterboxd(Automation):
 
     def getWatchlist(self):
 
-        enablers = [tryInt(x) for x in splitString(self.conf('automation_urls_use'))]
-        urls = splitString(self.conf('automation_urls'))
+        enablers = [try_int(x) for x in split_string(self.conf('automation_urls_use'))]
+        urls = split_string(self.conf('automation_urls'))
 
         index = -1
         movies = []
@@ -49,8 +49,8 @@ class Letterboxd(Automation):
             soup = BeautifulSoup(self.getHTMLData(self.url % (username, 1)))
 
             pagination = soup.find_all('li', attrs={'class': 'paginate-page'})
-            number_of_pages = tryInt(pagination[-1].find('a').get_text()) if pagination else 1
-            pages = range(1, number_of_pages)
+            number_of_pages = try_int(pagination[-1].find('a').get_text()) if pagination else 1
+            pages = list(range(1, number_of_pages))
 
             for page in pages:
                 soup = BeautifulSoup(self.getHTMLData(self.url % (username, page)))

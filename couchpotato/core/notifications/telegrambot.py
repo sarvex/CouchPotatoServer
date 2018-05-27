@@ -1,8 +1,8 @@
-from couchpotato.core.helpers.variable import getIdentifier
+import requests
+
+from couchpotato.core.helpers.variable import get_identifier
 from couchpotato.core.logger import CPLog
 from couchpotato.core.notifications.base import Notification
-import requests
-import six
 
 log = CPLog(__name__)
 
@@ -21,7 +21,7 @@ class TelegramBot(Notification):
 
         # Add IMDB url to message:
         if data:
-            imdb_id = getIdentifier(data)
+            imdb_id = get_identifier(data)
             if imdb_id:
                 url = 'http://www.imdb.com/title/{0}/'.format(imdb_id)
                 message = '{0}\n{1}'.format(message, url)

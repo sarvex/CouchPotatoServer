@@ -18,13 +18,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import unicode_literals
-from guessit import UnicodeMixin, s, u, base_text_type
-from guessit.language import Language
-from guessit.country import Country
-import json
+
 import datetime
+import json
 import logging
+
+from guessit import UnicodeMixin, s, u, base_text_type
+from guessit.country import Country
+from guessit.language import Language
 
 log = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ class Guess(UnicodeMixin, dict):
             confidence = kwargs.pop('confidence')
         except KeyError:
             confidence = 0
-            
+
         try:
             raw = kwargs.pop('raw')
         except KeyError:
@@ -54,10 +55,10 @@ class Guess(UnicodeMixin, dict):
         for prop in self:
             self._confidence[prop] = confidence
             self._raw[prop] = raw
-            
+
     def to_dict(self, advanced=False):
         data = dict(self)
-        for prop, value in data.items():
+        for prop, value in list(data.items()):
             if isinstance(value, datetime.date):
                 data[prop] = value.isoformat()
             elif isinstance(value, (Language, Country, base_text_type)):
@@ -73,17 +74,17 @@ class Guess(UnicodeMixin, dict):
         if advanced:
             data = self.to_dict(advanced)
             return json.dumps(data, indent=4)
-        else:            
+        else:
             data = self.to_dict()
-    
+
             parts = json.dumps(data, indent=4).split('\n')
             for i, p in enumerate(parts):
                 if p[:5] != '    "':
                     continue
-    
+
                 prop = p.split('"')[1]
                 parts[i] = ('    [%.2f] "' % self.confidence(prop)) + p[5:]
-    
+
             return '\n'.join(parts)
 
     def __unicode__(self):
@@ -91,7 +92,7 @@ class Guess(UnicodeMixin, dict):
 
     def confidence(self, prop):
         return self._confidence.get(prop, -1)
-    
+
     def raw(self, prop):
         return self._raw.get(prop, None)
 
@@ -104,7 +105,7 @@ class Guess(UnicodeMixin, dict):
 
     def set_confidence(self, prop, value):
         self._confidence[prop] = value
-        
+
     def set_raw(self, prop, value):
         self._raw[prop] = value
 

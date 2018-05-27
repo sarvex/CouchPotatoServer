@@ -5,8 +5,8 @@ import hashlib
 import re
 import time
 
-import gntp.shim
 import gntp.errors as errors
+import gntp.shim
 
 __all__ = [
 	'GNTPRegister',
@@ -70,7 +70,7 @@ class _GNTPBase(object):
 			'SHA1': hashlib.sha1,
 			'SHA256': hashlib.sha256,
 			'SHA512': hashlib.sha512,
-		}	
+        }
 		self.headers = {}
 		self.resources = {}
 
@@ -258,12 +258,12 @@ class _GNTPBase(object):
 		buff.writeln(self._format_info())
 
 		#Headers
-		for k, v in self.headers.items():
+        for k, v in list(self.headers.items()):
 			buff.writeheader(k, v)
 		buff.writeln()
 
 		#Resources
-		for resource, data in self.resources.items():
+        for resource, data in list(self.resources.items()):
 			buff.writeheader('Identifier', resource)
 			buff.writeheader('Length', len(data))
 			buff.writeln()
@@ -355,19 +355,19 @@ class GNTPRegister(_GNTPBase):
 		buff.writeln(self._format_info())
 
 		#Headers
-		for k, v in self.headers.items():
+        for k, v in list(self.headers.items()):
 			buff.writeheader(k, v)
 		buff.writeln()
 
 		#Notifications
 		if len(self.notifications) > 0:
 			for notice in self.notifications:
-				for k, v in notice.items():
+                for k, v in list(notice.items()):
 					buff.writeheader(k, v)
 				buff.writeln()
 
 		#Resources
-		for resource, data in self.resources.items():
+        for resource, data in list(self.resources.items()):
 			buff.writeheader('Identifier', resource)
 			buff.writeheader('Length', len(data))
 			buff.writeln()

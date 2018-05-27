@@ -25,36 +25,36 @@ class CPLog(object):
             self.Env = Env
             self.is_develop = Env.get('dev')
 
-            from couchpotato.core.event import addEvent
-            addEvent('app.after_shutdown', self.close)
+            from couchpotato.core.event import add_event
+            add_event('app.after_shutdown', self.close)
 
     def close(self, *args, **kwargs):
         logging.shutdown()
 
     def info(self, msg, replace_tuple = ()):
-        self.logger.info(self.addContext(msg, replace_tuple))
+        self.logger.info(self.add_context(msg, replace_tuple))
 
     def info2(self, msg, replace_tuple = ()):
-        self.logger.log(19, self.addContext(msg, replace_tuple))
+        self.logger.log(19, self.add_context(msg, replace_tuple))
 
     def debug(self, msg, replace_tuple = ()):
-        self.logger.debug(self.addContext(msg, replace_tuple))
+        self.logger.debug(self.add_context(msg, replace_tuple))
 
     def error(self, msg, replace_tuple = ()):
-        self.logger.error(self.addContext(msg, replace_tuple))
+        self.logger.error(self.add_context(msg, replace_tuple))
 
     def warning(self, msg, replace_tuple = ()):
-        self.logger.warning(self.addContext(msg, replace_tuple))
+        self.logger.warning(self.add_context(msg, replace_tuple))
 
     def critical(self, msg, replace_tuple = ()):
-        self.logger.critical(self.addContext(msg, replace_tuple), exc_info = 1)
+        self.logger.critical(self.add_context(msg, replace_tuple), exc_info=1)
 
-    def addContext(self, msg, replace_tuple = ()):
-        return '[%+25.25s] %s' % (self.context[-25:], self.safeMessage(msg, replace_tuple))
+    def add_context(self, msg, replace_tuple=()):
+        return '[%+25.25s] %s' % (self.context[-25:], self.safe_message(msg, replace_tuple))
 
-    def safeMessage(self, msg, replace_tuple = ()):
+    def safe_message(self, msg, replace_tuple=()):
 
-        from couchpotato.core.helpers.encoding import ss, toUnicode
+        from couchpotato.core.helpers.encoding import ss, to_unicode
 
         msg = ss(msg)
 
@@ -62,7 +62,8 @@ class CPLog(object):
             if isinstance(replace_tuple, tuple):
                 msg = msg % tuple([ss(x) if not isinstance(x, (int, float)) else x for x in list(replace_tuple)])
             elif isinstance(replace_tuple, dict):
-                msg = msg % dict((k, ss(v) if not isinstance(v, (int, float)) else v) for k, v in replace_tuple.iteritems())
+                msg = msg % dict(
+                    (k, ss(v) if not isinstance(v, (int, float)) else v) for k, v in list(replace_tuple.items()))
             else:
                 msg = msg % ss(replace_tuple)
         except Exception as e:
@@ -83,4 +84,4 @@ class CPLog(object):
             except:
                 pass
 
-        return toUnicode(msg)
+        return to_unicode(msg)

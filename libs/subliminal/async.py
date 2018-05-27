@@ -15,15 +15,15 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with subliminal.  If not, see <http://www.gnu.org/licenses/>.
-from .core import (consume_task, LANGUAGE_INDEX, SERVICE_INDEX,
-    SERVICE_CONFIDENCE, MATCHING_CONFIDENCE, SERVICES, create_list_tasks,
-    create_download_tasks, group_by_video, key_subtitles)
-from .language import language_list, language_set, LANGUAGES
-from .tasks import StopTask
-import Queue
 import logging
+import queue
 import threading
 
+from .core import (consume_task, LANGUAGE_INDEX, SERVICE_INDEX,
+                   SERVICE_CONFIDENCE, MATCHING_CONFIDENCE, SERVICES, create_list_tasks,
+                   create_download_tasks, group_by_video, key_subtitles)
+from .language import language_list, language_set, LANGUAGES
+from .tasks import StopTask
 
 __all__ = ['Worker', 'Pool']
 logger = logging.getLogger(__name__)
@@ -47,26 +47,26 @@ class Worker(threading.Thread):
                 result = consume_task(task, self.services)
                 self.results.put((task.video, result))
             except:
-                logger.error(u'Exception raised in worker %s' % self.name, exc_info=True)
+                logger.error('Exception raised in worker %s' % self.name, exc_info=True)
             finally:
                 self.tasks.task_done()
         self.terminate()
-        logger.debug(u'Thread %s terminated' % self.name)
+        logger.debug('Thread %s terminated' % self.name)
 
     def terminate(self):
         """Terminate instantiated services"""
-        for service_name, service in self.services.iteritems():
+        for service_name, service in self.services.items():
             try:
                 service.terminate()
             except:
-                logger.error(u'Exception raised when terminating service %s' % service_name, exc_info=True)
+                logger.error('Exception raised when terminating service %s' % service_name, exc_info=True)
 
 
 class Pool(object):
     """Pool of workers"""
     def __init__(self, size):
-        self.tasks = Queue.Queue()
-        self.results = Queue.Queue()
+        self.tasks = queue.Queue()
+        self.results = queue.Queue()
         self.workers = []
         for _ in range(size):
             self.workers.append(Worker(self.tasks, self.results))
@@ -105,7 +105,7 @@ class Pool(object):
             try:
                 result = self.results.get(block=False)
                 results.append(result)
-            except Queue.Empty:
+            except queue.Empty:
                 break
         return results
 
@@ -113,10 +113,10 @@ class Pool(object):
         """See :meth:`subliminal.list_subtitles`"""
         services = services or SERVICES
         languages = language_set(languages) if languages is not None else language_set(LANGUAGES)
-        if isinstance(paths, basestring):
+        if isinstance(paths, str):
             paths = [paths]
-        if any([not isinstance(p, unicode) for p in paths]):
-            logger.warning(u'Not all entries are unicode')
+        if any([not isinstance(p, str) for p in paths]):
+            logger.warning('Not all entries are unicode')
         tasks = create_list_tasks(paths, languages, services, force, multi, cache_dir, max_depth, scan_filter)
         for task in tasks:
             self.tasks.put(task)
@@ -128,11 +128,11 @@ class Pool(object):
         """See :meth:`subliminal.download_subtitles`"""
         services = services or SERVICES
         languages = language_list(languages) if languages is not None else language_list(LANGUAGES)
-        if isinstance(paths, basestring):
+        if isinstance(paths, str):
             paths = [paths]
         order = order or [LANGUAGE_INDEX, SERVICE_INDEX, SERVICE_CONFIDENCE, MATCHING_CONFIDENCE]
         subtitles_by_video = self.list_subtitles(paths, languages, services, force, multi, cache_dir, max_depth, scan_filter)
-        for video, subtitles in subtitles_by_video.iteritems():
+        for video, subtitles in subtitles_by_video.items():
             subtitles.sort(key=lambda s: key_subtitles(s, video, languages, services, order), reverse=True)
         tasks = create_download_tasks(subtitles_by_video, languages, multi)
         for task in tasks:

@@ -1,17 +1,17 @@
-from math import fabs, ceil
-import traceback
 import re
+import traceback
+from math import fabs, ceil
 
 from CodernityDB.database import RecordNotFound
+
 from couchpotato import get_db
 from couchpotato.api import addApiView
-from couchpotato.core.event import addEvent, fireEvent
-from couchpotato.core.helpers.encoding import toUnicode, ss
-from couchpotato.core.helpers.variable import mergeDicts, getExt, tryInt, splitString, tryFloat
+from couchpotato.core.event import add_event, fire_event
+from couchpotato.core.helpers.encoding import to_unicode, ss
+from couchpotato.core.helpers.variable import merge_dictionaries, get_extension, try_int, split_string, try_float
 from couchpotato.core.logger import CPLog
 from couchpotato.core.plugins.base import Plugin
 from couchpotato.core.plugins.quality.index import QualityIndex
-
 
 log = CPLog(__name__)
 
@@ -47,14 +47,14 @@ class QualityPlugin(Plugin):
     cached_order = None
 
     def __init__(self):
-        addEvent('quality.all', self.all)
-        addEvent('quality.single', self.single)
-        addEvent('quality.guess', self.guess)
-        addEvent('quality.pre_releases', self.preReleases)
-        addEvent('quality.order', self.getOrder)
-        addEvent('quality.ishigher', self.isHigher)
-        addEvent('quality.isfinish', self.isFinish)
-        addEvent('quality.fill', self.fill)
+        add_event('quality.all', self.all)
+        add_event('quality.single', self.single)
+        add_event('quality.guess', self.guess)
+        add_event('quality.pre_releases', self.preReleases)
+        add_event('quality.order', self.getOrder)
+        add_event('quality.ishigher', self.isHigher)
+        add_event('quality.isfinish', self.isFinish)
+        add_event('quality.fill', self.fill)
 
         addApiView('quality.size.save', self.saveSize)
         addApiView('quality.list', self.allView, docs = {
@@ -65,10 +65,10 @@ class QualityPlugin(Plugin):
 }"""}
         })
 
-        addEvent('app.initialize', self.fill, priority = 10)
-        addEvent('app.load', self.fillBlank, priority = 120)
+        add_event('app.initialize', self.fill, priority=10)
+        add_event('app.load', self.fillBlank, priority=120)
 
-        addEvent('app.test', self.doTest)
+        add_event('app.test', self.doTest)
 
         self.order = []
         self.addOrder()
@@ -101,7 +101,7 @@ class QualityPlugin(Plugin):
         temp = []
         for quality in self.qualities:
             quality_doc = db.get('quality', quality.get('identifier'), with_doc = True)['doc']
-            q = mergeDicts(quality, quality_doc)
+            q = merge_dictionaries(quality, quality_doc)
             temp.append(q)
 
         if len(temp) == len(self.qualities):
@@ -121,7 +121,7 @@ class QualityPlugin(Plugin):
             quality = None
 
         if quality:
-            quality_dict = mergeDicts(self.getQuality(quality['identifier']), quality)
+            quality_dict = merge_dictionaries(self.getQuality(quality['identifier']), quality)
 
         return quality_dict
 
@@ -138,7 +138,7 @@ class QualityPlugin(Plugin):
             quality = db.get('quality', kwargs.get('identifier'), with_doc = True)
 
             if quality:
-                quality['doc'][kwargs.get('value_type')] = tryInt(kwargs.get('value'))
+                quality['doc'][kwargs.get('value_type')] = try_int(kwargs.get('value'))
                 db.update(quality['doc'])
 
             self.cached_qualities = None
@@ -183,8 +183,8 @@ class QualityPlugin(Plugin):
                         '_t': 'quality',
                         'order': order,
                         'identifier': q.get('identifier'),
-                        'size_min': tryInt(q.get('size')[0]),
-                        'size_max': tryInt(q.get('size')[1]),
+                        'size_min': try_int(q.get('size')[0]),
+                        'size_max': try_int(q.get('size')[1]),
                     })
 
                     log.info('Creating profile: %s', q.get('label'))
@@ -193,7 +193,7 @@ class QualityPlugin(Plugin):
                         'order': order + 20,  # Make sure it goes behind other profiles
                         'core': True,
                         'qualities': [q.get('identifier')],
-                        'label': toUnicode(q.get('label')),
+                        'label': to_unicode(q.get('label')),
                         'finish': [True],
                         'wait_for': [0],
                     })
@@ -214,7 +214,7 @@ class QualityPlugin(Plugin):
         if not extra: extra = {}
 
         # Create hash for cache
-        cache_key = str([f.replace('.' + getExt(f), '') if len(getExt(f)) < 4 else f for f in files])
+        cache_key = str([f.replace('.' + get_extension(f), '') if len(get_extension(f)) < 4 else f for f in files])
         if use_cache:
             cached = self.getCache(cache_key)
             if cached and len(extra) == 0:
@@ -236,10 +236,10 @@ class QualityPlugin(Plugin):
 
         for cur_file in files:
             words = re.split('\W+', cur_file.lower())
-            name_year = fireEvent('scanner.name_year', cur_file, file_name = cur_file, single = True)
+            name_year = fire_event('scanner.name_year', cur_file, file_name=cur_file, single=True)
             threed_words = words
             if name_year and name_year.get('name'):
-                split_name = splitString(name_year.get('name'), ' ')
+                split_name = split_string(name_year.get('name'), ' ')
                 threed_words = [x for x in words if x not in split_name]
 
             for quality in qualities:
@@ -305,7 +305,7 @@ class QualityPlugin(Plugin):
         # Check alt and tags
         for tag_type in ['identifier', 'alternative', 'tags', 'label']:
             qualities = quality.get(tag_type, [])
-            qualities = [qualities] if isinstance(qualities, (str, unicode)) else qualities
+            qualities = [qualities] if isinstance(qualities, str) else qualities
 
             for alt in qualities:
                 if isinstance(alt, tuple):
@@ -313,7 +313,7 @@ class QualityPlugin(Plugin):
                         log.debug('Found %s via %s %s in %s', (quality['identifier'], tag_type, quality.get(tag_type), cur_file))
                         score += points.get(tag_type)
 
-                if isinstance(alt, (str, unicode)) and ss(alt.lower()) in words and ss(alt.lower()) not in scored_on:
+                if isinstance(alt, str) and ss(alt.lower()) in words and ss(alt.lower()) not in scored_on:
                     log.debug('Found %s via %s %s in %s', (quality['identifier'], tag_type, quality.get(tag_type), cur_file))
                     score += points.get(tag_type)
 
@@ -374,9 +374,9 @@ class QualityPlugin(Plugin):
 
         if size:
 
-            size = tryFloat(size)
-            size_min = tryFloat(quality['size_min'])
-            size_max = tryFloat(quality['size_max'])
+            size = try_float(size)
+            size_min = try_float(quality['size_min'])
+            size_max = try_float(quality['size_max'])
 
             if size_min <= size <= size_max:
                 log.debug('Found %s via release size: %s MB < %s MB < %s MB', (quality['identifier'], size_min, size, size_max))
@@ -438,7 +438,7 @@ class QualityPlugin(Plugin):
 
     def isHigher(self, quality, compare_with, profile = None):
         if not isinstance(profile, dict) or not profile.get('qualities'):
-            profile = fireEvent('profile.default', single = True)
+            profile = fire_event('profile.default', single=True)
 
         # Try to find quality in profile, if not found: a quality we do not want is lower than anything else
         try:

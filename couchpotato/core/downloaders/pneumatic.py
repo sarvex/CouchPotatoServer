@@ -1,11 +1,10 @@
-from __future__ import with_statement
+
 import os
 import traceback
 
 from couchpotato.core._base.downloader.main import DownloaderBase
 from couchpotato.core.helpers.encoding import sp
 from couchpotato.core.logger import CPLog
-
 
 log = CPLog(__name__)
 
@@ -61,11 +60,11 @@ class Pneumatic(DownloaderBase):
                         strm_file.write(strmContent)
                         strm_file.close()
 
-                        return self.downloadReturnId('')
+                        return self.download_return_id('')
 
                     else:
                         log.info('File %s already exists.', full_path)
-                        return self.downloadReturnId('')
+                        return self.download_return_id('')
 
                 except:
                     log.error('Failed to download .strm: %s', traceback.format_exc())

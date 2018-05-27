@@ -13,17 +13,16 @@ import sys
 # Py 2 <=> 3 compatibility for class type checking
 if sys.version_info[0] > 2:
     class_type_ = type
-    from urllib.request import (ProxyHandler, UnknownHandler, 
-                                HTTPDefaultErrorHandler, FTPHandler, 
-                                FileHandler, HTTPErrorProcessor, 
-                                HTTPHandler, OpenerDirector, 
+    from urllib.request import (ProxyHandler, UnknownHandler,
+                                HTTPDefaultErrorHandler, FTPHandler,
+                                FileHandler, HTTPErrorProcessor,
+                                HTTPHandler, OpenerDirector,
                                 HTTPRedirectHandler)
 else:
-    import types
-    class_type_ = types.ClassType
-    
-    from urllib2 import (ProxyHandler, UnknownHandler, HTTPDefaultErrorHandler, 
-                         FTPHandler, FileHandler, HTTPErrorProcessor, 
+    class_type_ = type
+
+    from urllib2 import (ProxyHandler, UnknownHandler, HTTPDefaultErrorHandler,
+                         FTPHandler, FileHandler, HTTPErrorProcessor,
                          HTTPHandler, OpenerDirector, HTTPRedirectHandler)
 
 from ndg.httpsclient.https import HTTPSContextHandler
@@ -62,10 +61,10 @@ def build_opener(*handlers, **kw):
     for klass in default_classes:
         if klass not in skip:
             opener.add_handler(klass())
-            
+
     # Pick up SSL context from keyword settings
     ssl_context = kw.get('ssl_context')
-    
+
     # Add the HTTPS handler with ssl_context
     if HTTPSContextHandler not in skip:
         opener.add_handler(HTTPSContextHandler(ssl_context))

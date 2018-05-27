@@ -18,11 +18,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import unicode_literals
-from guessit.textutils import find_first_level_groups
-from guessit.patterns import group_delimiters
+
 import functools
 import logging
+
+from guessit.patterns import group_delimiters
+from guessit.textutils import find_first_level_groups
 
 log = logging.getLogger(__name__)
 

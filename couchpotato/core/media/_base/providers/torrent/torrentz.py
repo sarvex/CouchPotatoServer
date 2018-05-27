@@ -1,13 +1,13 @@
 import re
 import traceback
 
-from couchpotato.core.helpers.encoding import tryUrlencode
-from couchpotato.core.helpers.rss import RSS
-from couchpotato.core.helpers.variable import tryInt, splitString
-from couchpotato.core.logger import CPLog
-from couchpotato.core.media._base.providers.torrent.base import TorrentMagnetProvider
 import six
 
+from couchpotato.core.helpers.encoding import try_url_encode
+from couchpotato.core.helpers.rss import RSS
+from couchpotato.core.helpers.variable import try_int, split_string
+from couchpotato.core.logger import CPLog
+from couchpotato.core.media._base.providers.torrent.base import TorrentMagnetProvider
 
 log = CPLog(__name__)
 
@@ -28,7 +28,7 @@ class Base(TorrentMagnetProvider, RSS):
         # Create search parameters
         search_params = self.buildUrl(title, media, quality)
 
-        min_seeds = tryInt(self.conf('minimal_seeds'))
+        min_seeds = try_int(self.conf('minimal_seeds'))
         if min_seeds:
             search_params += ' seed > %s' % (min_seeds - 1)
 
@@ -39,12 +39,13 @@ class Base(TorrentMagnetProvider, RSS):
 
                 for result in rss_data:
 
-                    name = self.getTextElement(result, 'title')
-                    detail_url = self.getTextElement(result, 'link')
-                    description = self.getTextElement(result, 'description')
+                    name = self.get_text_element(result, 'title')
+                    detail_url = self.get_text_element(result, 'link')
+                    description = self.get_text_element(result, 'description')
 
-                    magnet = splitString(detail_url, '/')[-1]
-                    magnet_url = 'magnet:?xt=urn:btih:%s&dn=%s&tr=%s' % (magnet.upper(), tryUrlencode(name), tryUrlencode('udp://tracker.openbittorrent.com/announce'))
+                    magnet = split_string(detail_url, '/')[-1]
+                    magnet_url = 'magnet:?xt=urn:btih:%s&dn=%s&tr=%s' % (
+                    magnet.upper(), try_url_encode(name), try_url_encode('udp://tracker.openbittorrent.com/announce'))
 
                     reg = re.search('Size: (?P<size>\d+) (?P<unit>[KMG]B) Seeds: (?P<seeds>[\d,]+) Peers: (?P<peers>[\d,]+)', six.text_type(description))
                     size = reg.group('size')
@@ -63,9 +64,9 @@ class Base(TorrentMagnetProvider, RSS):
                         'name': six.text_type(name),
                         'url': magnet_url,
                         'detail_url': detail_url,
-                        'size': tryInt(size)*multiplier,
-                        'seeders': tryInt(seeds),
-                        'leechers': tryInt(peers),
+                        'size': try_int(size) * multiplier,
+                        'seeders': try_int(seeds),
+                        'leechers': try_int(peers),
                     })
 
             except:

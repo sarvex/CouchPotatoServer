@@ -1,5 +1,5 @@
-from couchpotato.core.helpers.encoding import toUnicode
-from couchpotato.core.helpers.variable import splitString
+from couchpotato.core.helpers.encoding import to_unicode
+from couchpotato.core.helpers.variable import split_string
 from couchpotato.core.logger import CPLog
 from couchpotato.core.notifications.base import Notification
 
@@ -25,7 +25,7 @@ class Pushbullet(Notification):
                 device_iden = device,
                 type = 'note',
                 title = self.default_title,
-                body = toUnicode(message)
+                body=to_unicode(message)
             )
 
             if response:
@@ -39,16 +39,16 @@ class Pushbullet(Notification):
                 channel_tag = channel,
                 type = 'note',
                 title = self.default_title,
-                body = toUnicode(message)
+                body=to_unicode(message)
             )
 
         return successful == len(devices)
 
     def getDevices(self):
-        return splitString(self.conf('devices'))
+        return split_string(self.conf('devices'))
 
     def getChannels(self):
-        return splitString(self.conf('channels'))
+        return split_string(self.conf('channels'))
 
     def request(self, method, **kwargs):
         try:

@@ -2,10 +2,10 @@ import re
 import traceback
 
 from bs4 import BeautifulSoup
-from couchpotato.core.helpers.variable import tryInt, simplifyString
+
+from couchpotato.core.helpers.variable import try_int, simplify_string
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.nzb.base import NZBProvider
-
 
 log = CPLog(__name__)
 
@@ -50,8 +50,8 @@ class Base(NZBProvider):
 
                     def extra_check(item):
                         parts = re.search('available:.(?P<parts>\d+)./.(?P<total>\d+)', info.text)
-                        total = float(tryInt(parts.group('total')))
-                        parts = float(tryInt(parts.group('parts')))
+                        total = float(try_int(parts.group('total')))
+                        parts = float(try_int(parts.group('parts')))
 
                         if (total / parts) < 1 and ((total / parts) < 0.95 or ((total / parts) >= 0.95 and not ('par2' in info.text.lower() or 'pa3' in info.text.lower()))):
                             log.info2('Wrong: \'%s\', not complete: %s out of %s', (item['name'], parts, total))
@@ -65,8 +65,8 @@ class Base(NZBProvider):
 
                     results.append({
                         'id': nzb_id,
-                        'name': simplifyString(title.text),
-                        'age': tryInt(age),
+                        'name': simplify_string(title.text),
+                        'age': try_int(age),
                         'size': self.parseSize(size_match.group('size')),
                         'url': self.urls['download'] % nzb_id,
                         'detail_url': self.urls['detail'] % info.find('a')['href'],

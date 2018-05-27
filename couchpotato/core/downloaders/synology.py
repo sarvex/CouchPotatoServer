@@ -1,12 +1,12 @@
 import json
 import traceback
 
-from couchpotato.core._base.downloader.main import DownloaderBase
-from couchpotato.core.helpers.encoding import isInt
-from couchpotato.core.helpers.variable import cleanHost
-from couchpotato.core.logger import CPLog
 import requests
 
+from couchpotato.core._base.downloader.main import DownloaderBase
+from couchpotato.core.helpers.encoding import is_int
+from couchpotato.core.helpers.variable import clean_host
+from couchpotato.core.logger import CPLog
 
 log = CPLog(__name__)
 
@@ -41,8 +41,8 @@ class Synology(DownloaderBase):
         log.info('Sending "%s" (%s) to Synology.', (data['name'], data['protocol']))
 
         # Load host from config and split out port.
-        host = cleanHost(self.conf('host'), protocol = False).split(':')
-        if not isInt(host[1]):
+        host = clean_host(self.conf('host'), protocol=False).split(':')
+        if not is_int(host[1]):
             log.error('Config properties are not filled in correctly, port is missing.')
             return False
 
@@ -62,14 +62,14 @@ class Synology(DownloaderBase):
         except:
             log.error('Exception while adding torrent: %s', traceback.format_exc())
         finally:
-            return self.downloadReturnId('') if response else False
+            return self.download_return_id('') if response else False
 
     def test(self):
         """ Check if connection works
         :return: bool
         """
 
-        host = cleanHost(self.conf('host'), protocol = False).split(':')
+        host = clean_host(self.conf('host'), protocol=False).split(':')
         try:
             srpc = SynologyRPC(host[0], host[1], self.conf('username'), self.conf('password'))
             test_result = srpc.test()
@@ -78,15 +78,15 @@ class Synology(DownloaderBase):
 
         return test_result
 
-    def getEnabledProtocol(self):
+    def get_enabled_protocol(self):
         if self.conf('use_for') == 'both':
-            return super(Synology, self).getEnabledProtocol()
+            return super(Synology, self).get_enabled_protocol()
         elif self.conf('use_for') == 'torrent':
             return ['torrent', 'torrent_magnet']
         else:
             return ['nzb']
 
-    def isEnabled(self, manual = False, data = None):
+    def is_enabled(self, manual=False, data=None):
         if not data: data = {}
 
         for_protocol = ['both']
@@ -95,7 +95,7 @@ class Synology(DownloaderBase):
         elif data:
             for_protocol.append(data.get('protocol'))
 
-        return super(Synology, self).isEnabled(manual, data) and\
+        return super(Synology, self).is_enabled(manual, data) and \
                ((self.conf('use_for') in for_protocol))
 
 

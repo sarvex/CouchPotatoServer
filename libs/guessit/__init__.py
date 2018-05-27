@@ -18,7 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import unicode_literals
+
 
 __version__ = '0.6.2'
 __all__ = ['Guess', 'Language',
@@ -48,35 +48,33 @@ if sys.version_info[0] >= 3:
 else:
     PY3 = False
     __all__ = [ str(s) for s in __all__ ] # fix imports for python2
-    unicode_text_type = unicode
+    unicode_text_type = str
     native_text_type = str
-    base_text_type = basestring
+    base_text_type = str
     def u(x):
         if isinstance(x, str):
             return x.decode('utf-8')
-        return unicode(x)
+        return str(x)
     def s(x):
-        if isinstance(x, unicode):
+        if isinstance(x, str):
             return x.encode('utf-8')
         if isinstance(x, list):
             return [ s(y) for y in x ]
         if isinstance(x, tuple):
             return tuple(s(y) for y in x)
         if isinstance(x, dict):
-            return dict((s(key), s(value)) for key, value in x.items())
+            return dict((s(key), s(value)) for key, value in list(x.items()))
         return x
     class UnicodeMixin(object):
-        __str__ = lambda x: unicode(x).encode('utf-8')
+        __str__ = lambda x: str(x).encode('utf-8')
     def to_hex(x):
         return x.encode('hex')
 
 
 from guessit.guess import Guess, merge_all
-from guessit.language import Language
 from guessit.matcher import IterativeMatcher
 from guessit.textutils import clean_string
 import logging
-import json
 
 log = logging.getLogger(__name__)
 
@@ -131,7 +129,8 @@ def _guess_filename(filename, filetype):
 
         for lang_node in lang_nodes:
             lang = lang_node.guess.get(lang_key, None)
-            if len(lang_node.value) > 3 and (lang_node.span[0] in title_spans.keys() or lang_node.span[1] in title_spans.keys()):
+            if len(lang_node.value) > 3 and (
+                lang_node.span[0] in list(title_spans.keys()) or lang_node.span[1] in list(title_spans.keys())):
                 # Language is next or before title, and is not a language code. Add to skip for 2nd pass.
 
                 # if filetype is subtitle and the language appears last, just before
@@ -250,7 +249,7 @@ def guess_file_info(filename, filetype, info=None):
     if hashers:
         try:
             blocksize = 8192
-            hasherobjs = dict(hashers).values()
+            hasherobjs = list(dict(hashers).values())
 
             with open(filename, 'rb') as f:
                 chunk = f.read(blocksize)

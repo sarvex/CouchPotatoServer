@@ -63,7 +63,6 @@ __all__ = ['dumps', 'loads']
 #
 
 import struct
-import string
 from threading import Lock
 
 # Default number of bits for serialized floats, either 32 or 64 (also a parameter for dumps()).
@@ -116,7 +115,7 @@ def decode_int(x, f):
     try:
         n = int(x[f:newf])
     except (OverflowError, ValueError):
-        n = long(x[f:newf])
+        n = int(x[f:newf])
     if x[f] == '-':
         if x[f + 1] == '0':
             raise ValueError
@@ -155,7 +154,7 @@ def decode_string(x, f):
     try:
         n = int(x[f:colon])
     except (OverflowError, ValueError):
-        n = long(x[f:colon])
+        n = int(x[f:colon])
     if x[f] == '0' and colon != f+1:
         raise ValueError
     colon += 1
@@ -274,7 +273,7 @@ make_fixed_length_dict_decoders()
 
 def encode_dict(x,r):
     r.append(CHR_DICT)
-    for k, v in x.items():
+    for k, v in list(x.items()):
         encode_func[type(k)](k, r)
         encode_func[type(v)](v, r)
     r.append(CHR_TERM)
@@ -345,12 +344,12 @@ def encode_list(x, r):
 def encode_dict(x,r):
     if len(x) < DICT_FIXED_COUNT:
         r.append(chr(DICT_FIXED_START + len(x)))
-        for k, v in x.items():
+        for k, v in list(x.items()):
             encode_func[type(k)](k, r)
             encode_func[type(v)](v, r)
     else:
         r.append(CHR_DICT)
-        for k, v in x.items():
+        for k, v in list(x.items()):
             encode_func[type(k)](k, r)
             encode_func[type(v)](v, r)
         r.append(CHR_TERM)
@@ -399,15 +398,15 @@ def test():
     f3 = struct.unpack('!f', struct.pack('!f', -0.6))[0]
     L = (({'a':15, 'bb':f1, 'ccc':f2, '':(f3,(),False,True,'')},('a',10**20),tuple(range(-100000,100000)),'b'*31,'b'*62,'b'*64,2**30,2**33,2**62,2**64,2**30,2**33,2**62,2**64,False,False, True, -1, 2, 0),)
     assert loads(dumps(L)) == L
-    d = dict(zip(range(-100000,100000),range(-100000,100000)))
+    d = dict(list(zip(list(range(-100000, 100000)), list(range(-100000, 100000)))))
     d.update({'a':20, 20:40, 40:41, f1:f2, f2:f3, f3:False, False:True, True:False})
     L = (d, {}, {5:6}, {7:7,True:8}, {9:10, 22:39, 49:50, 44: ''})
     assert loads(dumps(L)) == L
     L = ('', 'a'*10, 'a'*100, 'a'*1000, 'a'*10000, 'a'*100000, 'a'*1000000, 'a'*10000000)
     assert loads(dumps(L)) == L
-    L = tuple([dict(zip(range(n),range(n))) for n in range(100)]) + ('b',)
+    L = tuple([dict(list(zip(list(range(n)), list(range(n))))) for n in range(100)]) + ('b',)
     assert loads(dumps(L)) == L
-    L = tuple([dict(zip(range(n),range(-n,0))) for n in range(100)]) + ('b',)
+    L = tuple([dict(list(zip(list(range(n)), list(range(-n, 0))))) for n in range(100)]) + ('b',)
     assert loads(dumps(L)) == L
     L = tuple([tuple(range(n)) for n in range(100)]) + ('b',)
     assert loads(dumps(L)) == L
@@ -420,7 +419,7 @@ def test():
     assert 1e-10<abs(loads(dumps(1.1))-1.1)<1e-6
     assert 1e-10<abs(loads(dumps(1.1,32))-1.1)<1e-6
     assert abs(loads(dumps(1.1,64))-1.1)<1e-12
-    assert loads(dumps(u"Hello World!!"))
+    assert loads(dumps("Hello World!!"))
 try:
     import psyco
     psyco.bind(dumps)

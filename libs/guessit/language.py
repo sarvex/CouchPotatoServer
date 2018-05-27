@@ -18,13 +18,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import unicode_literals
+
+import logging
+import re
+
 from guessit import UnicodeMixin, base_text_type, u, s
+from guessit.country import Country
 from guessit.fileutils import load_file_in_same_dir
 from guessit.textutils import find_words
-from guessit.country import Country
-import re
-import logging
 
 __all__ = [ 'is_iso_language', 'is_language', 'lang_set', 'Language',
             'ALL_LANGUAGES', 'ALL_LANGUAGES_NAMES', 'UNDETERMINED',
@@ -276,7 +277,7 @@ class Language(UnicodeMixin):
     def __ne__(self, other):
         return not self == other
 
-    def __nonzero__(self):
+    def __bool__(self):
         return self.lang != 'und'
 
     def __unicode__(self):
@@ -345,16 +346,16 @@ def search_language(string, lang_filter=None, skip=None):
 
         if pos != -1:
             end = pos + len(lang)
-            
+
             # skip if span in in skip list
             while skip and (pos - 1, end - 1) in skip:
                 pos = slow.find(lang, end)
                 if pos == -1:
                     continue
-                end = pos + len(lang)                
+                end = pos + len(lang)
             if pos == -1:
                 continue
-                            
+
             # make sure our word is always surrounded by separators
             if slow[pos - 1] not in sep or slow[end] not in sep:
                 continue

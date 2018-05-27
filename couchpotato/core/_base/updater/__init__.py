@@ -1,7 +1,7 @@
 import os
 
-from .main import Updater
 from couchpotato.environment import Env
+from .main import Updater
 
 
 def autoload():

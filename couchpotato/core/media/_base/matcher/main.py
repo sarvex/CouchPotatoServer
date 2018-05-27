@@ -1,8 +1,9 @@
-from couchpotato.core.event import addEvent, fireEvent
-from couchpotato.core.helpers.variable import possibleTitles
+from caper import Caper
+
+from couchpotato.core.event import add_event, fire_event
+from couchpotato.core.helpers.variable import possible_titles
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.matcher.base import MatcherBase
-from caper import Caper
 
 log = CPLog(__name__)
 
@@ -14,33 +15,33 @@ class Matcher(MatcherBase):
 
         self.caper = Caper()
 
-        addEvent('matcher.parse', self.parse)
-        addEvent('matcher.match', self.match)
+        add_event('matcher.parse', self.parse)
+        add_event('matcher.match', self.match)
 
-        addEvent('matcher.flatten_info', self.flattenInfo)
-        addEvent('matcher.construct_from_raw', self.constructFromRaw)
+        add_event('matcher.flatten_info', self.flatten_info)
+        add_event('matcher.construct_from_raw', self.construct_from_raw)
 
-        addEvent('matcher.correct_title', self.correctTitle)
-        addEvent('matcher.correct_quality', self.correctQuality)
+        add_event('matcher.correct_title', self.correctTitle)
+        add_event('matcher.correct_quality', self.correctQuality)
 
     def parse(self, name, parser='scene'):
         return self.caper.parse(name, parser)
 
     def match(self, release, media, quality):
-        match = fireEvent('matcher.parse', release['name'], single = True)
+        match = fire_event('matcher.parse', release['name'], single=True)
 
         if len(match.chains) < 1:
             log.info2('Wrong: %s, unable to parse release name (no chains)', release['name'])
             return False
 
         for chain in match.chains:
-            if fireEvent('%s.matcher.correct' % media['type'], chain, release, media, quality, single = True):
+            if fire_event('%s.matcher.correct' % media['type'], chain, release, media, quality, single=True):
                 return chain
 
         return False
 
     def correctTitle(self, chain, media):
-        root = fireEvent('library.root', media, single = True)
+        root = fire_event('library.root', media, single=True)
 
         if 'show_name' not in chain.info or not len(chain.info['show_name']):
             log.info('Wrong: missing show name in parsed result')
@@ -64,7 +65,7 @@ class Matcher(MatcherBase):
         # Check show titles match
         # TODO check xem names
         for title in titles:
-            for valid_words in [x.split(' ') for x in possibleTitles(title)]:
+            for valid_words in [x.split(' ') for x in possible_titles(title)]:
 
                 if valid_words == chain_words:
                     return True
@@ -82,7 +83,7 @@ class Matcher(MatcherBase):
 
         video_tags = quality_map[quality['identifier']]
 
-        if not self.chainMatch(chain, 'video', video_tags):
+        if not self.chain_match(chain, 'video', video_tags):
             log.info2('Wrong: %s tags not in chain', video_tags)
             return False
 

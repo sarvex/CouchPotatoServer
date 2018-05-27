@@ -1,18 +1,19 @@
-from datetime import timedelta
 import time
 import traceback
+from datetime import timedelta
 from string import ascii_lowercase
 
 from CodernityDB.database import RecordNotFound, RecordDeleted
-from couchpotato import tryInt, get_db
+
+from couchpotato import try_int, get_db
 from couchpotato.api import addApiView
-from couchpotato.core.event import fireEvent, fireEventAsync, addEvent
-from couchpotato.core.helpers.encoding import toUnicode
-from couchpotato.core.helpers.variable import splitString, getImdb, getTitle
+from couchpotato.core.event import fire_event, fire_event_async, add_event
+from couchpotato.core.helpers.encoding import to_unicode
+from couchpotato.core.helpers.variable import split_string, get_imdb, get_title
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media import MediaBase
-from .index import MediaIndex, MediaStatusIndex, MediaTypeIndex, TitleSearchIndex, TitleIndex, StartsWithIndex, MediaChildrenIndex, MediaTagIndex
-
+from .index import MediaIndex, MediaStatusIndex, MediaTypeIndex, TitleSearchIndex, TitleIndex, StartsWithIndex, \
+    MediaChildrenIndex, MediaTagIndex
 
 log = CPLog(__name__)
 
@@ -73,24 +74,24 @@ class MediaPlugin(MediaBase):
 
         addApiView('media.available_chars', self.charView)
 
-        addEvent('app.load', self.addSingleRefreshView, priority = 100)
-        addEvent('app.load', self.addSingleListView, priority = 100)
-        addEvent('app.load', self.addSingleCharView, priority = 100)
-        addEvent('app.load', self.addSingleDeleteView, priority = 100)
-        addEvent('app.load', self.cleanupFaults)
+        add_event('app.load', self.addSingleRefreshView, priority=100)
+        add_event('app.load', self.addSingleListView, priority=100)
+        add_event('app.load', self.addSingleCharView, priority=100)
+        add_event('app.load', self.addSingleDeleteView, priority=100)
+        add_event('app.load', self.cleanupFaults)
 
-        addEvent('media.get', self.get)
-        addEvent('media.with_status', self.withStatus)
-        addEvent('media.with_identifiers', self.withIdentifiers)
-        addEvent('media.list', self.list)
-        addEvent('media.delete', self.delete)
-        addEvent('media.restatus', self.restatus)
-        addEvent('media.tag', self.tag)
-        addEvent('media.untag', self.unTag)
+        add_event('media.get', self.get)
+        add_event('media.with_status', self.withStatus)
+        add_event('media.with_identifiers', self.withIdentifiers)
+        add_event('media.list', self.list)
+        add_event('media.delete', self.delete)
+        add_event('media.restatus', self.restatus)
+        add_event('media.tag', self.tag)
+        add_event('media.untag', self.unTag)
 
     # Wrongly tagged media files
     def cleanupFaults(self):
-        medias = fireEvent('media.with_status', 'ignored', single = True) or []
+        medias = fire_event('media.with_status', 'ignored', single=True) or []
 
         db = get_db()
         for media in medias:
@@ -102,7 +103,7 @@ class MediaPlugin(MediaBase):
 
     def refresh(self, id = '', **kwargs):
         handlers = []
-        ids = splitString(id)
+        ids = split_string(id)
 
         for x in ids:
 
@@ -110,8 +111,8 @@ class MediaPlugin(MediaBase):
             if refresh_handler:
                 handlers.append(refresh_handler)
 
-        fireEvent('notify.frontend', type = 'media.busy', data = {'_id': ids})
-        fireEventAsync('schedule.queue', handlers = handlers)
+        fire_event('notify.frontend', type='media.busy', data={'_id': ids})
+        fire_event_async('schedule.queue', handlers=handlers)
 
         return {
             'success': True,
@@ -124,7 +125,7 @@ class MediaPlugin(MediaBase):
             event = '%s.update' % media.get('type')
 
             def handler():
-                fireEvent(event, media_id = media_id, on_complete = self.createOnComplete(media_id))
+                fire_event(event, media_id=media_id, on_complete=self.createOnComplete(media_id))
 
             return handler
 
@@ -133,7 +134,7 @@ class MediaPlugin(MediaBase):
 
     def addSingleRefreshView(self):
 
-        for media_type in fireEvent('media.types', merge = True):
+        for media_type in fire_event('media.types', merge=True):
             addApiView('%s.refresh' % media_type, self.refresh)
 
     def get(self, media_id):
@@ -141,7 +142,7 @@ class MediaPlugin(MediaBase):
         try:
             db = get_db()
 
-            imdb_id = getImdb(str(media_id))
+            imdb_id = get_imdb(str(media_id))
 
             if imdb_id:
                 media = db.get('media', 'imdb-%s' % imdb_id, with_doc = True)['doc']
@@ -154,7 +155,7 @@ class MediaPlugin(MediaBase):
                 try: media['category'] = db.get('id', media.get('category_id'))
                 except: pass
 
-                media['releases'] = fireEvent('release.for_media', media['_id'], single = True)
+                media['releases'] = fire_event('release.for_media', media['_id'], single=True)
 
             return media
 
@@ -194,7 +195,7 @@ class MediaPlugin(MediaBase):
                     except (RecordDeleted, RecordNotFound):
                         log.debug('Record not found, skipping: %s', ms['_id'])
                     except (ValueError, EOFError):
-                        fireEvent('database.delete_corrupted', ms.get('_id'), traceback_error = traceback.format_exc(0))
+                        fire_event('database.delete_corrupted', ms.get('_id'), traceback_error=traceback.format_exc(0))
                 else:
                     yield ms
 
@@ -238,18 +239,18 @@ class MediaPlugin(MediaBase):
         # Filter on movie status
         if status and len(status) > 0:
             filter_by['media_status'] = set()
-            for media_status in fireEvent('media.with_status', status, with_doc = False, single = True):
+            for media_status in fire_event('media.with_status', status, with_doc=False, single=True):
                 filter_by['media_status'].add(media_status.get('_id'))
 
         # Filter on release status
         if release_status and len(release_status) > 0:
             filter_by['release_status'] = set()
-            for release_status in fireEvent('release.with_status', release_status, with_doc = False, single = True):
+            for release_status in fire_event('release.with_status', release_status, with_doc=False, single=True):
                 filter_by['release_status'].add(release_status.get('media_id'))
 
         # Add search filters
         if starts_with:
-            starts_with = toUnicode(starts_with.lower())[0]
+            starts_with = to_unicode(starts_with.lower())[0]
             starts_with = starts_with if starts_with in ascii_lowercase else '#'
             filter_by['starts_with'] = [x['_id'] for x in db.get_many('media_startswith', starts_with)]
 
@@ -280,9 +281,9 @@ class MediaPlugin(MediaBase):
         offset = 0
         limit = -1
         if limit_offset:
-            splt = splitString(limit_offset) if isinstance(limit_offset, (str, unicode)) else limit_offset
-            limit = tryInt(splt[0])
-            offset = tryInt(0 if len(splt) is 1 else splt[1])
+            splt = split_string(limit_offset) if isinstance(limit_offset, str) else limit_offset
+            limit = try_int(splt[0])
+            offset = try_int(0 if len(splt) is 1 else splt[1])
 
         # List movies based on title order
         medias = []
@@ -293,7 +294,7 @@ class MediaPlugin(MediaBase):
                 offset -= 1
                 continue
 
-            media = fireEvent('media.get', media_id, single = True)
+            media = fire_event('media.get', media_id, single=True)
 
             # Skip if no media has been found
             if not media:
@@ -311,12 +312,12 @@ class MediaPlugin(MediaBase):
     def listView(self, **kwargs):
 
         total_movies, movies = self.list(
-            types = splitString(kwargs.get('type')),
-            status = splitString(kwargs.get('status')),
-            release_status = splitString(kwargs.get('release_status')),
+            types=split_string(kwargs.get('type')),
+            status=split_string(kwargs.get('status')),
+            release_status=split_string(kwargs.get('release_status')),
             status_or = kwargs.get('status_or') is not None,
             limit_offset = kwargs.get('limit_offset'),
-            with_tags = splitString(kwargs.get('with_tags')),
+            with_tags=split_string(kwargs.get('with_tags')),
             starts_with = kwargs.get('starts_with'),
             search = kwargs.get('search')
         )
@@ -330,7 +331,7 @@ class MediaPlugin(MediaBase):
 
     def addSingleListView(self):
 
-        for media_type in fireEvent('media.types', merge = True):
+        for media_type in fire_event('media.types', merge=True):
             tempList = lambda *args, **kwargs : self.listView(type = media_type, **kwargs)
             addApiView('%s.list' % media_type, tempList, docs = {
                 'desc': 'List media',
@@ -374,13 +375,13 @@ class MediaPlugin(MediaBase):
         # Filter on movie status
         if status and len(status) > 0:
             filter_by['media_status'] = set()
-            for media_status in fireEvent('media.with_status', status, with_doc = False, single = True):
+            for media_status in fire_event('media.with_status', status, with_doc=False, single=True):
                 filter_by['media_status'].add(media_status.get('_id'))
 
         # Filter on release status
         if release_status and len(release_status) > 0:
             filter_by['release_status'] = set()
-            for release_status in fireEvent('release.with_status', release_status, with_doc = False, single = True):
+            for release_status in fire_event('release.with_status', release_status, with_doc=False, single=True):
                 filter_by['release_status'].add(release_status.get('media_id'))
 
         # Filter by combining ids
@@ -399,9 +400,9 @@ class MediaPlugin(MediaBase):
 
     def charView(self, **kwargs):
 
-        type = splitString(kwargs.get('type', 'movie'))
-        status = splitString(kwargs.get('status', None))
-        release_status = splitString(kwargs.get('release_status', None))
+        type = split_string(kwargs.get('type', 'movie'))
+        status = split_string(kwargs.get('status', None))
+        release_status = split_string(kwargs.get('release_status', None))
         chars = self.availableChars(type, status, release_status)
 
         return {
@@ -412,7 +413,7 @@ class MediaPlugin(MediaBase):
 
     def addSingleCharView(self):
 
-        for media_type in fireEvent('media.types', merge = True):
+        for media_type in fire_event('media.types', merge=True):
             tempChar = lambda *args, **kwargs : self.charView(type = media_type, **kwargs)
             addApiView('%s.available_chars' % media_type, tempChar)
 
@@ -425,7 +426,7 @@ class MediaPlugin(MediaBase):
             if media:
                 deleted = False
 
-                media_releases = fireEvent('release.for_media', media['_id'], single = True)
+                media_releases = fire_event('release.for_media', media['_id'], single=True)
 
                 if delete_from == 'all':
                     # Delete connected releases
@@ -460,15 +461,15 @@ class MediaPlugin(MediaBase):
                         # Remove profile (no use for in manage)
                         if new_media_status == 'done':
                             media['profile_id'] = None
-                        
+
                         db.update(media)
 
-                        fireEvent('media.untag', media['_id'], 'recent', single = True)
+                        fire_event('media.untag', media['_id'], 'recent', single=True)
                     else:
-                        fireEvent('media.restatus', media.get('_id'), single = True)
+                        fire_event('media.restatus', media.get('_id'), single=True)
 
                 if deleted:
-                    fireEvent('notify.frontend', type = 'media.deleted', data = media)
+                    fire_event('notify.frontend', type='media.deleted', data=media)
         except:
             log.error('Failed deleting media: %s', traceback.format_exc())
 
@@ -476,7 +477,7 @@ class MediaPlugin(MediaBase):
 
     def deleteView(self, id = '', **kwargs):
 
-        ids = splitString(id)
+        ids = split_string(id)
         for media_id in ids:
             self.delete(media_id, delete_from = kwargs.get('delete_from', 'all'))
 
@@ -486,7 +487,7 @@ class MediaPlugin(MediaBase):
 
     def addSingleDeleteView(self):
 
-        for media_type in fireEvent('media.types', merge = True):
+        for media_type in fire_event('media.types', merge=True):
             tempDelete = lambda *args, **kwargs : self.deleteView(type = media_type, **kwargs)
             addApiView('%s.delete' % media_type, tempDelete, docs = {
             'desc': 'Delete a ' + media_type + ' from the wanted list',
@@ -504,7 +505,7 @@ class MediaPlugin(MediaBase):
             m = db.get('id', media_id)
             previous_status = m['status']
 
-            log.debug('Changing status for %s', getTitle(m))
+            log.debug('Changing status for %s', get_title(m))
             if not m['profile_id']:
                 m['status'] = 'done'
             else:
@@ -512,14 +513,17 @@ class MediaPlugin(MediaBase):
 
                 try:
                     profile = db.get('id', m['profile_id'])
-                    media_releases = fireEvent('release.for_media', m['_id'], single = True)
+                    media_releases = fire_event('release.for_media', m['_id'], single=True)
                     done_releases = [release for release in media_releases if release.get('status') == 'done']
 
                     if done_releases:
 
                         # Check if we are finished with the media
                         for release in done_releases:
-                            if fireEvent('quality.isfinish', {'identifier': release['quality'], 'is_3d': release.get('is_3d', False)}, profile, timedelta(seconds = time.time() - release['last_edit']).days, single = True):
+                            if fire_event('quality.isfinish',
+                                          {'identifier': release['quality'], 'is_3d': release.get('is_3d', False)},
+                                          profile, timedelta(seconds=time.time() - release['last_edit']).days,
+                                          single=True):
                                 m['status'] = 'done'
                                 break
 

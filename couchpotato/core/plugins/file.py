@@ -1,16 +1,16 @@
 import os.path
 import traceback
 
+from tornado.web import StaticFileHandler
+
 from couchpotato import get_db
 from couchpotato.api import addApiView
-from couchpotato.core.event import addEvent, fireEvent
-from couchpotato.core.helpers.encoding import toUnicode, ss, sp
-from couchpotato.core.helpers.variable import md5, getExt, isSubFolder
+from couchpotato.core.event import add_event, fire_event
+from couchpotato.core.helpers.encoding import to_unicode, ss, sp
+from couchpotato.core.helpers.variable import md5, get_extension, is_sub_folder
 from couchpotato.core.logger import CPLog
 from couchpotato.core.plugins.base import Plugin
 from couchpotato.environment import Env
-from tornado.web import StaticFileHandler
-
 
 log = CPLog(__name__)
 
@@ -20,7 +20,7 @@ autoload = 'FileManager'
 class FileManager(Plugin):
 
     def __init__(self):
-        addEvent('file.download', self.download)
+        add_event('file.download', self.download)
 
         addApiView('file.cache/(.*)', self.showCacheFile, static = True, docs = {
             'desc': 'Return a file from the cp_data/cache directory',
@@ -30,9 +30,9 @@ class FileManager(Plugin):
             'return': {'type': 'file'}
         })
 
-        fireEvent('schedule.interval', 'file.cleanup', self.cleanup, hours = 24)
+        fire_event('schedule.interval', 'file.cleanup', self.cleanup, hours=24)
 
-        addEvent('app.test', self.doSubfolderTest)
+        add_event('app.test', self.doSubfolderTest)
 
     def cleanup(self):
 
@@ -47,19 +47,20 @@ class FileManager(Plugin):
             files = []
             for media in medias:
                 file_dict = media['doc'].get('files', {})
-                for x in file_dict.keys():
+                for x in list(file_dict.keys()):
                     files.extend(file_dict[x])
 
             for f in os.listdir(cache_dir):
                 if os.path.splitext(f)[1] in ['.png', '.jpg', '.jpeg']:
                     file_path = os.path.join(cache_dir, f)
-                    if toUnicode(file_path) not in files:
+                    if to_unicode(file_path) not in files:
                         os.remove(file_path)
         except:
             log.error('Failed removing unused file: %s', traceback.format_exc())
 
     def showCacheFile(self, route, **kwargs):
-        Env.get('app').add_handlers(".*$", [('%s%s' % (Env.get('api_base'), route), StaticFileHandler, {'path': toUnicode(Env.get('cache_dir'))})])
+        Env.get('app').add_handlers(".*$", [
+            ('%s%s' % (Env.get('api_base'), route), StaticFileHandler, {'path': to_unicode(Env.get('cache_dir'))})])
 
     def download(self, url = '', dest = None, overwrite = False, urlopen_kwargs = None):
         if not urlopen_kwargs: urlopen_kwargs = {}
@@ -68,7 +69,7 @@ class FileManager(Plugin):
         urlopen_kwargs['stream'] = True
 
         if not dest:  # to Cache
-            dest = os.path.join(Env.get('cache_dir'), ss('%s.%s' % (md5(url), getExt(url))))
+            dest = os.path.join(Env.get('cache_dir'), ss('%s.%s' % (md5(url), get_extension(url))))
 
         dest = sp(dest)
 
@@ -103,7 +104,7 @@ class FileManager(Plugin):
 
         failed = 0
         for x in tests:
-            if isSubFolder(x[0], x[1]) is not tests[x]:
+            if is_sub_folder(x[0], x[1]) is not tests[x]:
                 log.error('Failed subfolder test %s %s', x)
                 failed += 1
 

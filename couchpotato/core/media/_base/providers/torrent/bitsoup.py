@@ -1,10 +1,10 @@
 import traceback
 
 from bs4 import BeautifulSoup, SoupStrainer
-from couchpotato.core.helpers.variable import tryInt
+
+from couchpotato.core.helpers.variable import try_int
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.torrent.base import TorrentProvider
-
 
 log = CPLog(__name__)
 
@@ -54,8 +54,8 @@ class Base(TorrentProvider):
                     torrent_name = torrent.getText()
 
                     torrent_size = self.parseSize(all_cells[8].getText())
-                    torrent_seeders = tryInt(all_cells[10].getText())
-                    torrent_leechers = tryInt(all_cells[11].getText())
+                    torrent_seeders = try_int(all_cells[10].getText())
+                    torrent_leechers = try_int(all_cells[11].getText())
                     torrent_url = self.urls['baseurl'] % download['href']
                     torrent_detail_url = self.urls['baseurl'] % torrent['href']
 

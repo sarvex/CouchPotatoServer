@@ -18,19 +18,17 @@ __version__ = '1.3.3'
 # NOTE: Python's modulo can return negative numbers. We compensate for
 # this behaviour using the abs() function
 
-from cPickle import dumps, loads
 import base64
 import math
 import os
 import random
-import sys
-import types
+# Display a warning that this insecure version is imported.
+import warnings
 import zlib
+from pickle import dumps, loads
 
 from rsa._compat import byte
 
-# Display a warning that this insecure version is imported.
-import warnings
 warnings.warn('Insecure version of the RSA module is imported as %s, be careful'
         % __name__)
 
@@ -55,26 +53,26 @@ def bytes2int(bytes):
     8405007
     """
 
-    if not (type(bytes) is types.ListType or type(bytes) is types.StringType):
+    if not (type(bytes) is list or type(bytes) is bytes):
         raise TypeError("You must pass a string or a list")
 
     # Convert byte stream to integer
     integer = 0
     for byte in bytes:
         integer *= 256
-        if type(byte) is types.StringType: byte = ord(byte)
+        if type(byte) is bytes: byte = ord(byte)
         integer += byte
 
     return integer
 
 def int2bytes(number):
     """Converts a number to a string of bytes
-    
+
     >>> bytes2int(int2bytes(123456789))
     123456789
     """
 
-    if not (type(number) is types.LongType or type(number) is types.IntType):
+    if not (type(number) is int or type(number) is int):
         raise TypeError("You must pass a long or an int")
 
     string = ""
@@ -82,7 +80,7 @@ def int2bytes(number):
     while number > 0:
         string = "%s%s" % (byte(number & 0xFF), string)
         number /= 256
-    
+
     return string
 
 def fast_exponentiation(a, p, n):
@@ -110,7 +108,8 @@ def ceil(x):
     """ceil(x) -> int(math.ceil(x))"""
 
     return int(math.ceil(x))
-    
+
+
 def randint(minvalue, maxvalue):
     """Returns a random integer x with minvalue <= x <= maxvalue"""
 
@@ -126,10 +125,10 @@ def randint(minvalue, maxvalue):
 
     # Convert to bits, but make sure it's always at least min_nbits*2
     rangebits = max(rangebytes * 8, min_nbits * 2)
-    
+
     # Take a random number of bits between min_nbits and rangebits
     nbits = random.randint(min_nbits, rangebits)
-    
+
     return (read_random_int(nbits) % range) + minvalue
 
 def fermat_little_theorem(p):
@@ -183,7 +182,7 @@ def randomized_primality_testing(n, k):
     for i in range(t+1):
         x = randint(1, n-1)
         if jacobi_witness(x, n): return False
-    
+
     return True
 
 def is_prime(number):
@@ -204,11 +203,11 @@ def is_prime(number):
     if randomized_primality_testing(number, 5):
         # Prime, according to Jacobi
         return True
-    
+
     # Not prime
     return False
 
-    
+
 def getprime(nbits):
     """Returns a prime number of max. 'math.ceil(nbits/8)*8' bits. In
     other words: nbits is rounded up to whole bytes.
@@ -257,7 +256,7 @@ def find_p_q(nbits):
     while True:
         q = getprime(nbits)
         if not q == p: break
-    
+
     return (p, q)
 
 def extended_euclid_gcd(a, b):
@@ -268,7 +267,7 @@ def extended_euclid_gcd(a, b):
         return (a, 1, 0)
 
     q = abs(a % b)
-    r = long(a / b)
+    r = int(a / b)
     (d, k, l) = extended_euclid_gcd(b, q)
 
     return (d, l, k - l*r)
@@ -321,7 +320,7 @@ def gen_pubpriv_keys(nbits):
     The public key consists of a dict {e: ..., , n: ....). The private
     key consists of a dict {d: ...., p: ...., q: ....).
     """
-    
+
     (p, q, e, d) = gen_keys(nbits)
 
     return ( {'e': e, 'n': p*q}, {'d': d, 'p': p, 'q': q} )
@@ -330,10 +329,10 @@ def encrypt_int(message, ekey, n):
     """Encrypts a message using encryption key 'ekey', working modulo
     n"""
 
-    if type(message) is types.IntType:
-        return encrypt_int(long(message), ekey, n)
+    if type(message) is int:
+        return encrypt_int(int(message), ekey, n)
 
-    if not type(message) is types.LongType:
+    if not type(message) is int:
         raise TypeError("You must pass a long or an int")
 
     if message > 0 and \
@@ -388,7 +387,7 @@ def chopstring(message, key, n, funcref):
         blocks += 1
 
     cypher = []
-    
+
     for bindex in range(blocks):
         offset = bindex * nbytes
         block = message[offset:offset+nbytes]
@@ -406,21 +405,21 @@ def gluechops(chops, key, n, funcref):
     message = ""
 
     chops = unpicklechops(chops)
-    
+
     for cpart in chops:
         mpart = funcref(cpart, key, n)
         message += int2bytes(mpart)
-    
+
     return message
 
 def encrypt(message, key):
     """Encrypts a string 'message' with the public key 'key'"""
-    
+
     return chopstring(message, key['e'], key['n'], encrypt_int)
 
 def sign(message, key):
     """Signs a string 'message' with the private key 'key'"""
-    
+
     return chopstring(message, key['d'], key['p']*key['q'], decrypt_int)
 
 def decrypt(cypher, key):

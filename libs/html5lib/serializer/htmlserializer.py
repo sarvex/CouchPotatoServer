@@ -1,7 +1,8 @@
-from __future__ import absolute_import, division, unicode_literals
-from six import text_type
 
 import gettext
+
+from six import text_type
+
 _ = gettext.gettext
 
 try:
@@ -232,7 +233,7 @@ class HTMLSerializer(object):
                     in_cdata = True
                 elif in_cdata:
                     self.serializeError(_("Unexpected child element of a CDATA element"))
-                for (attr_namespace, attr_name), attr_value in token["data"].items():
+                for (attr_namespace, attr_name), attr_value in list(token["data"].items()):
                     # TODO: Add namespace support here
                     k = attr_name
                     v = attr_value

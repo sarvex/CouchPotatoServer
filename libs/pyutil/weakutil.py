@@ -2,12 +2,12 @@
 #  This file is part of pyutil; see README.rst for licensing terms.
 
 import warnings
-
 # from the Python Standard Library
 from weakref import ref
 
 # from the pyutil library
-from assertutil import precondition
+from .assertutil import precondition
+
 
 # Thanks to Thomas Wouters, JP Calderone and the authors from the Python Cookbook.
 
@@ -20,8 +20,8 @@ class WeakMethod:
         warnings.warn("deprecated", DeprecationWarning)
         precondition(hasattr(fn, 'im_self'), "fn is required to be a bound method.")
         self._cleanupcallback = callback
-        self._obj = ref(fn.im_self, self.call_cleanup_cb)
-        self._meth = fn.im_func
+        self._obj = ref(fn.__self__, self.call_cleanup_cb)
+        self._meth = fn.__func__
 
     def __call__(self, *args, **kws):
         s = self._obj()

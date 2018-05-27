@@ -1,21 +1,21 @@
-from operator import itemgetter
 import threading
 import time
 import traceback
 import uuid
+from operator import itemgetter
+
 from CodernityDB.database import RecordDeleted
+from tornado.ioloop import IOLoop
 
 from couchpotato import get_db
 from couchpotato.api import addApiView, addNonBlockApiView
-from couchpotato.core.event import addEvent, fireEvent
-from couchpotato.core.helpers.encoding import toUnicode
-from couchpotato.core.helpers.variable import tryInt, splitString
+from couchpotato.core.event import add_event, fire_event
+from couchpotato.core.helpers.encoding import to_unicode
+from couchpotato.core.helpers.variable import try_int, split_string
 from couchpotato.core.logger import CPLog
 from couchpotato.core.notifications.base import Notification
-from .index import NotificationIndex, NotificationUnreadIndex
 from couchpotato.environment import Env
-from tornado.ioloop import IOLoop
-
+from .index import NotificationIndex, NotificationUnreadIndex
 
 log = CPLog(__name__)
 
@@ -39,8 +39,8 @@ class CoreNotifier(Notification):
     def __init__(self):
         super(CoreNotifier, self).__init__()
 
-        addEvent('notify', self.notify)
-        addEvent('notify.frontend', self.frontend)
+        add_event('notify', self.notify)
+        add_event('notify.frontend', self.frontend)
 
         addApiView('notification.markread', self.markAsRead, docs = {
             'desc': 'Mark notifications as read',
@@ -64,13 +64,13 @@ class CoreNotifier(Notification):
         addNonBlockApiView('notification.listener', (self.addListener, self.removeListener))
         addApiView('notification.listener', self.listener)
 
-        fireEvent('schedule.interval', 'core.check_messages', self.checkMessages, hours = 12, single = True)
-        fireEvent('schedule.interval', 'core.clean_messages', self.cleanMessages, seconds = 15, single = True)
+        fire_event('schedule.interval', 'core.check_messages', self.checkMessages, hours=12, single=True)
+        fire_event('schedule.interval', 'core.clean_messages', self.cleanMessages, seconds=15, single=True)
 
-        addEvent('app.load', self.clean)
+        add_event('app.load', self.clean)
 
         if not Env.get('dev'):
-            addEvent('app.load', self.checkMessages)
+            add_event('app.load', self.checkMessages)
 
         self.messages = []
         self.listeners = []
@@ -87,7 +87,7 @@ class CoreNotifier(Notification):
 
     def markAsRead(self, ids = None, **kwargs):
 
-        ids = splitString(ids) if ids else None
+        ids = split_string(ids) if ids else None
 
         try:
             db = get_db()
@@ -110,9 +110,9 @@ class CoreNotifier(Notification):
         db = get_db()
 
         if limit_offset:
-            splt = splitString(limit_offset)
-            limit = tryInt(splt[0])
-            offset = tryInt(0 if len(splt) is 1 else splt[1])
+            splt = split_string(limit_offset)
+            limit = try_int(splt[0])
+            offset = try_int(0 if len(splt) is 1 else splt[1])
             results = db.all('notification', limit = limit, offset = offset, with_doc = True)
         else:
             results = db.all('notification', limit = 200, with_doc = True)
@@ -130,16 +130,16 @@ class CoreNotifier(Notification):
     def checkMessages(self):
 
         prop_name = 'messages.last_check'
-        last_check = tryInt(Env.prop(prop_name, default = 0))
+        last_check = try_int(Env.prop(prop_name, default=0))
 
-        messages = fireEvent('cp.messages', last_check = last_check, single = True) or []
+        messages = fire_event('cp.messages', last_check=last_check, single=True) or []
 
         for message in messages:
             if message.get('time') > last_check:
                 message['sticky'] = True  # Always sticky core messages
 
                 message_type = 'core.message.important' if message.get('important') else 'core.message'
-                fireEvent(message_type, message = message.get('message'), data = message)
+                fire_event(message_type, message=message.get('message'), data=message)
 
             if last_check < message.get('time'):
                 last_check = message.get('time')
@@ -157,7 +157,7 @@ class CoreNotifier(Notification):
         try:
             db = get_db()
 
-            n['message'] = toUnicode(message)
+            n['message'] = to_unicode(message)
 
             if data.get('sticky'):
                 n['sticky'] = True
@@ -253,7 +253,7 @@ class CoreNotifier(Notification):
 
         recent = []
         try:
-            index = map(itemgetter('message_id'), self.messages).index(last_id)
+            index = list(map(itemgetter('message_id'), self.messages)).index(last_id)
             recent = self.messages[index + 1:]
         except:
             pass

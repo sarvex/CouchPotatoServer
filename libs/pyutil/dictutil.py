@@ -1,20 +1,22 @@
 """
 Tools to mess with dicts.
 """
+import copy
+import operator
 import warnings
-
-import copy, operator
 from bisect import bisect_left, insort_left
+from functools import reduce
 
 from pyutil.assertutil import _assert, precondition
+
 
 def move(k, d1, d2, strict=False):
     """
     Move item with key k from d1 to d2.
     """
     warnings.warn("deprecated", DeprecationWarning)
-    if strict and not d1.has_key(k):
-        raise KeyError, k
+    if strict and k not in d1:
+        raise KeyError(k)
 
     d2[k] = d1[k]
     del d1[k]
@@ -27,12 +29,12 @@ def subtract(d1, d2):
     """
     warnings.warn("deprecated", DeprecationWarning)
     if len(d1) > len(d2):
-        for k in d2.keys():
-            if d1.has_key(k):
+        for k in list(d2.keys()):
+            if k in d1:
                 del d1[k]
     else:
-        for k in d1.keys():
-            if d2.has_key(k):
+        for k in list(d1.keys()):
+            if k in d2:
                 del d1[k]
     return d1
 
@@ -59,14 +61,14 @@ class UtilDict:
         self.update(initialdata)
 
     def del_if_present(self, key):
-        if self.has_key(key):
+        if key in self:
             del self[key]
 
     def items_sorted_by_value(self):
         """
         @return a sequence of (key, value,) pairs sorted according to value
         """
-        l = [(x[1], x[0],) for x in self.d.iteritems()]
+        l = [(x[1], x[0],) for x in self.d.items()]
         l.sort()
         return [(x[1], x[0],) for x in l]
 
@@ -74,7 +76,7 @@ class UtilDict:
         """
         @return a sequence of (key, value,) pairs sorted according to key
         """
-        l = self.d.items()
+        l = list(self.d.items())
         l.sort()
         return l
 
@@ -93,7 +95,7 @@ class UtilDict:
     def __cmp__(self, other):
         try:
             return self.d.__cmp__(other)
-        except TypeError, le:
+        except TypeError as le:
             # maybe we should look for a .d member in other.  I know this is insanely kludgey, but the Right Way To Do It is for dict.__cmp__ to use structural typing ("duck typing")
             try:
                 return self.d.__cmp__(other.d)
@@ -194,7 +196,7 @@ class NumDict:
         """
         @return: the sum of all values
         """
-        return reduce(operator.__add__, self.d.values())
+        return reduce(operator.__add__, list(self.d.values()))
 
     def inc(self, key, default=0):
         """
@@ -216,16 +218,16 @@ class NumDict:
         """
         @return a sequence of (key, value,) pairs sorted according to value
         """
-        l = [(x[1], x[0],) for x in self.d.iteritems()]
+        l = [(x[1], x[0],) for x in self.d.items()]
         l.sort()
         return [(x[1], x[0],) for x in l]
 
     def item_with_largest_value(self):
-        it = self.d.iteritems()
-        (winner, winnerval,) = it.next()
+        it = iter(self.d.items())
+        (winner, winnerval,) = next(it)
         try:
             while True:
-                n, nv = it.next()
+                n, nv = next(it)
                 if nv > winnerval:
                     winner = n
                     winnerval = nv
@@ -237,7 +239,7 @@ class NumDict:
         """
         @return a sequence of (key, value,) pairs sorted according to key
         """
-        l = self.d.items()
+        l = list(self.d.items())
         l.sort()
         return l
 
@@ -256,7 +258,7 @@ class NumDict:
     def __cmp__(self, other):
         try:
             return self.d.__cmp__(other)
-        except TypeError, le:
+        except TypeError as le:
             # maybe we should look for a .d member in other.  I know this is insanely kludgey, but the Right Way To Do It is for dict.__cmp__ to use structural typing ("duck typing")
             try:
                 return self.d.__cmp__(other.d)
@@ -339,13 +341,13 @@ class NumDict:
         return self.d.values(*args, **kwargs)
 
 def del_if_present(d, k):
-    if d.has_key(k):
+    if k in d:
         del d[k]
 
 class ValueOrderedDict:
     """
     Note: this implementation assumes that the values do not mutate and change
-    their sort order.  That is, it stores the values in a sorted list and 
+    their sort order.  That is, it stores the values in a sorted list and
     as items are added and removed from the dict, it makes updates to the list
     which will keep the list sorted.  But if a value that is currently sitting
     in the list changes its sort order, then the internal consistency of this
@@ -362,9 +364,12 @@ class ValueOrderedDict:
             self.i = 0
         def __iter__(self):
             return self
-        def next(self):
+
+        def __next__(self):
             precondition(self.i <= len(self.c.l), "The iterated ValueOrderedDict doesn't have this many elements.  Most likely this is because someone altered the contents of the ValueOrderedDict while the iteration was in progress.", self.i, self.c)
-            precondition((self.i == len(self.c.l)) or self.c.d.has_key(self.c.l[self.i][1]), "The iterated ValueOrderedDict doesn't have this key.  Most likely this is because someone altered the contents of the ValueOrderedDict while the iteration was in progress.", self.i, (self.i < len(self.c.l)) and self.c.l[self.i], self.c)
+            precondition((self.i == len(self.c.l)) or self.c.l[self.i][1] in self.c.d,
+                         "The iterated ValueOrderedDict doesn't have this key.  Most likely this is because someone altered the contents of the ValueOrderedDict while the iteration was in progress.",
+                         self.i, (self.i < len(self.c.l)) and self.c.l[self.i], self.c)
             if self.i == len(self.c.l):
                 raise StopIteration
             le = self.c.l[self.i]
@@ -375,13 +380,14 @@ class ValueOrderedDict:
         return ValueOrderedDict.ItemIterator(self)
 
     def items(self):
-        return zip(map(operator.__getitem__, self.l, [1]*len(self.l)), map(operator.__getitem__, self.l, [0]*len(self.l)))
+        return list(zip(list(map(operator.__getitem__, self.l, [1] * len(self.l))),
+                        list(map(operator.__getitem__, self.l, [0] * len(self.l)))))
 
     def values(self):
-        return map(operator.__getitem__, self.l, [0]*len(self.l))
+        return list(map(operator.__getitem__, self.l, [0] * len(self.l)))
 
     def keys(self):
-        return map(operator.__getitem__, self.l, [1]*len(self.l))
+        return list(map(operator.__getitem__, self.l, [1] * len(self.l)))
 
     class KeyIterator:
         def __init__(self, c):
@@ -389,9 +395,12 @@ class ValueOrderedDict:
             self.i = 0
         def __iter__(self):
             return self
-        def next(self):
+
+        def __next__(self):
             precondition(self.i <= len(self.c.l), "The iterated ValueOrderedDict doesn't have this many elements.  Most likely this is because someone altered the contents of the ValueOrderedDict while the iteration was in progress.", self.i, self.c)
-            precondition((self.i == len(self.c.l)) or self.c.d.has_key(self.c.l[self.i][1]), "The iterated ValueOrderedDict doesn't have this key.  Most likely this is because someone altered the contents of the ValueOrderedDict while the iteration was in progress.", self.i, (self.i < len(self.c.l)) and self.c.l[self.i], self.c)
+            precondition((self.i == len(self.c.l)) or self.c.l[self.i][1] in self.c.d,
+                         "The iterated ValueOrderedDict doesn't have this key.  Most likely this is because someone altered the contents of the ValueOrderedDict while the iteration was in progress.",
+                         self.i, (self.i < len(self.c.l)) and self.c.l[self.i], self.c)
             if self.i == len(self.c.l):
                 raise StopIteration
             le = self.c.l[self.i]
@@ -407,9 +416,12 @@ class ValueOrderedDict:
             self.i = 0
         def __iter__(self):
             return self
-        def next(self):
+
+        def __next__(self):
             precondition(self.i <= len(self.c.l), "The iterated ValueOrderedDict doesn't have this many elements.  Most likely this is because someone altered the contents of the ValueOrderedDict while the iteration was in progress.", self.i, self.c)
-            precondition((self.i == len(self.c.l)) or self.c.d.has_key(self.c.l[self.i][1]), "The iterated ValueOrderedDict doesn't have this key.  Most likely this is because someone altered the contents of the ValueOrderedDict while the iteration was in progress.", self.i, (self.i < len(self.c.l)) and self.c.l[self.i], self.c)
+            precondition((self.i == len(self.c.l)) or self.c.l[self.i][1] in self.c.d,
+                         "The iterated ValueOrderedDict doesn't have this key.  Most likely this is because someone altered the contents of the ValueOrderedDict while the iteration was in progress.",
+                         self.i, (self.i < len(self.c.l)) and self.c.l[self.i], self.c)
             if self.i == len(self.c.l):
                 raise StopIteration
             le = self.c.l[self.i]
@@ -432,12 +444,12 @@ class ValueOrderedDict:
     def __repr_n__(self, n=None):
         s = ["{",]
         try:
-            iter = self.iteritems()
-            x = iter.next()
+            iter = iter(self.items())
+            x = next(iter)
             s.append(str(x[0])); s.append(": "); s.append(str(x[1]))
             i = 1
             while (n is None) or (i < n):
-                x = iter.next()
+                x = next(iter)
                 s.append(", "); s.append(str(x[0])); s.append(": "); s.append(str(x[1]))
         except StopIteration:
             pass
@@ -451,8 +463,8 @@ class ValueOrderedDict:
         return "<%s %s>" % (self.__class__.__name__, self.__repr_n__(16),)
 
     def __eq__(self, other):
-        for (k, v,) in other.iteritems():
-            if not self.d.has_key(k) or self.d[k] != v:
+        for (k, v,) in other.items():
+            if k not in self.d or self.d[k] != v:
                 return False
         return True
 
@@ -462,17 +474,17 @@ class ValueOrderedDict:
     def _assert_invariants(self):
         iter = self.l.__iter__()
         try:
-            oldx = iter.next()
+            oldx = next(iter)
             while True:
-                x = iter.next()
+                x = next(iter)
                 # self.l is required to be sorted
                 _assert(x >= oldx, x, oldx)
                 # every element of self.l is required to appear in self.d
-                _assert(self.d.has_key(x[1]), x)
+                _assert(x[1] in self.d, x)
                 oldx =x
         except StopIteration:
             pass
-        for (k, v,) in self.d.iteritems():
+        for (k, v,) in self.d.items():
             i = bisect_left(self.l, (v, k,))
             while (self.l[i][0] is not v) or (self.l[i][1] is not k):
                 i += 1
@@ -489,14 +501,14 @@ class ValueOrderedDict:
 
     def setdefault(self, key, default=None):
         assert self._assert_invariants()
-        if not self.has_key(key):
+        if key not in self:
             self[key] = default
         assert self._assert_invariants()
         return self[key]
 
     def __setitem__(self, key, val=None):
         assert self._assert_invariants()
-        if self.d.has_key(key):
+        if key in self.d:
             oldval = self.d[key]
             if oldval != val:
                 # re-sort
@@ -525,9 +537,9 @@ class ValueOrderedDict:
         return result
 
     def __getitem__(self, key, default=None, strictkey=True):
-        if not self.d.has_key(key):
+        if key not in self.d:
             if strictkey:
-                raise KeyError, key
+                raise KeyError(key)
             else:
                 return default
         return self.d[key]
@@ -544,7 +556,7 @@ class ValueOrderedDict:
             that key and strictkey is False
         """
         assert self._assert_invariants()
-        if self.d.has_key(key):
+        if key in self.d:
             val = self.d.pop(key)
             i = bisect_left(self.l, (val, key,))
             while (self.l[i][0] is not val) or (self.l[i][1] is not key):
@@ -554,7 +566,7 @@ class ValueOrderedDict:
             return val
         elif strictkey:
             assert self._assert_invariants()
-            raise KeyError, key
+            raise KeyError(key)
         else:
             assert self._assert_invariants()
             return default
@@ -570,26 +582,26 @@ class ValueOrderedDict:
         @return: self
         """
         assert self._assert_invariants()
-        for (k, v,) in otherdict.iteritems():
+        for (k, v,) in otherdict.items():
             self.insert(k, v)
         assert self._assert_invariants()
         return self
 
     def has_key(self, key):
         assert self._assert_invariants()
-        return self.d.has_key(key)
+        return key in self.d
 
     def popitem(self):
         if not self.l:
-            raise KeyError, 'popitem(): dictionary is empty'
+            raise KeyError('popitem(): dictionary is empty')
         le = self.l.pop(0)
         del self.d[le[1]]
         return (le[1], le[0],)
 
     def pop(self, k, default=None, strictkey=False):
-        if not self.d.has_key(k):
+        if k not in self.d:
             if strictkey:
-                raise KeyError, k
+                raise KeyError(k)
             else:
                 return default
         v = self.d.pop(k)

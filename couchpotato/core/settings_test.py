@@ -1,7 +1,6 @@
-import mock
-from mock import patch, Mock, MagicMock
-import unittest
 from unittest import TestCase
+
+from mock import patch, Mock, MagicMock
 
 from couchpotato.core.settings import Settings
 
@@ -18,7 +17,7 @@ class DoNotUseMe:
         s = Mock()
 
         # methods:
-        s.isOptionWritable = Mock(return_value=True)
+        s.is_option_writable = Mock(return_value=True)
         s.set = Mock(return_value=None)
         s.save = Mock()
 
@@ -49,9 +48,10 @@ class SettingsCommon(TestCase):
         s.p = MagicMock()
         s.p.get.return_value = raw
 
-        act = s.get(option = opt, section = sec)
+        act = s.get(option=opt, section=sec)
 
         self.assertEqual(act, exp)
+
 
 class SettingsSaveWritableNonWritable(TestCase):
 
@@ -63,7 +63,7 @@ class SettingsSaveWritableNonWritable(TestCase):
 
         # set up Settings-mocks :
         # lets assume, that option is writable:
-        mock_isOptionWritable = s.isOptionWritable = Mock(return_value=True)
+        mock_isOptionWritable = s.is_option_writable = Mock(return_value=True)
         mock_set = s.set = Mock(return_value=None)
         mock_p_save = s.save = Mock()
 
@@ -77,7 +77,7 @@ class SettingsSaveWritableNonWritable(TestCase):
 
         # HERE is an example of mocking LOCAL 'import'
         with patch.dict('sys.modules', {'couchpotato.environment.Env': env_mock}):
-            result = s.saveView(**params)
+            result = s.save_view(**params)
 
         self.assertIsInstance(s, Settings)
         self.assertIsInstance(result, dict)
@@ -96,7 +96,7 @@ class SettingsSaveWritableNonWritable(TestCase):
 
         # set up Settings-mocks :
         # lets assume, that option is not writable:
-        mock_is_w = s.isOptionWritable = Mock(return_value=False)
+        mock_is_w = s.is_option_writable = Mock(return_value=False)
         mock_set = s.set = Mock(return_value=None)
         mock_p_save = s.save = Mock()
         mock_log_s = s.log = Mock()
@@ -111,7 +111,7 @@ class SettingsSaveWritableNonWritable(TestCase):
 
         # HERE is an example of mocking LOCAL 'import'
         with patch.dict('sys.modules', {'couchpotato.environment.Env': env_mock}):
-            result = s.saveView(**params)
+            result = s.save_view(**params)
 
         self.assertIsInstance(s, Settings)
         self.assertIsInstance(result, dict)
@@ -130,7 +130,7 @@ class OptionMetaSuite(TestCase):
 
     def setUp(self):
         self.s = Settings()
-        self.meta = self.s.optionMetaSuffix()
+        self.meta = self.s.option_meta_suffix()
 
         # hide real config-parser:
         self.s.p = Mock()
@@ -149,8 +149,8 @@ class OptionMetaSuite(TestCase):
         s.p.has_option = Mock(side_effect=lambda s, o: not (s == section and o == option_meta))
 
         # by default all options are writable and readable
-        self.assertTrue(s.isOptionWritable(section, option))
-        self.assertTrue(s.isOptionReadable(section, option))
+        self.assertTrue(s.is_option_writable(section, option))
+        self.assertTrue(s.is_option_readable(section, option))
 
     def test_non_writable(self):
         s = self.s
@@ -169,5 +169,5 @@ class OptionMetaSuite(TestCase):
         s.p.get = Mock(side_effect=mock_get_meta_ro)
 
         # by default all options are writable and readable
-        self.assertFalse(s.isOptionWritable(section, option))
-        self.assertTrue(s.isOptionReadable(section, option))
+        self.assertFalse(s.is_option_writable(section, option))
+        self.assertTrue(s.is_option_readable(section, option))

@@ -3,7 +3,7 @@
 
 def commonprefix(l):
     cp = []
-    for i in range(min(map(len, l))):
+    for i in range(min(list(map(len, l)))):
         c = l[0][i]
         for s in l[1:]:
             if s[i] != c:
@@ -13,7 +13,7 @@ def commonprefix(l):
 
 def commonsuffix(l):
     cp = []
-    for i in range(min(map(len, l))):
+    for i in range(min(list(map(len, l)))):
         c = l[0][-i-1]
         for s in l[1:]:
             if s[-i-1] != c:

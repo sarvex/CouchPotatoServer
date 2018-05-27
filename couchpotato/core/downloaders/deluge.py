@@ -1,17 +1,17 @@
-from base64 import b64encode, b16encode, b32decode
-from datetime import timedelta
-from hashlib import sha1
 import os.path
 import re
 import traceback
+from base64 import b64encode, b16encode, b32decode
+from datetime import timedelta
+from hashlib import sha1
 
 from bencode import bencode as benc, bdecode
-from couchpotato.core._base.downloader.main import DownloaderBase, ReleaseDownloadList
-from couchpotato.core.helpers.encoding import isInt, sp
-from couchpotato.core.helpers.variable import tryFloat, cleanHost
-from couchpotato.core.logger import CPLog
 from synchronousdeluge import DelugeClient
 
+from couchpotato.core._base.downloader.main import DownloaderBase, ReleaseDownloadList
+from couchpotato.core.helpers.encoding import is_int, sp
+from couchpotato.core.helpers.variable import try_float, clean_host
+from couchpotato.core.logger import CPLog
 
 log = CPLog(__name__)
 
@@ -31,13 +31,13 @@ class Deluge(DownloaderBase):
         """
 
         # Load host from config and split out port.
-        host = cleanHost(self.conf('host'), protocol = False).split(':')
+        host = clean_host(self.conf('host'), protocol=False).split(':')
 
         # Force host assignment
         if len(host) == 1:
             host.append(80)
 
-        if not isInt(host[1]):
+        if not is_int(host[1]):
             log.error('Config properties are not filled in correctly, port is missing.')
             return False
 
@@ -94,7 +94,7 @@ class Deluge(DownloaderBase):
 
         if data.get('seed_ratio'):
             options['stop_at_ratio'] = 1
-            options['stop_ratio'] = tryFloat(data.get('seed_ratio'))
+            options['stop_ratio'] = try_float(data.get('seed_ratio'))
 
 #        Deluge only has seed time as a global option. Might be added in
 #        in a future API release.
@@ -112,7 +112,7 @@ class Deluge(DownloaderBase):
             return False
 
         log.info('Torrent sent to Deluge successfully.')
-        return self.downloadReturnId(remote_torrent)
+        return self.download_return_id(remote_torrent)
 
     def test(self):
         """ Check if connection works
@@ -122,7 +122,7 @@ class Deluge(DownloaderBase):
             return True
         return False
 
-    def getAllDownloadStatus(self, ids):
+    def get_all_download_status(self, ids):
         """ Get status of all active downloads
 
         :param ids: list of (mixed) downloader ids
@@ -138,7 +138,7 @@ class Deluge(DownloaderBase):
 
         release_downloads = ReleaseDownloadList(self)
 
-        queue = self.drpc.get_alltorrents(ids)
+        queue = self.drpc.get_all_torrents(ids)
 
         if not queue:
             log.debug('Nothing in queue or error')
@@ -159,7 +159,8 @@ class Deluge(DownloaderBase):
             # If an user opts to seed a torrent forever (usually associated to private trackers usage), stop_ratio will be 0 or -1 (depending on Deluge version).
             # In this scenario the status of the torrent would never change from BUSY to SEEDING.
             # The last check takes care of this case.
-            if torrent['is_seed'] and ((tryFloat(torrent['ratio']) < tryFloat(torrent['stop_ratio'])) or (tryFloat(torrent['stop_ratio']) < 0)):
+            if torrent['is_seed'] and ((try_float(torrent['ratio']) < try_float(torrent['stop_ratio'])) or (
+                try_float(torrent['stop_ratio']) < 0)):
                 # We have torrent['seeding_time'] to work out what the seeding time is, but we do not
                 # have access to the downloader seed_time, as with deluge we have no way to pass it
                 # when the torrent is added. So Deluge will only look at the ratio.
@@ -195,11 +196,11 @@ class Deluge(DownloaderBase):
         else:
             return self.drpc.resume_torrent([release_download['id']])
 
-    def removeFailed(self, release_download):
+    def remove_failed(self, release_download):
         log.info('%s failed downloading, deleting...', release_download['name'])
         return self.drpc.remove_torrent(release_download['id'], True)
 
-    def processComplete(self, release_download, delete_files = False):
+    def process_complete(self, release_download, delete_files=False):
         log.debug('Requesting Deluge to remove the torrent %s%s.', (release_download['name'], ' and cleanup the downloaded files' if delete_files else ''))
         return self.drpc.remove_torrent(release_download['id'], remove_local_data = delete_files)
 
@@ -267,7 +268,7 @@ class DelugeRPC(object):
 
         return torrent_id
 
-    def get_alltorrents(self, ids):
+    def get_all_torrents(self, ids):
         ret = False
         try:
             self.connect()

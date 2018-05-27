@@ -1,19 +1,19 @@
-from inspect import ismethod, isfunction
 import os
 import time
 import traceback
+from inspect import ismethod, isfunction
 
 from CodernityDB.database import RecordDeleted, RecordNotFound
+
 from couchpotato import md5, get_db
 from couchpotato.api import addApiView
-from couchpotato.core.event import fireEvent, addEvent
-from couchpotato.core.helpers.encoding import toUnicode, sp
-from couchpotato.core.helpers.variable import getTitle, tryInt
+from couchpotato.core.event import fire_event, add_event
+from couchpotato.core.helpers.encoding import to_unicode, sp
+from couchpotato.core.helpers.variable import get_title, try_int
 from couchpotato.core.logger import CPLog
 from couchpotato.core.plugins.base import Plugin
-from .index import ReleaseIndex, ReleaseStatusIndex, ReleaseIDIndex, ReleaseDownloadIndex
 from couchpotato.environment import Env
-
+from .index import ReleaseIndex, ReleaseStatusIndex, ReleaseIDIndex, ReleaseDownloadIndex
 
 log = CPLog(__name__)
 
@@ -47,19 +47,19 @@ class Release(Plugin):
             }
         })
 
-        addEvent('release.add', self.add)
-        addEvent('release.download', self.download)
-        addEvent('release.try_download_result', self.tryDownloadResult)
-        addEvent('release.create_from_search', self.createFromSearch)
-        addEvent('release.delete', self.delete)
-        addEvent('release.clean', self.clean)
-        addEvent('release.update_status', self.updateStatus)
-        addEvent('release.with_status', self.withStatus)
-        addEvent('release.for_media', self.forMedia)
+        add_event('release.add', self.add)
+        add_event('release.download', self.download)
+        add_event('release.try_download_result', self.tryDownloadResult)
+        add_event('release.create_from_search', self.createFromSearch)
+        add_event('release.delete', self.delete)
+        add_event('release.clean', self.clean)
+        add_event('release.update_status', self.updateStatus)
+        add_event('release.with_status', self.withStatus)
+        add_event('release.for_media', self.forMedia)
 
         # Clean releases that didn't have activity in the last week
-        addEvent('app.load', self.cleanDone, priority = 1000)
-        fireEvent('schedule.interval', 'movie.clean_releases', self.cleanDone, hours = 12)
+        add_event('app.load', self.cleanDone, priority=1000)
+        fire_event('schedule.interval', 'movie.clean_releases', self.cleanDone, hours=12)
 
     def cleanDone(self):
         log.debug('Removing releases from dashboard')
@@ -95,7 +95,7 @@ class Release(Plugin):
                 except:
                     log.error('Failed fixing mis-status tag: %s', traceback.format_exc())
             except ValueError:
-                fireEvent('database.delete_corrupted', release.get('key'), traceback_error = traceback.format_exc(0))
+                fire_event('database.delete_corrupted', release.get('key'), traceback_error=traceback.format_exc(0))
                 reindex += 1
             except RecordDeleted:
                 db.delete(doc)
@@ -110,7 +110,7 @@ class Release(Plugin):
         del media_exist
 
         # get movies last_edit more than a week ago
-        medias = fireEvent('media.with_status', ['done', 'active'], single = True)
+        medias = fire_event('media.with_status', ['done', 'active'], single=True)
 
         for media in medias:
             if media.get('last_edit', 0) > (now - week):
@@ -127,7 +127,7 @@ class Release(Plugin):
                     self.updateStatus(rel['_id'], status = 'ignored')
 
             if 'recent' in media.get('tags', []):
-                fireEvent('media.untag', media.get('_id'), 'recent', single = True)
+                fire_event('media.untag', media.get('_id'), 'recent', single=True)
 
     def add(self, group, update_info = True, update_id = None):
 
@@ -140,7 +140,7 @@ class Release(Plugin):
             try:
                 media = db.get('media', 'imdb-%s' % group['identifier'], with_doc = True)['doc']
             except:
-                media = fireEvent('movie.add', params = {
+                media = fire_event('movie.add', params={
                     'identifier': group['identifier'],
                     'profile_id': None,
                 }, search_after = False, update_after = update_info, notify_after = False, status = 'done', single = True)
@@ -184,10 +184,10 @@ class Release(Plugin):
                 })
 
             # Empty out empty file groups
-            release['files'] = dict((k, [toUnicode(x) for x in v]) for k, v in group['files'].items() if v)
+            release['files'] = dict((k, [to_unicode(x) for x in v]) for k, v in list(group['files'].items()) if v)
             db.update(release)
 
-            fireEvent('media.restatus', media['_id'], allowed_restatus = ['done'], single = True)
+            fire_event('media.restatus', media['_id'], allowed_restatus=['done'], single=True)
 
             return True
         except:
@@ -273,10 +273,11 @@ class Release(Plugin):
             item = release['info']
             movie = db.get('id', release['media_id'])
 
-            fireEvent('notify.frontend', type = 'release.manual_download', data = True, message = 'Snatching "%s"' % item['name'])
+            fire_event('notify.frontend', type='release.manual_download', data=True,
+                       message='Snatching "%s"' % item['name'])
 
             # Get matching provider
-            provider = fireEvent('provider.belongs_to', item['url'], provider = item.get('provider'), single = True)
+            provider = fire_event('provider.belongs_to', item['url'], provider=item.get('provider'), single=True)
 
             if item.get('protocol') != 'torrent_magnet':
                 item['download'] = provider.loginDownload if provider.urls.get('login') else provider.download
@@ -284,7 +285,8 @@ class Release(Plugin):
             success = self.download(data = item, media = movie, manual = True)
 
             if success:
-                fireEvent('notify.frontend', type = 'release.manual_download', data = True, message = 'Successfully snatched "%s"' % item['name'])
+                fire_event('notify.frontend', type='release.manual_download', data=True,
+                           message='Successfully snatched "%s"' % item['name'])
 
             return {
                 'success': success == True
@@ -299,7 +301,7 @@ class Release(Plugin):
     def download(self, data, media, manual = False):
 
         # Test to see if any downloaders are enabled for this type
-        downloader_enabled = fireEvent('download.enabled', manual, data, single = True)
+        downloader_enabled = fire_event('download.enabled', manual, data, single=True)
         if not downloader_enabled:
             log.info('Tried to download, but none of the "%s" downloaders are enabled or gave an error', data.get('protocol'))
             return False
@@ -319,7 +321,7 @@ class Release(Plugin):
                 return False
 
         # Send NZB or torrent file to downloader
-        download_result = fireEvent('download', data = data, media = media, manual = manual, filedata = filedata, single = True)
+        download_result = fire_event('download', data=data, media=media, manual=manual, filedata=filedata, single=True)
         if not download_result:
             log.info('Tried to download, but the "%s" downloader gave an error', data.get('protocol'))
             return False
@@ -341,10 +343,10 @@ class Release(Plugin):
                 rls['download_info'] = download_result
                 db.update(rls)
 
-            log_movie = '%s (%s) in %s' % (getTitle(media), media['info'].get('year'), rls['quality'])
+            log_movie = '%s (%s) in %s' % (get_title(media), media['info'].get('year'), rls['quality'])
             snatch_message = 'Snatched "%s": %s from %s' % (data.get('name'), log_movie, (data.get('provider', '') + data.get('provider_extra', '')))
             log.info(snatch_message)
-            fireEvent('%s.snatched' % data['type'], message = snatch_message, data = media)
+            fire_event('%s.snatched' % data['type'], message=snatch_message, data=media)
 
             # Mark release as snatched
             if renamer_enabled:
@@ -355,14 +357,15 @@ class Release(Plugin):
 
                 if media['status'] == 'active':
                     profile = db.get('id', media['profile_id'])
-                    if fireEvent('quality.isfinish', {'identifier': rls['quality'], 'is_3d': rls.get('is_3d', False)}, profile, single = True):
+                    if fire_event('quality.isfinish', {'identifier': rls['quality'], 'is_3d': rls.get('is_3d', False)},
+                                  profile, single=True):
                         log.info('Renamer disabled, marking media as finished: %s', log_movie)
 
                         # Mark release done
                         self.updateStatus(rls['_id'], status = 'done')
 
                         # Mark media done
-                        fireEvent('media.restatus', media['_id'], single = True)
+                        fire_event('media.restatus', media['_id'], single=True)
 
                         return True
 
@@ -380,7 +383,7 @@ class Release(Plugin):
         wait_for = False
         let_through = False
         filtered_results = []
-        minimum_seeders = tryInt(Env.setting('minimum_seeders', section = 'torrent', default = 1))
+        minimum_seeders = try_int(Env.setting('minimum_seeders', section='torrent', default=1))
 
         # Filter out ignored and other releases we don't want
         for rel in results:
@@ -419,7 +422,7 @@ class Release(Plugin):
                 wait_for = True
                 continue
 
-            downloaded = fireEvent('release.download', data = rel, media = media, single = True)
+            downloaded = fire_event('release.download', data=rel, media=media, single=True)
             if downloaded is True:
                 return True
             elif downloaded != 'try_next':
@@ -469,10 +472,10 @@ class Release(Plugin):
                 # Update info, but filter out functions
                 for info in rel:
                     try:
-                        if not isinstance(rel[info], (str, unicode, int, long, float)):
+                        if not isinstance(rel[info], (str, int, float)):
                             continue
 
-                        rls['info'][info] = toUnicode(rel[info]) if isinstance(rel[info], (str, unicode)) else rel[info]
+                        rls['info'][info] = to_unicode(rel[info]) if isinstance(rel[info], str) else rel[info]
                     except:
                         log.debug('Couldn\'t add %s to ReleaseInfo: %s', (info, traceback.format_exc()))
 
@@ -518,7 +521,7 @@ class Release(Plugin):
                 db.update(rel)
 
                 #Update all movie info as there is no release update function
-                fireEvent('notify.frontend', type = 'release.update_status', data = rel)
+                fire_event('notify.frontend', type='release.update_status', data=rel)
 
             return True
         except:
@@ -556,7 +559,7 @@ class Release(Plugin):
             except RecordDeleted:
                 pass
             except (ValueError, EOFError):
-                fireEvent('database.delete_corrupted', r.get('_id'), traceback_error = traceback.format_exc(0))
+                fire_event('database.delete_corrupted', r.get('_id'), traceback_error=traceback.format_exc(0))
 
         releases = sorted(releases, key = lambda k: k.get('info', {}).get('score', 0), reverse = True)
 

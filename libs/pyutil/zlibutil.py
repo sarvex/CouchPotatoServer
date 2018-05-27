@@ -9,12 +9,15 @@ original data was maximally compressable, and a naive use of zlib would
 consume all of your RAM while trying to decompress it.
 """
 
-import exceptions, string, zlib
-
-from humanreadable import hr
+import exceptions
+import string
+import zlib
 from pyutil.assertutil import precondition
 
-class DecompressError(exceptions.StandardError, zlib.error): pass
+from .humanreadable import hr
+
+
+class DecompressError(exceptions.Exception, zlib.error): pass
 class UnsafeDecompressError(DecompressError): pass # This means it would take more memory to decompress than we can spare.
 class TooBigError(DecompressError): pass # This means the resulting uncompressed text would exceed the maximum allowed length.
 class ZlibError(DecompressError): pass # internal error, probably due to the input not being zlib compressed text
@@ -56,8 +59,8 @@ def decompress(zbuf, maxlen=(65 * (2**20)), maxmem=(65 * (2**20))):
         exceedingly large until you realize that it means you can decompress
         64 KB chunks of compressiontext at a bite.)
     """
-    assert isinstance(maxlen, (int, long,)) and maxlen > 0, "maxlen is required to be a real maxlen, geez!"
-    assert isinstance(maxmem, (int, long,)) and maxmem > 0, "maxmem is required to be a real maxmem, geez!"
+    assert isinstance(maxlen, int) and maxlen > 0, "maxlen is required to be a real maxlen, geez!"
+    assert isinstance(maxmem, int) and maxmem > 0, "maxmem is required to be a real maxmem, geez!"
     assert maxlen <= maxmem, "maxlen is required to be <= maxmem.  All data that is included in the return value is counted against maxmem as well as against maxlen, so it is impossible to return a result bigger than maxmem, even if maxlen is bigger than maxmem.  See decompress_to_spool() if you want to spool a large text out while limiting the amount of memory used during the process."
 
     lenzbuf = len(zbuf)
@@ -74,7 +77,9 @@ def decompress(zbuf, maxlen=(65 * (2**20)), maxmem=(65 * (2**20))):
         lencompbite = availmem / 1032 # XXX TODO: The biggest compression ratio zlib can have for whole files is 1032:1.  Unfortunately I don't know if small chunks of compressiontext *within* a file can expand to more than that.  I'll assume not...  --Zooko 2001-05-12
         if lencompbite < 128:
             # If we can't safely attempt even a few bytes of compression text, let us give up.  Either `maxmem' was too small or this compressiontext is actually a decompression bomb.
-            raise UnsafeDecompressError, "used up roughly maxmem memory. maxmem: %s, len(zbuf): %s, offset: %s, decomplen: %s, lencompbite: %s" % tuple(map(hr, [maxmem, len(zbuf), offset, decomplen, lencompbite,]))
+            raise UnsafeDecompressError(
+                "used up roughly maxmem memory. maxmem: %s, len(zbuf): %s, offset: %s, decomplen: %s, lencompbite: %s" % tuple(
+                    map(hr, [maxmem, len(zbuf), offset, decomplen, lencompbite, ])))
         # I wish the following were a local function like this:
         # def proc_decomp_bite(tmpstr, lencompbite=0, decomplen=decomplen, maxlen=maxlen, availmem=availmem, decompstrlist=decompstrlist, offset=offset, zbuf=zbuf):
         # ...but we can't conveniently and efficiently update the integer variables like offset in the outer scope.  Oh well.  --Zooko 2003-06-26
@@ -83,13 +88,15 @@ def decompress(zbuf, maxlen=(65 * (2**20)), maxmem=(65 * (2**20))):
                 tmpstr = decomp.decompress(zbuf)
             else:
                 tmpstr = decomp.decompress(zbuf[offset:offset+lencompbite])
-        except zlib.error, le:
-            raise ZlibError, (offset, lencompbite, decomplen, hr(le), )
+        except zlib.error as le:
+            raise ZlibError(offset, lencompbite, decomplen, hr(le), )
 
         lentmpstr = len(tmpstr)
         decomplen = decomplen + lentmpstr
         if decomplen > maxlen:
-            raise TooBigError, "length of resulting data > maxlen. maxlen: %s, len(zbuf): %s, offset: %s, decomplen: %s" % tuple(map(hr, [maxlen, len(zbuf), offset, decomplen,]))
+            raise TooBigError(
+                "length of resulting data > maxlen. maxlen: %s, len(zbuf): %s, offset: %s, decomplen: %s" % tuple(
+                    map(hr, [maxlen, len(zbuf), offset, decomplen, ])))
         availmem = availmem - lentmpstr
         offset = offset + lencompbite
         decompstrlist.append(tmpstr)
@@ -97,13 +104,15 @@ def decompress(zbuf, maxlen=(65 * (2**20)), maxmem=(65 * (2**20))):
 
     try:
         tmpstr = decomp.flush()
-    except zlib.error, le:
-        raise ZlibError, (offset, lencompbite, decomplen, le, )
+    except zlib.error as le:
+        raise ZlibError(offset, lencompbite, decomplen, le, )
 
     lentmpstr = len(tmpstr)
     decomplen = decomplen + lentmpstr
     if decomplen > maxlen:
-        raise TooBigError, "length of resulting data > maxlen. maxlen: %s, len(zbuf): %s, offset: %s, decomplen: %s" % tuple(map(hr, [maxlen, len(zbuf), offset, decomplen,]))
+        raise TooBigError(
+            "length of resulting data > maxlen. maxlen: %s, len(zbuf): %s, offset: %s, decomplen: %s" % tuple(
+                map(hr, [maxlen, len(zbuf), offset, decomplen, ])))
     availmem = availmem - lentmpstr
     offset = offset + lencompbite
     if lentmpstr > 0:
@@ -140,8 +149,8 @@ def decompress_to_fileobj(zbuf, fileobj, maxlen=(65 * (2**20)), maxmem=(65 * (2*
     @param fileobj a file object to which the decompressed text will be written
     """
     precondition(hasattr(fileobj, 'write') and callable(fileobj.write), "fileobj is required to have a write() method.", fileobj=fileobj)
-    precondition(isinstance(maxlen, (int, long,)) and maxlen > 0, "maxlen is required to be a real maxlen, geez!", maxlen=maxlen)
-    precondition(isinstance(maxmem, (int, long,)) and maxmem > 0, "maxmem is required to be a real maxmem, geez!", maxmem=maxmem)
+    precondition(isinstance(maxlen, int) and maxlen > 0, "maxlen is required to be a real maxlen, geez!", maxlen=maxlen)
+    precondition(isinstance(maxmem, int) and maxmem > 0, "maxmem is required to be a real maxmem, geez!", maxmem=maxmem)
     precondition(maxlen <= maxmem, "maxlen is required to be <= maxmem.  All data that is written out to fileobj is counted against maxmem as well as against maxlen, so it is impossible to return a result bigger than maxmem, even if maxlen is bigger than maxmem.  See decompress_to_spool() if you want to spool a large text out while limiting the amount of memory used during the process.", maxlen=maxlen, maxmem=maxmem)
 
     lenzbuf = len(zbuf)
@@ -155,7 +164,9 @@ def decompress_to_fileobj(zbuf, fileobj, maxlen=(65 * (2**20)), maxmem=(65 * (2*
         lencompbite = availmem / 1032 # XXX TODO: The biggest compression ratio zlib can have for whole files is 1032:1.  Unfortunately I don't know if small chunks of compressiontext *within* a file can expand to more than that.  I'll assume not...  --Zooko 2001-05-12
         if lencompbite < 128:
             # If we can't safely attempt even a few bytes of compression text, let us give up.  Either maxmem was too small or this compressiontext is actually a decompression bomb.
-            raise UnsafeDecompressError, "used up roughly maxmem memory. maxmem: %s, len(zbuf): %s, offset: %s, decomplen: %s" % tuple(map(hr, [maxmem, len(zbuf), offset, decomplen,]))
+            raise UnsafeDecompressError(
+                "used up roughly maxmem memory. maxmem: %s, len(zbuf): %s, offset: %s, decomplen: %s" % tuple(
+                    map(hr, [maxmem, len(zbuf), offset, decomplen, ])))
         # I wish the following were a local function like this:
         # def proc_decomp_bite(tmpstr, lencompbite=0, decomplen=decomplen, maxlen=maxlen, availmem=availmem, decompstrlist=decompstrlist, offset=offset, zbuf=zbuf):
         # ...but we can't conveniently and efficiently update the integer variables like offset in the outer scope.  Oh well.  --Zooko 2003-06-26
@@ -164,12 +175,14 @@ def decompress_to_fileobj(zbuf, fileobj, maxlen=(65 * (2**20)), maxmem=(65 * (2*
                 tmpstr = decomp.decompress(zbuf)
             else:
                 tmpstr = decomp.decompress(zbuf[offset:offset+lencompbite])
-        except zlib.error, le:
-            raise ZlibError, (offset, lencompbite, decomplen, le, )
+        except zlib.error as le:
+            raise ZlibError(offset, lencompbite, decomplen, le, )
         lentmpstr = len(tmpstr)
         decomplen = decomplen + lentmpstr
         if decomplen > maxlen:
-            raise TooBigError, "length of resulting data > maxlen. maxlen: %s, len(zbuf): %s, offset: %s, decomplen: %s" % tuple(map(hr, [maxlen, len(zbuf), offset, decomplen,]))
+            raise TooBigError(
+                "length of resulting data > maxlen. maxlen: %s, len(zbuf): %s, offset: %s, decomplen: %s" % tuple(
+                    map(hr, [maxlen, len(zbuf), offset, decomplen, ])))
         availmem = availmem - lentmpstr
         offset = offset + lencompbite
         fileobj.write(tmpstr)
@@ -177,12 +190,14 @@ def decompress_to_fileobj(zbuf, fileobj, maxlen=(65 * (2**20)), maxmem=(65 * (2*
 
     try:
         tmpstr = decomp.flush()
-    except zlib.error, le:
-        raise ZlibError, (offset, lencompbite, decomplen, le, )
+    except zlib.error as le:
+        raise ZlibError(offset, lencompbite, decomplen, le, )
     lentmpstr = len(tmpstr)
     decomplen = decomplen + lentmpstr
     if decomplen > maxlen:
-        raise TooBigError, "length of resulting data > maxlen. maxlen: %s, len(zbuf): %s, offset: %s, decomplen: %s" % tuple(map(hr, [maxlen, len(zbuf), offset, decomplen,]))
+        raise TooBigError(
+            "length of resulting data > maxlen. maxlen: %s, len(zbuf): %s, offset: %s, decomplen: %s" % tuple(
+                map(hr, [maxlen, len(zbuf), offset, decomplen, ])))
     availmem = availmem - lentmpstr
     offset = offset + lencompbite
     fileobj.write(tmpstr)
@@ -214,8 +229,8 @@ def decompress_to_spool(zbuf, fileobj, maxlen=(65 * (2**20)), maxmem=(65 * (2**2
     @param fileobj the decompressed text will be written to it
     """
     precondition(hasattr(fileobj, 'write') and callable(fileobj.write), "fileobj is required to have a write() method.", fileobj=fileobj)
-    precondition(isinstance(maxlen, (int, long,)) and maxlen > 0, "maxlen is required to be a real maxlen, geez!", maxlen=maxlen)
-    precondition(isinstance(maxmem, (int, long,)) and maxmem > 0, "maxmem is required to be a real maxmem, geez!", maxmem=maxmem)
+    precondition(isinstance(maxlen, int) and maxlen > 0, "maxlen is required to be a real maxlen, geez!", maxlen=maxlen)
+    precondition(isinstance(maxmem, int) and maxmem > 0, "maxmem is required to be a real maxmem, geez!", maxmem=maxmem)
 
     tmpstr = ''
     lenzbuf = len(zbuf)
@@ -229,7 +244,9 @@ def decompress_to_spool(zbuf, fileobj, maxlen=(65 * (2**20)), maxmem=(65 * (2**2
         lencompbite = availmem / 1032 # XXX TODO: The biggest compression ratio zlib can have for whole files is 1032:1.  Unfortunately I don't know if small chunks of compressiontext *within* a file can expand to more than that.  I'll assume not...  --Zooko 2001-05-12
         if lencompbite < 128:
             # If we can't safely attempt even a few bytes of compression text, let us give up.  Either `maxmem' was too small or this compressiontext is actually a decompression bomb.
-            raise UnsafeDecompressError, "used up roughly `maxmem' memory. maxmem: %s, len(zbuf): %s, offset: %s, decomplen: %s" % tuple(map(hr, [maxmem, len(zbuf), offset, decomplen,]))
+            raise UnsafeDecompressError(
+                "used up roughly `maxmem' memory. maxmem: %s, len(zbuf): %s, offset: %s, decomplen: %s" % tuple(
+                    map(hr, [maxmem, len(zbuf), offset, decomplen, ])))
         # I wish the following were a local function like this:
         # def proc_decomp_bite(tmpstr, lencompbite=0, decomplen=decomplen, maxlen=maxlen, availmem=availmem, decompstrlist=decompstrlist, offset=offset, zbuf=zbuf):
         # ...but we can't conveniently and efficiently update the integer variables like offset in the outer scope.  Oh well.  --Zooko 2003-06-26
@@ -238,24 +255,28 @@ def decompress_to_spool(zbuf, fileobj, maxlen=(65 * (2**20)), maxmem=(65 * (2**2
                 tmpstr = decomp.decompress(zbuf)
             else:
                 tmpstr = decomp.decompress(zbuf[offset:offset+lencompbite])
-        except zlib.error, le:
-            raise ZlibError, (offset, lencompbite, decomplen, le, )
+        except zlib.error as le:
+            raise ZlibError(offset, lencompbite, decomplen, le, )
         lentmpstr = len(tmpstr)
         decomplen = decomplen + lentmpstr
         if decomplen > maxlen:
-            raise TooBigError, "length of resulting data > `maxlen'. maxlen: %s, len(zbuf): %s, offset: %s, decomplen: %s" % tuple(map(hr, [maxlen, len(zbuf), offset, decomplen,]))
+            raise TooBigError(
+                "length of resulting data > `maxlen'. maxlen: %s, len(zbuf): %s, offset: %s, decomplen: %s" % tuple(
+                    map(hr, [maxlen, len(zbuf), offset, decomplen, ])))
         offset = offset + lencompbite
         fileobj.write(tmpstr)
         tmpstr = ''
 
     try:
         tmpstr = decomp.flush()
-    except zlib.error, le:
-        raise ZlibError, (offset, lencompbite, decomplen, le, )
+    except zlib.error as le:
+        raise ZlibError(offset, lencompbite, decomplen, le, )
     lentmpstr = len(tmpstr)
     decomplen = decomplen + lentmpstr
     if decomplen > maxlen:
-        raise TooBigError, "length of resulting data > `maxlen'. maxlen: %s, len(zbuf): %s, offset: %s, decomplen: %s" % tuple(map(hr, [maxlen, len(zbuf), offset, decomplen,]))
+        raise TooBigError(
+            "length of resulting data > `maxlen'. maxlen: %s, len(zbuf): %s, offset: %s, decomplen: %s" % tuple(
+                map(hr, [maxlen, len(zbuf), offset, decomplen, ])))
     offset = offset + lencompbite
     fileobj.write(tmpstr)
     tmpstr = ''

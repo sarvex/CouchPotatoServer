@@ -8,8 +8,8 @@ import os
 
 try:
     from twisted.trial import unittest
-except ImportError, le:
-    print "Skipping %s since it requires Twisted and Twisted could not be imported: %s" % (__name__, le,)
+except ImportError as le:
+    print("Skipping %s since it requires Twisted and Twisted could not be imported: %s" % (__name__, le,))
 else:
     from pyutil import PickleSaver, fileutil
 
@@ -31,6 +31,6 @@ else:
 
             fname = os.path.join(tempdir.name, "picklesavertest")
             self._test_save_now(fname)
-            self.failUnless(os.path.isfile(fname), "The file [%s] does not exist." %(fname,))
+            self.assertTrue(os.path.isfile(fname), "The file [%s] does not exist." % (fname,))
 
             tempdir.shutdown()

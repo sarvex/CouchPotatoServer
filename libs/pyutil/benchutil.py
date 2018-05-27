@@ -31,7 +31,7 @@ where "M" is 1/4 of the number of invocations (in this case 10).
 >>> for N in 1, 5, 9, 13, 17, 21:
 ...  print "%2d" % N,
 ...  rep_bench(fib, N, UNITS_PER_SECOND=1000000)
-... 
+...
  1 best: 9.537e-01,   3th-best: 9.537e-01, mean: 1.121e+00,   3th-worst: 1.192e+00, worst: 2.146e+00 (of     10)
  5 best: 5.722e-01,   3th-best: 6.199e-01, mean: 7.200e-01,   3th-worst: 8.106e-01, worst: 8.106e-01 (of     10)
  9 best: 2.437e+00,   3th-best: 2.464e+00, mean: 2.530e+00,   3th-worst: 2.570e+00, worst: 2.676e+00 (of     10)
@@ -87,22 +87,20 @@ and the main function is to make them be methods of the same object, e.g.:
  this work and send me a patch!
 """
 
-import cProfile, operator, time
+import platform
+import time
 from decimal import Decimal as D
 
-#from pyutil import jsonutil as json
-
-import platform
+# from pyutil import jsonutil as json
 if 'windows' in platform.system().lower():
     clock = time.clock
 else:
     clock = time.time
 
-from assertutil import _assert
 
 def makeg(func):
     def blah(n, func=func):
-        for i in xrange(n):
+        for i in range(n):
             func()
     return blah
 
@@ -150,7 +148,7 @@ def rep_bench(func, n, runtime=1.0, initfunc=None, MAXREPS=10, MAXTIME=60.0, pro
             initfunc(n)
         try:
             tl, iters = bench_it(func, n, runtime=runtime, profile=profile, profresults=profresults)
-        except BadMeasure, bme:
+        except BadMeasure as bme:
             bmes.append(bme)
         else:
             tls.append((tl, iters))
@@ -184,7 +182,8 @@ def rep_bench(func, n, runtime=1.0, initfunc=None, MAXREPS=10, MAXTIME=60.0, pro
         }
 
     if not quiet:
-        print "best: %(best)#8.03e, %(mp1)3dth-best: %(mth-best)#8.03e, mean: %(mean)#8.03e, %(mp1)3dth-worst: %(mth-worst)#8.03e, worst: %(worst)#8.03e (of %(num)6d)" % res
+        print(
+            "best: %(best)#8.03e, %(mp1)3dth-best: %(mth-best)#8.03e, mean: %(mean)#8.03e, %(mp1)3dth-worst: %(mth-worst)#8.03e, worst: %(worst)#8.03e (of %(num)6d)" % res)
 
     return res
 
@@ -237,7 +236,7 @@ def bench(func, initfunc=None, TOPXP=21, MAXREPS=5, MAXTIME=60.0, profile=False,
 
     res = {}
     for BSIZE in BSIZES:
-        print "N: %7d," % BSIZE,
+        print("N: %7d," % BSIZE, end=' ')
         r = rep_bench(func, BSIZE, initfunc=initfunc, MAXREPS=MAXREPS, MAXTIME=MAXTIME, profile=profile, profresults=profresults, UNITS_PER_SECOND=UNITS_PER_SECOND)
         res[BSIZE] = r
 
@@ -247,5 +246,5 @@ def bench(func, initfunc=None, TOPXP=21, MAXREPS=5, MAXTIME=60.0, profile=False,
     return res
 
 def print_bench_footer(UNITS_PER_SECOND=1):
-    print "all results are in time units per N"
-    print "time units per second: %s; seconds per time unit: %s" % (UNITS_PER_SECOND, D(1)/UNITS_PER_SECOND)
+    print("all results are in time units per N")
+    print("time units per second: %s; seconds per time unit: %s" % (UNITS_PER_SECOND, D(1) / UNITS_PER_SECOND))

@@ -15,17 +15,16 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with subliminal.  If not, see <http://www.gnu.org/licenses/>.
+import bisect
+import logging
+from urllib.parse import urlencode
+
 from . import ServiceBase
 from ..exceptions import ServiceError
 from ..language import language_set
 from ..subtitles import get_subtitle_path, ResultSubtitle
-from ..videos import Episode, Movie
 from ..utils import to_unicode
-
-import bisect
-import logging
-
-from urllib import urlencode
+from ..videos import Episode, Movie
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +87,7 @@ class Subscenter(ServiceBase):
         return self.query(video.path or video.release, languages, series, season, episode, title, year)
 
     def query(self, filepath, languages=None, series=None, season=None, episode=None, title=None, year=None):
-        logger.debug(u'Getting subtitles for {0} season {1} episode {2} with languages {3}'.format(
+        logger.debug('Getting subtitles for {0} season {1} episode {2} with languages {3}'.format(
             series, season, episode, languages))
 
         query = {
@@ -125,7 +124,7 @@ class Subscenter(ServiceBase):
         # loop over results
         subtitles = {}
         for group_data in results.get('data', []):
-            for language_code, subtitles_data in group_data.get('subtitles', {}).items():
+            for language_code, subtitles_data in list(group_data.get('subtitles', {}).items()):
                 language_object = self.get_language(language_code)
 
                 for subtitle_item in subtitles_data:
@@ -149,7 +148,7 @@ class Subscenter(ServiceBase):
                     logger.debug('Found subtitle %r', subtitle)
                     subtitles[subtitle_id] = subtitle
 
-        return subtitles.values()
+        return list(subtitles.values())
 
     def download(self, subtitle):
         data = {

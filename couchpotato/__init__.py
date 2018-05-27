@@ -2,15 +2,15 @@ import os
 import time
 import traceback
 
-from couchpotato.api import api_docs, api_docs_missing, api
-from couchpotato.core.event import fireEvent
-from couchpotato.core.helpers.encoding import sp
-from couchpotato.core.helpers.variable import md5, tryInt
-from couchpotato.core.logger import CPLog
-from couchpotato.environment import Env
 from tornado import template
 from tornado.web import RequestHandler, authenticated
 
+from couchpotato.api import api_docs, api_docs_missing, api
+from couchpotato.core.event import fire_event
+from couchpotato.core.helpers.encoding import sp
+from couchpotato.core.helpers.variable import md5, try_int
+from couchpotato.core.logger import CPLog
+from couchpotato.environment import Env
 
 log = CPLog(__name__)
 
@@ -57,7 +57,7 @@ def get_db():
 
 # Web view
 def index(*args):
-    return template_loader.load('index.html').generate(sep = os.sep, fireEvent = fireEvent, Env = Env)
+    return template_loader.load('index.html').generate(sep=os.sep, fireEvent=fire_event, Env=Env)
 addView('', index)
 
 
@@ -85,11 +85,11 @@ def manifest(handler):
 
     if not Env.get('dev'):
         # CSS
-        for url in fireEvent('clientscript.get_styles', single = True):
+        for url in fire_event('clientscript.get_styles', single=True):
             lines.append(web_base + url)
 
         # Scripts
-        for url in fireEvent('clientscript.get_scripts', single = True):
+        for url in fire_event('clientscript.get_scripts', single=True):
             lines.append(web_base + url)
 
         # Favicon
@@ -123,14 +123,15 @@ def apiDocs(*args):
         del api_docs['']
         del api_docs_missing['']
 
-    return template_loader.load('api.html').generate(fireEvent = fireEvent, routes = sorted(routes), api_docs = api_docs, api_docs_missing = sorted(api_docs_missing), Env = Env)
+    return template_loader.load('api.html').generate(fireEvent=fire_event, routes=sorted(routes), api_docs=api_docs,
+                                                     api_docs_missing=sorted(api_docs_missing), Env=Env)
 
 addView('docs', apiDocs)
 
 
 # Database debug manager
 def databaseManage(*args):
-    return template_loader.load('database.html').generate(fireEvent = fireEvent, Env = Env)
+    return template_loader.load('database.html').generate(fireEvent=fire_event, Env=Env)
 
 addView('database', databaseManage)
 
@@ -164,7 +165,7 @@ class LoginHandler(BaseHandler):
         if self.get_current_user():
             self.redirect(Env.get('web_base'))
         else:
-            self.write(template_loader.load('login.html').generate(sep = os.sep, fireEvent = fireEvent, Env = Env))
+            self.write(template_loader.load('login.html').generate(sep=os.sep, fireEvent=fire_event, Env=Env))
 
     def post(self, *args, **kwargs):
 
@@ -177,7 +178,7 @@ class LoginHandler(BaseHandler):
             api_key = Env.setting('api_key')
 
         if api_key:
-            remember_me = tryInt(self.get_argument('remember_me', default = 0))
+            remember_me = try_int(self.get_argument('remember_me', default=0))
             self.set_secure_cookie('user', api_key, expires_days = 30 if remember_me > 0 else None)
 
         self.redirect(Env.get('web_base'))

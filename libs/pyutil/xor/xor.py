@@ -7,10 +7,12 @@ What word has three letters and a 'x' in it?
 Not that one silly.
 """
 
+import array
+import operator
 import warnings
-import array, operator
 
 from pyutil.assertutil import precondition
+
 
 def py_xor(str1, str2):
     warnings.warn("deprecated", DeprecationWarning)
@@ -42,7 +44,7 @@ def py_xor_simple(str1, str2):
     warnings.warn("deprecated", DeprecationWarning)
     precondition(len(str1) == len(str2), "str1 and str2 are required to be of the same length.", str1=str1, str2=str2)
 
-    return ''.join(map(chr, map(operator.__xor__, map(ord, str1), map(ord, str2))))
+    return ''.join(map(chr, list(map(operator.__xor__, list(map(ord, str1)), list(map(ord, str2))))))
 
 # Now make "xor.xor()" be the best xor we've got:
 xor = py_xor

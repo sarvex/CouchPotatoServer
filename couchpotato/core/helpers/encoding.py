@@ -1,35 +1,35 @@
-from string import ascii_letters, digits
-from urllib import quote_plus
 import os
 import re
 import traceback
 import unicodedata
+from string import ascii_letters, digits
+from urllib.parse import quote_plus
 
-from chardet import detect
-from couchpotato.core.logger import CPLog
 import six
+from chardet import detect
 
+from couchpotato.core.logger import CPLog
 
 log = CPLog(__name__)
 
 
-def toSafeString(original):
+def to_safe_string(original):
     valid_chars = "-_.() %s%s" % (ascii_letters, digits)
-    cleaned_filename = unicodedata.normalize('NFKD', toUnicode(original)).encode('ASCII', 'ignore')
+    cleaned_filename = unicodedata.normalize('NFKD', to_unicode(original)).encode('ASCII', 'ignore')
     valid_string = ''.join(c for c in cleaned_filename if c in valid_chars)
     return ' '.join(valid_string.split())
 
 
-def simplifyString(original):
-    string = stripAccents(original.lower())
-    string = toSafeString(' '.join(re.split('\W+', string)))
+def simplify_string(original):
+    string = strip_accents(original.lower())
+    string = to_safe_string(' '.join(re.split('\W+', string)))
     split = re.split('\W+|_', string.lower())
-    return toUnicode(' '.join(split))
+    return to_unicode(' '.join(split))
 
 
-def toUnicode(original, *args):
+def to_unicode(original, *args):
     try:
-        if isinstance(original, unicode):
+        if isinstance(original, str):
             return original
         else:
             try:
@@ -56,8 +56,7 @@ def toUnicode(original, *args):
 
 
 def ss(original, *args):
-
-    u_original = toUnicode(original, *args)
+    u_original = to_unicode(original, *args)
     try:
         from couchpotato.environment import Env
         return u_original.encode(Env.get('encoding'))
@@ -96,7 +95,7 @@ def sp(path, *args):
 
 
 def ek(original, *args):
-    if isinstance(original, (str, unicode)):
+    if isinstance(original, str):
         try:
             from couchpotato.environment import Env
             return original.decode(Env.get('encoding'), 'ignore')
@@ -106,7 +105,7 @@ def ek(original, *args):
     return original
 
 
-def isInt(value):
+def is_int(value):
     try:
         int(value)
         return True
@@ -114,15 +113,15 @@ def isInt(value):
         return False
 
 
-def stripAccents(s):
-    return ''.join((c for c in unicodedata.normalize('NFD', toUnicode(s)) if unicodedata.category(c) != 'Mn'))
+def strip_accents(s):
+    return ''.join((c for c in unicodedata.normalize('NFD', to_unicode(s)) if unicodedata.category(c) != 'Mn'))
 
 
-def tryUrlencode(s):
+def try_url_encode(s):
     new = six.u('')
     if isinstance(s, dict):
-        for key, value in s.items():
-            new += six.u('&%s=%s') % (key, tryUrlencode(value))
+        for key, value in list(s.items()):
+            new += six.u('&%s=%s') % (key, try_url_encode(value))
 
         return new[1:]
     else:

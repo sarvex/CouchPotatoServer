@@ -15,14 +15,15 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with subliminal.  If not, see <http://www.gnu.org/licenses/>.
+import bisect
+import logging
+
 from . import ServiceBase
 from ..exceptions import ServiceError
 from ..language import language_set
 from ..subtitles import get_subtitle_path, ResultSubtitle
-from ..videos import Episode, Movie
 from ..utils import to_unicode
-import bisect
-import logging
+from ..videos import Episode, Movie
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +81,7 @@ class Wizdom(ServiceBase):
 
     def query(self, filepath, languages=None, series=None, season=None, episode=None, title=None, imdbid=None,
               year=None):
-        logger.debug(u'Getting subtitles for {0} season {1} episode {2} with languages {3}'.format(
+        logger.debug('Getting subtitles for {0} season {1} episode {2} with languages {3}'.format(
             series, season, episode, languages))
         # search for the IMDB ID if needed
         is_movie = not (series and season and episode)
@@ -90,7 +91,7 @@ class Wizdom(ServiceBase):
         imdb_id = imdbid or self._search_imdb_id(title, year, is_movie)
 
         # search
-        logger.debug(u'Using IMDB ID {0}'.format(imdb_id))
+        logger.debug('Using IMDB ID {0}'.format(imdb_id))
         url = 'http://json.{}/{}.json'.format(self.server_url, imdb_id)
 
         # get the list of subtitles
@@ -118,17 +119,17 @@ class Wizdom(ServiceBase):
             download_link = 'http://zip.{}/{}.zip'.format(self.server_url, subtitle_id)
             # add the release and increment downloaded count if we already have the subtitle
             if subtitle_id in subtitles:
-                logger.debug(u'Found additional release {0} for subtitle {1}'.format(release, subtitle_id))
+                logger.debug('Found additional release {0} for subtitle {1}'.format(release, subtitle_id))
                 bisect.insort_left(subtitles[subtitle_id].releases, release)  # deterministic order
                 subtitles[subtitle_id].downloaded += 1
                 continue
             # otherwise create it
             subtitle = ResultSubtitle(subtitle_path, language_object, self.__class__.__name__.lower(),
                                       download_link, release=to_unicode(release))
-            logger.debug(u'Found subtitle {0}'.format(subtitle))
+            logger.debug('Found subtitle {0}'.format(subtitle))
             subtitles[subtitle_id] = subtitle
 
-        return subtitles.values()
+        return list(subtitles.values())
 
     def download(self, subtitle):
         self.download_zip_file(subtitle.link, subtitle.path)

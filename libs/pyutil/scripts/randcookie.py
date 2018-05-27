@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
-import os, sys
+import os
+import sys
 
 import zbase32
+
 
 def main():
     if len(sys.argv) > 1:
@@ -23,7 +25,7 @@ def main():
         chs = 7-chs
         i += chs
 
-    print s
+    print(s)
 
 if __name__ == '__main__':
     main()

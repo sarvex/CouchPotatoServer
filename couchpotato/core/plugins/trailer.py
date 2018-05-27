@@ -1,10 +1,9 @@
 import os
 
-from couchpotato.core.event import addEvent, fireEvent
-from couchpotato.core.helpers.variable import getExt, getTitle
+from couchpotato.core.event import add_event, fire_event
+from couchpotato.core.helpers.variable import get_extension, get_title
 from couchpotato.core.logger import CPLog
 from couchpotato.core.plugins.base import Plugin
-
 
 log = CPLog(__name__)
 
@@ -14,24 +13,25 @@ autoload = 'Trailer'
 class Trailer(Plugin):
 
     def __init__(self):
-        addEvent('renamer.after', self.searchSingle)
+        add_event('renamer.after', self.searchSingle)
 
     def searchSingle(self, message = None, group = None):
         if not group: group = {}
-        if self.isDisabled() or len(group['files']['trailer']) > 0: return
+        if self.is_disabled() or len(group['files']['trailer']) > 0: return
 
-        trailers = fireEvent('trailer.search', group = group, merge = True)
+        trailers = fire_event('trailer.search', group=group, merge=True)
         if not trailers or trailers == []:
-            log.info('No trailers found for: %s', getTitle(group))
+            log.info('No trailers found for: %s', get_title(group))
             return False
 
         for trailer in trailers.get(self.conf('quality'), []):
 
-            ext = getExt(trailer)
+            ext = get_extension(trailer)
             filename = self.conf('name').replace('<filename>', group['filename']) + ('.%s' % ('mp4' if len(ext) > 5 else ext))
             destination = os.path.join(group['destination_dir'], filename)
             if not os.path.isfile(destination):
-                trailer_file = fireEvent('file.download', url = trailer, dest = destination, urlopen_kwargs = {'headers': {'User-Agent': 'Quicktime'}}, single = True)
+                trailer_file = fire_event('file.download', url=trailer, dest=destination,
+                                          urlopen_kwargs={'headers': {'User-Agent': 'Quicktime'}}, single=True)
                 if trailer_file and os.path.getsize(trailer_file) < (1024 * 1024):  # Don't trust small trailers (1MB), try next one
                     os.unlink(trailer_file)
                     continue

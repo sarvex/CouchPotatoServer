@@ -18,12 +18,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import unicode_literals
+
+import functools
+import re
+import unicodedata
+
 from guessit import s
 from guessit.patterns import sep
-import functools
-import unicodedata
-import re
+
 
 # string-related functions
 

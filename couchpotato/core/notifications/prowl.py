@@ -1,9 +1,8 @@
 import traceback
 
-from couchpotato.core.helpers.encoding import toUnicode
+from couchpotato.core.helpers.encoding import to_unicode
 from couchpotato.core.logger import CPLog
 from couchpotato.core.notifications.base import Notification
-
 
 log = CPLog(__name__)
 
@@ -22,7 +21,7 @@ class Prowl(Notification):
         data = {
             'apikey': self.conf('api_key'),
             'application': self.default_title,
-            'description': toUnicode(message),
+            'description': to_unicode(message),
             'priority': self.conf('priority'),
         }
         headers = {

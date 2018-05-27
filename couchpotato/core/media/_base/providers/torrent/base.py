@@ -1,11 +1,10 @@
 import time
 import traceback
 
-from couchpotato.core.helpers.variable import getImdb, md5, cleanHost
+from couchpotato.core.helpers.variable import get_imdb, md5, clean_host
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.base import YarrProvider
 from couchpotato.environment import Env
-
 
 log = CPLog(__name__)
 
@@ -18,7 +17,7 @@ class TorrentProvider(YarrProvider):
     proxy_list = []
 
     def imdbMatch(self, url, imdbId):
-        if getImdb(url) == imdbId:
+        if get_imdb(url) == imdbId:
             return True
 
         if url[:4] == 'http':
@@ -29,7 +28,7 @@ class TorrentProvider(YarrProvider):
                 log.error('Failed to open %s.', url)
                 return False
 
-            return getImdb(data) == imdbId
+            return get_imdb(data) == imdbId
 
         return False
 
@@ -37,7 +36,7 @@ class TorrentProvider(YarrProvider):
 
         forced_domain = self.conf('domain')
         if forced_domain:
-            return cleanHost(forced_domain).rstrip('/') + url
+            return clean_host(forced_domain).rstrip('/') + url
 
         if not self.proxy_domain:
             for proxy in self.proxy_list:
@@ -65,7 +64,7 @@ class TorrentProvider(YarrProvider):
             log.error('No %s proxies left, please add one in settings, or let us know which one to add on the forum.', self.getName())
             return None
 
-        return cleanHost(self.proxy_domain).rstrip('/') + url
+        return clean_host(self.proxy_domain).rstrip('/') + url
 
     def correctProxy(self, data):
         return True

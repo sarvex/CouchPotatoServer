@@ -58,11 +58,13 @@
 # $ python -c 'import time_comparisons ; time_comparisons.print_measurements()'
 
 
+import hashlib
+import os
+import random
+from decimal import Decimal
+
 from pyutil import benchutil
 
-import hashlib, random, os
-
-from decimal import Decimal
 D=Decimal
 
 p1 = 'a'*32
@@ -75,7 +77,7 @@ def randstr(n, alphabetsize):
     return ''.join([random.choice(alphabet) for i in range(n)])
 
 def compare(n, f, a, b):
-    for i in xrange(n):
+    for i in range(n):
         f(a, b)
 
 def eqeqcomp(a, b):
@@ -86,7 +88,7 @@ def sillycomp(a, b):
     for i in range(len(a)):
         if a[i] != b[i]:
             return False
-        for i in xrange(2**9):
+        for i in range(2 ** 9):
             pass
     if len(a) == len(b):
         return True
@@ -112,24 +114,24 @@ def print_measurements():
     N=10**4
     REPS=10**2
 
-    print "all times are in nanoseconds per comparison (in scientific notation)"
-    print
+    print("all times are in nanoseconds per comparison (in scientific notation)")
+    print()
 
     for comparator in [eqeqcomp, hashcomp, xorcomp, sillycomp]:
-        print "using comparator ", comparator
+        print("using comparator ", comparator)
 
         # for (a, b, desc) in [(p1, p1a, 'same'), (p1, p2, 'close'), (p1, p3, 'far')]:
         trials = [(p1, p1a, 'same'), (p1, p2, 'close'), (p1, p3, 'far')]
         random.shuffle(trials)
         for (a, b, desc) in trials:
-            print "comparing two strings that are %s to each other" % (desc,)
+            print("comparing two strings that are %s to each other" % (desc,))
 
             def f(n):
                 compare(n, comparator, a, b)
 
             benchutil.rep_bench(f, N, UNITS_PER_SECOND=10**9, MAXREPS=REPS)
 
-            print
+            print()
 
 def try_to_crack_secret(cracker, comparator, secretlen, alphabetsize):
     secret = randstr(secretlen, alphabetsize)
@@ -137,20 +139,22 @@ def try_to_crack_secret(cracker, comparator, secretlen, alphabetsize):
     def test_guess(x):
         return comparator(secret, x)
 
-    print "Giving cracker %s a chance to figure out the secret. Don't tell him, but the secret is %s. Whenever he makes a guess, we'll use comparator %s to decide if his guess is right ..." % (cracker, secret.encode('hex'), comparator,)
+    print(
+        "Giving cracker %s a chance to figure out the secret. Don't tell him, but the secret is %s. Whenever he makes a guess, we'll use comparator %s to decide if his guess is right ..." % (
+        cracker, secret.encode('hex'), comparator,))
 
     guess = cracker(test_guess, secretlen, alphabetsize)
 
-    print "Cracker %s guessed %r" % (cracker, guess,)
+    print("Cracker %s guessed %r" % (cracker, guess,))
     if guess == secret:
-        print "HE FIGURED IT OUT!? HOW DID HE DO THAT."
+        print("HE FIGURED IT OUT!? HOW DID HE DO THAT.")
     else:
-        print "HAHA. Our secret is safe."
+        print("HAHA. Our secret is safe.")
 
 def byte_at_a_time_cracker(test_guess, secretlen, alphabetsize):
     # If we were cleverer, we'd add some backtracking behaviour where, if we can't find any x such that ABCx stands out from the crowd as taking longer than all the other ABCy's, then we start to think that we've taken a wrong step and we go back to trying ABy's. Make sense? But we're not that clever. Once we take a step, we don't backtrack.
 
-    print
+    print()
 
     guess=[]
 
@@ -174,26 +178,27 @@ def byte_at_a_time_cracker(test_guess, secretlen, alphabetsize):
 
             # And see how long it takes the test_guess to consider it...
             def f(n):
-                for i in xrange(n):
+                for i in range(n):
                     test_guess(s)
 
             times = benchutil.rep_bench(f, 10**7, MAXREPS=10**3, quiet=True)
 
             fastesttime = times['mean']
 
-            print "%s..."%(c.encode('hex'),),
+            print("%s..." % (c.encode('hex'),), end=' ')
             if best_next_byte is None or fastesttime > best_next_byte_time:
-                print "new candidate for slowest next-char: %s, took: %s" % (c.encode('hex'), fastesttime,),
+                print("new candidate for slowest next-char: %s, took: %s" % (c.encode('hex'), fastesttime,), end=' ')
 
                 best_next_byte_time = fastesttime
                 best_next_byte = c
 
         # Okay we've tried all possible next bytes. Our guess is this one (the one that took longest to be tested by test_guess):
         guess.append(best_next_byte)
-        print "SLOWEST next-char %s! Current guess at secret: %s" % (best_next_byte.encode('hex'), ''.join(guess).encode('hex'),)
+        print("SLOWEST next-char %s! Current guess at secret: %s" % (
+        best_next_byte.encode('hex'), ''.join(guess).encode('hex'),))
 
     guess = ''.join(guess)
-    print "Our guess for the secret: %r" % (guess,)
+    print("Our guess for the secret: %r" % (guess,))
     return guess
 
 if __name__ == '__main__':
@@ -203,7 +208,7 @@ if __name__ == '__main__':
     if alphabetsize > 256:
         raise Exception("We assume we can fit one element of the alphabet into a byte.")
 
-    print "secretlen: %d, alphabetsize: %d" % (secretlen, alphabetsize,)
+    print("secretlen: %d, alphabetsize: %d" % (secretlen, alphabetsize,))
 
     # try_to_crack_secret(byte_at_a_time_cracker, sillycomp, secretlen, alphabetsize)
     try_to_crack_secret(byte_at_a_time_cracker, eqeqcomp, secretlen, alphabetsize)

@@ -18,11 +18,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import unicode_literals
-import logging
-import sys
-import os, os.path
 
+import logging
+import os
+import os.path
+import sys
 
 GREEN_FONT = "\x1B[0;32m"
 YELLOW_FONT = "\x1B[0;33m"

@@ -1,7 +1,11 @@
 # ISO-8601:
 # http://www.cl.cam.ac.uk/~mgk25/iso-time.html
 
-import calendar, datetime, re, time
+import calendar
+import datetime
+import re
+import time
+
 
 def iso_utc_date(now=None, t=time.time):
     if now is None:
@@ -28,7 +32,7 @@ def iso_utc_time_to_seconds(isotime, _conversion_re=re.compile(r"(?P<year>\d{4})
     """
     m = _conversion_re.match(isotime)
     if not m:
-        raise ValueError, (isotime, "not a complete ISO8601 timestamp")
+        raise ValueError(isotime, "not a complete ISO8601 timestamp")
 
     year, month, day = int(m.group('year')), int(m.group('month')), int(m.group('day'))
     hour, minute, second = int(m.group('hour')), int(m.group('minute')), int(m.group('second'))

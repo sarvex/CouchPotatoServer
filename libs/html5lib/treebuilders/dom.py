@@ -1,8 +1,8 @@
-from __future__ import absolute_import, division, unicode_literals
 
 
-from xml.dom import minidom, Node
+
 import weakref
+from xml.dom import minidom, Node
 
 from . import _base
 from .. import constants

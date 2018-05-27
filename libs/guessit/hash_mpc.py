@@ -18,9 +18,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import unicode_literals
-import struct
+
 import os
+import struct
 
 
 def hash_file(filename):

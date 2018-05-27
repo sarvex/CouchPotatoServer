@@ -18,12 +18,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import unicode_literals
-from guessit import s, u
-import os.path
-import zipfile
+
 import io
+import os.path
 import re
+import zipfile
+
+from guessit import s, u
 
 
 def split_path(path):
@@ -46,12 +47,12 @@ def split_path(path):
     while True:
         head, tail = os.path.split(path)
         headlen = len(head)
-        
-        # if a string has a : in position 1 it gets splitted in everycase, also if 
+
+        # if a string has a : in position 1 it gets splitted in everycase, also if
         # there is not a valid drive letter and also if : is not followed by \
         if headlen >= 2 and headlen <= 3 and head[1] == ':' and ( head + tail == path ) and ( head[1:] != ':\\' or not re.match("^[a-zA-Z]:\\\\", head) ):
             tail = path
-            head = ''                   
+            head = ''
             headlen = 0
 
         # on Unix systems, the root folder is '/'
@@ -88,8 +89,8 @@ def file_in_same_dir(ref_file, desired_file):
 def load_file_in_same_dir(ref_file, filename):
     """Load a given file. Works even when the file is contained inside a zip."""
 
-    from couchpotato.core.helpers.encoding import toUnicode
-    path = split_path(toUnicode(ref_file))[:-1] + [filename]
+    from couchpotato.core.helpers.encoding import to_unicode
+    path = split_path(to_unicode(ref_file))[:-1] + [filename]
 
     for i, p in enumerate(path):
         if p.endswith('.zip'):

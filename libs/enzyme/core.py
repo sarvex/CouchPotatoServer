@@ -18,11 +18,12 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with enzyme.  If not, see <http://www.gnu.org/licenses/>.
-import re
 import logging
-import fourcc
-import language
-from strutils import str_to_unicode, unicode_to_str
+import re
+
+from . import fourcc
+from . import language
+from .strutils import str_to_unicode, unicode_to_str
 
 UNPRINTABLE_KEYS = ['thumbnail', 'url', 'codec_private']
 MEDIACORE = ['title', 'caption', 'comment', 'size', 'type', 'subtype', 'timestamp',
@@ -59,7 +60,7 @@ class Media(object):
     def __init__(self, hash=None):
         if hash is not None:
             # create Media based on dict
-            for key, value in hash.items():
+            for key, value in list(hash.items()):
                 if isinstance(value, list) and value and isinstance(value[0], dict):
                     value = [Media(x) for x in value]
                 self._set(key, value)
@@ -82,7 +83,7 @@ class Media(object):
     #
     #TODO: Fix that mess
     def __unicode__(self):
-        result = u''
+        result = ''
 
         # print normal attributes
         lists = []
@@ -93,9 +94,9 @@ class Media(object):
             if isinstance(value, list):
                 if not value:
                     continue
-                elif isinstance(value[0], basestring):
+                elif isinstance(value[0], str):
                     # Just a list of strings (keywords?), so don't treat it specially.
-                    value = u', '.join(value)
+                    value = ', '.join(value)
                 else:
                     lists.append((key, value))
                     continue
@@ -104,18 +105,18 @@ class Media(object):
                 continue
             if key in UNPRINTABLE_KEYS:
                 value = '<unprintable data, size=%d>' % len(value)
-            result += u'| %10s: %s\n' % (unicode(key), unicode(value))
+            result += '| %10s: %s\n' % (str(key), str(value))
 
         # print tags (recursively, to support nested tags).
         def print_tags(tags, suffix, show_label):
             result = ''
             for n, (name, tag) in enumerate(tags.items()):
-                result += u'| %12s%s%s = ' % (u'tags: ' if n == 0 and show_label else '', suffix, name)
+                result += '| %12s%s%s = ' % ('tags: ' if n == 0 and show_label else '', suffix, name)
                 if isinstance(tag, list):
                     # TODO: doesn't support lists/dicts within lists.
-                    result += u'%s\n' % ', '.join(subtag.value for subtag in tag)
+                    result += '%s\n' % ', '.join(subtag.value for subtag in tag)
                 else:
-                    result += u'%s\n' % (tag.value or '')
+                    result += '%s\n' % (tag.value or '')
                 if isinstance(tag, dict):
                     result += print_tags(tag, '    ', False)
             return result
@@ -127,8 +128,8 @@ class Media(object):
                 label = '+-- ' + key.rstrip('s').capitalize()
                 if key not in ['tracks', 'subtitles', 'chapters']:
                     label += ' Track'
-                result += u'%s #%d\n' % (label, n + 1)
-                result += '|    ' + re.sub(r'\n(.)', r'\n|    \1', unicode(item))
+                result += '%s #%d\n' % (label, n + 1)
+                result += '|    ' + re.sub(r'\n(.)', r'\n|    \1', str(item))
 
         # print tables
         #FIXME: WTH?
@@ -149,7 +150,7 @@ class Media(object):
         return result
 
     def __str__(self):
-        return unicode(self).encode()
+        return str(self).encode()
 
     def __repr__(self):
         if hasattr(self, 'url'):
@@ -170,7 +171,7 @@ class Media(object):
             self.tables[name] = hashmap
         else:
             # Append to the already existing table
-            for k in hashmap.keys():
+            for k in list(hashmap.keys()):
                 self.tables[name][k] = hashmap[k]
 
     def _set(self, key, value):
@@ -204,30 +205,30 @@ class Media(object):
             if value is None:
                 continue
             if key == 'image':
-                if isinstance(value, unicode):
+                if isinstance(value, str):
                     setattr(self, key, unicode_to_str(value))
                 continue
             if isinstance(value, str):
                 setattr(self, key, str_to_unicode(value))
-            if isinstance(value, unicode):
-                setattr(self, key, value.strip().rstrip().replace(u'\0', u''))
+            if isinstance(value, str):
+                setattr(self, key, value.strip().rstrip().replace('\0', ''))
             if isinstance(value, list) and value and isinstance(value[0], Media):
                 for submenu in value:
                     submenu._finalize()
 
         # copy needed tags from tables
-        for name, table in self.tables.items():
+        for name, table in list(self.tables.items()):
             mapping = self.table_mapping.get(name, {})
-            for tag, attr in mapping.items():
+            for tag, attr in list(mapping.items()):
                 if self.get(attr):
                     continue
                 value = table.get(tag, None)
                 if value is not None:
-                    if not isinstance(value, (str, unicode)):
+                    if not isinstance(value, str):
                         value = str_to_unicode(str(value))
                     elif isinstance(value, str):
                         value = str_to_unicode(value)
-                    value = value.strip().rstrip().replace(u'\0', u'')
+                    value = value.strip().rstrip().replace('\0', '')
                     setattr(self, attr, value)
 
         if 'fourcc' in self._keys and 'codec' in self._keys and self.codec is not None:
@@ -315,7 +316,7 @@ class Tag(object):
         self.binary = binary
 
     def __unicode__(self):
-        return unicode(self.value)
+        return str(self.value)
 
     def __str__(self):
         return str(self.value)
@@ -385,7 +386,7 @@ class Music(AudioStream):
             try:
                 # XXX Why is this needed anyway?
                 if int(self.trackno) < 10:
-                    self.trackno = u'0%s' % int(self.trackno)
+                    self.trackno = '0%s' % int(self.trackno)
             except (AttributeError, ValueError):
                 pass
 

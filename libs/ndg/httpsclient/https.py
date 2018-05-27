@@ -20,8 +20,8 @@ if sys.version_info[0] > 2:
 
     from urllib.request import AbstractHTTPHandler
 else:
-    from httplib import HTTPS_PORT
-    from httplib import HTTPConnection
+    from http.client import HTTPS_PORT
+    from http.client import HTTPConnection
 
     from urllib2 import AbstractHTTPHandler
 

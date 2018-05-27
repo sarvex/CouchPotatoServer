@@ -15,17 +15,17 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with subliminal.  If not, see <http://www.gnu.org/licenses/>.
+import gzip
+import logging
+import os.path
+import xmlrpc.client
+
 from . import ServiceBase
 from ..exceptions import ServiceError, DownloadFailedError
 from ..language import Language, language_set
 from ..subtitles import get_subtitle_path, ResultSubtitle
 from ..utils import to_unicode
 from ..videos import Episode, Movie
-import gzip
-import logging
-import os.path
-import xmlrpclib
-
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +83,7 @@ class OpenSubtitles(ServiceBase):
 
     def __init__(self, config=None):
         super(OpenSubtitles, self).__init__(config)
-        self.server = xmlrpclib.ServerProxy(self.server_url)
+        self.server = xmlrpc.client.ServerProxy(self.server_url)
         self.token = None
 
     def init(self):
@@ -110,10 +110,10 @@ class OpenSubtitles(ServiceBase):
             raise ServiceError('One or more parameter missing')
         for search in searches:
             search['sublanguageid'] = ','.join(self.get_code(l) for l in languages)
-        logger.debug(u'Getting subtitles %r with token %s' % (searches, self.token))
+        logger.debug('Getting subtitles %r with token %s' % (searches, self.token))
         results = self.server.SearchSubtitles(self.token, searches)
         if not results['data']:
-            logger.debug(u'Could not find subtitles for %r with token %s' % (searches, self.token))
+            logger.debug('Could not find subtitles for %r with token %s' % (searches, self.token))
             return []
         subtitles = []
         for result in results['data']:

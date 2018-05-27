@@ -17,10 +17,11 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with enzyme.  If not, see <http://www.gnu.org/licenses/>.
-from exceptions import ParseError
-import core
 import logging
 import struct
+
+from . import core
+from .exceptions import ParseError
 
 __all__ = ['Parser']
 
@@ -115,13 +116,13 @@ class FlashVideo(core.AVContainer):
                 file.seek(size - 1, 1)
 
             elif chunk[0] == FLV_TAG_TYPE_META:
-                log.info(u'metadata %r', str(chunk))
+                log.info('metadata %r', str(chunk))
                 metadata = file.read(size)
                 try:
                     while metadata:
                         length, value = self._parse_value(metadata)
                         if isinstance(value, dict):
-                            log.info(u'metadata: %r', value)
+                            log.info('metadata: %r', value)
                             if value.get('creator'):
                                 self.copyright = value.get('creator')
                             if value.get('width'):
@@ -138,7 +139,7 @@ class FlashVideo(core.AVContainer):
                 except (IndexError, struct.error, TypeError):
                     pass
             else:
-                log.info(u'unkown %r', str(chunk))
+                log.info('unkown %r', str(chunk))
                 file.seek(size, 1)
 
             file.seek(4, 1)
@@ -174,7 +175,7 @@ class FlashVideo(core.AVContainer):
                 data = data[length:]
             return init_length - len(data), result
 
-        log.info(u'unknown code: %x. Stop metadata parser', ord(data[0]))
+        log.info('unknown code: %x. Stop metadata parser', ord(data[0]))
         return 0, None
 
 

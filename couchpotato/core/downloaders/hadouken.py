@@ -1,18 +1,20 @@
-from base64 import b16encode, b32decode, b64encode
-from distutils.version import LooseVersion
-from hashlib import sha1
-import httplib
+import http.client
 import json
 import os
 import re
-import urllib2
+import urllib.error
+import urllib.parse
+import urllib.request
+from base64 import b16encode, b32decode, b64encode
+from distutils.version import LooseVersion
+from hashlib import sha1
 
-from couchpotato.core._base.downloader.main import DownloaderBase, ReleaseDownloadList
-from couchpotato.core.helpers.encoding import isInt, sp
-from couchpotato.core.helpers.variable import cleanHost
-from couchpotato.core.logger import CPLog
 from bencode import bencode as benc, bdecode
 
+from couchpotato.core._base.downloader.main import DownloaderBase, ReleaseDownloadList
+from couchpotato.core.helpers.encoding import is_int, sp
+from couchpotato.core.helpers.variable import clean_host
+from couchpotato.core.logger import CPLog
 
 log = CPLog(__name__)
 
@@ -25,9 +27,9 @@ class Hadouken(DownloaderBase):
 
     def connect(self):
         # Load host from config and split out port.
-        host = cleanHost(self.conf('host'), protocol = False).split(':')
+        host = clean_host(self.conf('host'), protocol=False).split(':')
 
-        if not isInt(host[1]):
+        if not is_int(host[1]):
             log.error('Config properties are not filled in correctly, port is missing.')
             return False
 
@@ -109,7 +111,7 @@ class Hadouken(DownloaderBase):
         else:
             self.hadouken_api.add_file(filedata, torrent_params)
 
-        return self.downloadReturnId(torrent_hash)
+        return self.download_return_id(torrent_hash)
 
     def test(self):
         """ Tests the given host:port and API key """
@@ -130,7 +132,7 @@ class Hadouken(DownloaderBase):
         log.error('Hadouken v4.5.6 (or newer) required. Found v%s', version)
         return False
 
-    def getAllDownloadStatus(self, ids):
+    def get_all_download_status(self, ids):
         """ Get status of all active downloads
 
         :param ids: list of (mixed) downloader ids
@@ -187,7 +189,7 @@ class Hadouken(DownloaderBase):
 
         return self.hadouken_api.pause(release_download['id'], pause)
 
-    def removeFailed(self, release_download):
+    def remove_failed(self, release_download):
         """ Removes a failed torrent and also remove the data associated with it.
 
         Keyword arguments:
@@ -201,7 +203,7 @@ class Hadouken(DownloaderBase):
 
         return self.hadouken_api.remove(release_download['id'], remove_data = True)
 
-    def processComplete(self, release_download, delete_files = False):
+    def process_complete(self, release_download, delete_files=False):
         """ Removes the completed torrent from Hadouken and optionally removes the data
         associated with it.
 
@@ -224,7 +226,7 @@ class JsonRpcClient(object):
         self.url = url
         self.requestId = 0
 
-        self.opener = urllib2.build_opener()
+        self.opener = urllib.request.build_opener()
         self.opener.addheaders = [
             ('User-Agent', 'couchpotato-hadouken-client/1.0'),
             ('Accept', 'application/json'),
@@ -244,7 +246,7 @@ class JsonRpcClient(object):
             'params': params
         }
 
-        request = urllib2.Request(self.url, data = json.dumps(data))
+        request = urllib.request.Request(self.url, data=json.dumps(data))
 
         try:
             f = self.opener.open(request)
@@ -253,22 +255,22 @@ class JsonRpcClient(object):
 
             obj = json.loads(response)
 
-            if 'error' in obj.keys():
+            if 'error' in list(obj.keys()):
                 log.error('JSONRPC error, %s: %s', (obj['error']['code'], obj['error']['message']))
                 return False
 
-            if 'result' in obj.keys():
+            if 'result' in list(obj.keys()):
                 return obj['result']
 
             return True
-        except httplib.InvalidURL as err:
+        except http.client.InvalidURL as err:
             log.error('Invalid Hadouken host, check your config %s', err)
-        except urllib2.HTTPError as err:
+        except urllib.error.HTTPError as err:
             if err.code == 401:
                 log.error('Could not authenticate, check your config')
             else:
                 log.error('Hadouken HTTPError: %s', err)
-        except urllib2.URLError as err:
+        except urllib.error.URLError as err:
             log.error('Unable to connect to Hadouken %s', err)
 
         return False

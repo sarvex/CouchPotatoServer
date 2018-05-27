@@ -2,15 +2,12 @@ import ctypes
 import os
 import string
 import traceback
-import time
 
 from couchpotato import CPLog
 from couchpotato.api import addApiView
-from couchpotato.core.event import addEvent
-from couchpotato.core.helpers.encoding import sp, ss, toUnicode
-from couchpotato.core.helpers.variable import getUserDir
+from couchpotato.core.helpers.encoding import sp, ss, to_unicode
+from couchpotato.core.helpers.variable import get_user_directory
 from couchpotato.core.plugins.base import Plugin
-
 from couchpotato.environment import Env
 
 log = CPLog(__name__)
@@ -60,7 +57,7 @@ class FileBrowser(Plugin):
         for f in os.listdir(path):
             p = sp(os.path.join(path, f))
             if os.path.isdir(p) and ((self.is_hidden(p) and bool(int(show_hidden))) or not self.is_hidden(p)):
-                dirs.append(toUnicode('%s%s' % (p, os.path.sep)))
+                dirs.append(to_unicode('%s%s' % (p, os.path.sep)))
 
         return sorted(dirs)
 
@@ -79,8 +76,8 @@ class FileBrowser(Plugin):
     def view(self, path = '/', show_hidden = True, **kwargs):
 
         soft_chroot = Env.get('softchroot')
-        
-        home = getUserDir()
+
+        home = get_user_directory()
         if soft_chroot.enabled:
             if not soft_chroot.is_subdir(home):
                 home = soft_chroot.get_chroot()
@@ -99,7 +96,7 @@ class FileBrowser(Plugin):
             dirs = []
 
         if soft_chroot.enabled:
-            dirs = map(soft_chroot.abs2chroot, dirs)
+            dirs = list(map(soft_chroot.abs2chroot, dirs))
 
         parent = os.path.dirname(path.rstrip(os.path.sep))
         if parent == path.rstrip(os.path.sep):

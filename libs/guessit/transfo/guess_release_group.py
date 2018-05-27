@@ -18,16 +18,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import unicode_literals
-from guessit.transfo import SingleNodeGuesser
-from guessit.patterns import prop_multi, compute_canonical_form, _dash, _psep
-import re
+
 import logging
+import re
+
+from guessit.patterns import prop_multi, compute_canonical_form, _dash, _psep
+from guessit.transfo import SingleNodeGuesser
 
 log = logging.getLogger(__name__)
 
 def get_patterns(property_name):
-    return [ p.replace(_dash, _psep) for patterns in prop_multi[property_name].values() for p in patterns  ]
+    return [p.replace(_dash, _psep) for patterns in list(prop_multi[property_name].values()) for p in patterns]
 
 CODECS = get_patterns('videoCodec')
 FORMATS = get_patterns('format')
@@ -53,7 +54,7 @@ GROUP_NAMES2 = [ re.compile(r, re.IGNORECASE) for r in GROUP_NAMES2 ]
 
 def adjust_metadata(md):
     return dict((property_name, compute_canonical_form(property_name, value) or value)
-                for property_name, value in md.items())
+                for property_name, value in list(md.items()))
 
 
 def guess_release_group(string):

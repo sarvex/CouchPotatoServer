@@ -1,5 +1,7 @@
 import logging
-import urllib
+import urllib.error
+import urllib.parse
+import urllib.request
 
 from rtorrent.common import convert_version_tuple_to_str, join_uri, update_uri
 from rtorrent.lib.xmlrpc.clients.http import HTTPServerProxy
@@ -25,7 +27,7 @@ class Connection(object):
 
         # Transform + Parse URI
         self.uri = self._transform_uri(uri)
-        self.scheme = urllib.splittype(self.uri)[0]
+        self.scheme = urllib.parse.splittype(self.uri)[0]
 
         # Construct RPC Client
         self.sp = self._get_sp(self.scheme, sp)
@@ -140,7 +142,7 @@ class Connection(object):
 
     @staticmethod
     def _transform_uri(uri):
-        scheme = urllib.splittype(uri)[0]
+        scheme = urllib.parse.splittype(uri)[0]
 
         if scheme == 'httprpc' or scheme.startswith('httprpc+'):
             # Try find HTTPRPC transport (token after '+' in 'httprpc+https'), otherwise assume HTTP

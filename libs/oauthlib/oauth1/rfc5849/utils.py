@@ -10,7 +10,6 @@ spec.
 
 import string
 import time
-import urllib2
 from random import getrandbits, choice
 
 from oauthlib.common import quote, unquote
@@ -35,11 +34,11 @@ def filter_params(target):
 
 def filter_oauth_params(params):
     """Removes all non oauth parameters from a dict or a list of params."""
-    is_oauth = lambda kv: kv[0].startswith(u"oauth_")
+    is_oauth = lambda kv: kv[0].startswith("oauth_")
     if isinstance(params, dict):
-        return filter(is_oauth, params.items())
+        return list(filter(is_oauth, list(params.items())))
     else:
-        return filter(is_oauth, params)
+        return list(filter(is_oauth, params))
 
 
 def generate_timestamp():
@@ -49,7 +48,7 @@ def generate_timestamp():
 
     .. _`section 3.3`: http://tools.ietf.org/html/rfc5849#section-3.3
     """
-    return unicode(int(time.time()))
+    return str(int(time.time()))
 
 
 def generate_nonce():
@@ -62,7 +61,7 @@ def generate_nonce():
 
     .. _`section 3.3`: http://tools.ietf.org/html/rfc5849#section-3.3
     """
-    return unicode(getrandbits(64)) + generate_timestamp()
+    return str(getrandbits(64)) + generate_timestamp()
 
 
 def generate_token(length=20, chars=UNICODE_ASCII_CHARACTER_SET):
@@ -78,7 +77,7 @@ def generate_token(length=20, chars=UNICODE_ASCII_CHARACTER_SET):
         python-random-string-generation-with-upper-case-letters-and-digits
 
     """
-    return u''.join(choice(chars) for x in range(length))
+    return ''.join(choice(chars) for x in range(length))
 
 
 def escape(u):
@@ -89,7 +88,7 @@ def escape(u):
     .. _`section 3.6`: http://tools.ietf.org/html/rfc5849#section-3.6
 
     """
-    if not isinstance(u, unicode):
+    if not isinstance(u, str):
         raise ValueError('Only unicode objects are escapable.')
     # Letters, digits, and the characters '_.-' are already treated as safe
     # by urllib.quote(). We need to add '~' to fully support rfc5849.
@@ -97,7 +96,7 @@ def escape(u):
 
 
 def unescape(u):
-    if not isinstance(u, unicode):
+    if not isinstance(u, str):
         raise ValueError('Only unicode objects are unescapable.')
     return unquote(u)
 
@@ -109,8 +108,8 @@ def urlencode(query):
     """
     # Convert dictionaries to list of tuples
     if isinstance(query, dict):
-        query = query.items()
-    return u"&".join([u'='.join([escape(k), escape(v)]) for k, v in query])
+        query = list(query.items())
+    return "&".join(['='.join([escape(k), escape(v)]) for k, v in query])
 
 
 def parse_keqv_list(l):
@@ -118,7 +117,7 @@ def parse_keqv_list(l):
     encoded_list = [u.encode('utf-8') for u in l]
     encoded_parsed = urllib2.parse_keqv_list(encoded_list)
     return dict((k.decode('utf-8'),
-        v.decode('utf-8')) for k,v in encoded_parsed.items())
+                 v.decode('utf-8')) for k, v in list(encoded_parsed.items()))
 
 
 def parse_http_list(u):
@@ -130,12 +129,12 @@ def parse_http_list(u):
 
 def parse_authorization_header(authorization_header):
     """Parse an OAuth authorization header into a list of 2-tuples"""
-    auth_scheme = u'OAuth '
+    auth_scheme = 'OAuth '
     if authorization_header.startswith(auth_scheme):
-        authorization_header = authorization_header.replace(auth_scheme, u'', 1)
+        authorization_header = authorization_header.replace(auth_scheme, '', 1)
     items = parse_http_list(authorization_header)
     try:
-        return parse_keqv_list(items).items()
+        return list(parse_keqv_list(items).items())
     except ValueError:
         raise ValueError('Malformed authorization header')
 

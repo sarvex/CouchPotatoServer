@@ -1,4 +1,4 @@
-from couchpotato.core.event import addEvent
+from couchpotato.core.event import add_event
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.base import Provider
 
@@ -10,7 +10,7 @@ class TrailerProvider(Provider):
     type = 'trailer'
 
     def __init__(self):
-        addEvent('trailer.search', self.search)
+        add_event('trailer.search', self.search)
 
     def search(self, *args, **kwargs):
         pass

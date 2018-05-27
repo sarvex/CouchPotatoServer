@@ -1,11 +1,10 @@
-from urlparse import urlparse
+from urllib.parse import urlparse
 
-from couchpotato.core.event import addEvent, fireEvent
-from couchpotato.core.helpers.encoding import simplifyString
-from couchpotato.core.helpers.variable import getImdb, md5
+from couchpotato.core.event import add_event, fire_event
+from couchpotato.core.helpers.encoding import simplify_string
+from couchpotato.core.helpers.variable import get_imdb, md5
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.base import Provider
-
 
 log = CPLog(__name__)
 
@@ -21,16 +20,16 @@ class UserscriptBase(Provider):
     excludes = []
 
     def __init__(self):
-        addEvent('userscript.get_includes', self.getInclude)
-        addEvent('userscript.get_excludes', self.getExclude)
-        addEvent('userscript.get_provider_version', self.getVersion)
-        addEvent('userscript.get_movie_via_url', self.belongsTo)
+        add_event('userscript.get_includes', self.getInclude)
+        add_event('userscript.get_excludes', self.getExclude)
+        add_event('userscript.get_provider_version', self.getVersion)
+        add_event('userscript.get_movie_via_url', self.belongsTo)
 
     def search(self, name, year = None):
-        result = fireEvent('movie.search', q = '%s %s' % (name, year), limit = 1, merge = True)
+        result = fire_event('movie.search', q='%s %s' % (name, year), limit=1, merge=True)
 
         if len(result) > 0:
-            movie = fireEvent('movie.info', identifier = result[0].get('imdb'), extended = False, merge = True)
+            movie = fire_event('movie.info', identifier=result[0].get('imdb'), extended=False, merge=True)
             return movie
         else:
             return None
@@ -49,17 +48,17 @@ class UserscriptBase(Provider):
         return
 
     def getUrl(self, url):
-        return self.getCache(md5(simplifyString(url)), url = url)
+        return self.getCache(md5(simplify_string(url)), url=url)
 
     def getMovie(self, url):
         try:
             data = self.getUrl(url)
         except:
             data = ''
-        return self.getInfo(getImdb(data))
+        return self.getInfo(get_imdb(data))
 
     def getInfo(self, identifier):
-        return fireEvent('movie.info', identifier = identifier, extended = False, merge = True)
+        return fire_event('movie.info', identifier=identifier, extended=False, merge=True)
 
     def getInclude(self):
         return self.includes

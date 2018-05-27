@@ -18,10 +18,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import unicode_literals
-from guessit.patterns import sep
-import re
+
 import logging
+import re
+
+from guessit.patterns import sep
 
 log = logging.getLogger(__name__)
 

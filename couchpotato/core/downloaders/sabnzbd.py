@@ -1,15 +1,14 @@
-from datetime import timedelta
-from urllib2 import URLError
 import json
 import os
 import traceback
+from datetime import timedelta
+from urllib.error import URLError
 
 from couchpotato.core._base.downloader.main import DownloaderBase, ReleaseDownloadList
-from couchpotato.core.helpers.encoding import tryUrlencode, ss, sp
-from couchpotato.core.helpers.variable import cleanHost, mergeDicts
+from couchpotato.core.helpers.encoding import try_url_encode, ss, sp
+from couchpotato.core.helpers.variable import clean_host, merge_dictionaries
 from couchpotato.core.logger import CPLog
 from couchpotato.environment import Env
-
 
 log = CPLog(__name__)
 
@@ -77,7 +76,7 @@ class Sabnzbd(DownloaderBase):
         if sab_data.get('status') and not sab_data.get('error') and isinstance(nzo_ids, list) and len(nzo_ids) > 0:
             log.info('NZB sent to SAB successfully.')
             if filedata:
-                return self.downloadReturnId(nzo_ids[0])
+                return self.download_return_id(nzo_ids[0])
             else:
                 return True
         else:
@@ -109,7 +108,7 @@ class Sabnzbd(DownloaderBase):
 
         return True
 
-    def getAllDownloadStatus(self, ids):
+    def get_all_download_status(self, ids):
         """ Get status of all active downloads
 
         :param ids: list of (mixed) downloader ids
@@ -176,7 +175,7 @@ class Sabnzbd(DownloaderBase):
 
         return release_downloads
 
-    def removeFailed(self, release_download):
+    def remove_failed(self, release_download):
 
         log.info('%s failed downloading, deleting...', release_download['name'])
 
@@ -199,7 +198,7 @@ class Sabnzbd(DownloaderBase):
 
         return True
 
-    def processComplete(self, release_download, delete_files = False):
+    def process_complete(self, release_download, delete_files=False):
         log.debug('Requesting SabNZBd to remove the NZB %s.', release_download['name'])
 
         try:
@@ -217,7 +216,8 @@ class Sabnzbd(DownloaderBase):
 
     def call(self, request_params, use_json = True, **kwargs):
 
-        url = cleanHost(self.conf('host'), ssl = self.conf('ssl')) + 'api?' + tryUrlencode(mergeDicts(request_params, {
+        url = clean_host(self.conf('host'), ssl=self.conf('ssl')) + 'api?' + try_url_encode(
+            merge_dictionaries(request_params, {
             'apikey': self.conf('api_key'),
             'output': 'json'
         }))

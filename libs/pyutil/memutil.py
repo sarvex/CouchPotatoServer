@@ -1,12 +1,21 @@
 #  Copyright (c) 2002-2010 Zooko Wilcox-O'Hearn
 #  This file is part of pyutil; see README.rst for licensing terms.
 
-# from the Python Standard Library
-import exceptions, gc, math, operator, os, sys, types
+from functools import reduce
 
+# from the Python Standard Library
+import exceptions
+import gc
+import math
+import operator
+import os
+import sys
+import types
+
+from . import mathutil
 # from the pyutil library
-from assertutil import precondition
-import mathutil
+from .assertutil import precondition
+
 
 class Canary:
     """
@@ -16,7 +25,7 @@ class Canary:
         self.ownerdesc = repr(owner)
 
     def __del__(self):
-        print "Canary says that %s is gone." % self.ownerdesc
+        print("Canary says that %s is gone." % self.ownerdesc)
 
 def estimate_mem_of_obj(o):
     # assumes 32-bit CPUs...
@@ -24,15 +33,15 @@ def estimate_mem_of_obj(o):
     if hasattr(o, '__len__'):
         if isinstance(o, str):
             return PY_STRUCT_HEAD_LEN + o.__len__() * 1
-        if isinstance(o, unicode):
+        if isinstance(o, str):
             return PY_STRUCT_HEAD_LEN + o.__len__() * 4 # 4 depends on implementation and is approximate
-        if isinstance(o, (tuple, list,)):
+        if isinstance(o, (tuple, list)):
             return PY_STRUCT_HEAD_LEN + o.__len__() * 4
-        if isinstance(o, (dict, set,)):
+        if isinstance(o, (dict, set)):
             return PY_STRUCT_HEAD_LEN + o.__len__() * 4 * 2 * 2 # approximate
     if isinstance(o, int):
         return PY_STRUCT_HEAD_LEN + 4
-    if isinstance(o, long):
+    if isinstance(o, int):
         return PY_STRUCT_HEAD_LEN + 4
         if o < 1:
             return PY_STRUCT_HEAD_LEN
@@ -136,15 +145,17 @@ def measure_obj_leakage(f, numsamples=2**7, iterspersample=2**4, *args, **kwargs
 
     avex = float(reduce(operator.__add__, resiters)) / len(resiters)
     avey = float(reduce(operator.__add__, resnumobjs)) / len(resnumobjs)
-    sxy = reduce(operator.__add__, map(lambda a, avex=avex, avey=avey: (a[0] - avex) * (a[1] - avey), zip(resiters, resnumobjs)))
-    sxx = reduce(operator.__add__, map(lambda a, avex=avex: (a - avex) ** 2, resiters))
+    sxy = reduce(operator.__add__, list(
+        map(lambda a, avex=avex, avey=avey: (a[0] - avex) * (a[1] - avey), list(zip(resiters, resnumobjs)))))
+    sxx = reduce(operator.__add__, list(map(lambda a, avex=avex: (a - avex) ** 2, resiters)))
     return sxy / sxx
 
 def linear_fit_slope(xs, ys):
     avex = float(reduce(operator.__add__, xs)) / len(xs)
     avey = float(reduce(operator.__add__, ys)) / len(ys)
-    sxy = reduce(operator.__add__, map(lambda a, avex=avex, avey=avey: (a[0] - avex) * (a[1] - avey), zip(xs, ys)))
-    sxx = reduce(operator.__add__, map(lambda a, avex=avex: (a - avex) ** 2, xs))
+    sxy = reduce(operator.__add__,
+                 list(map(lambda a, avex=avex, avey=avey: (a[0] - avex) * (a[1] - avey), list(zip(xs, ys)))))
+    sxx = reduce(operator.__add__, list(map(lambda a, avex=avex: (a - avex) ** 2, xs)))
     return sxy / sxx
 
 def measure_ref_leakage(f, numsamples=2**7, iterspersample=2**4, *args, **kwargs):
@@ -172,7 +183,7 @@ def measure_ref_leakage(f, numsamples=2**7, iterspersample=2**4, *args, **kwargs
 
     try:
         sys.gettotalrefcount()
-    except AttributeError, le:
+    except AttributeError as le:
         raise AttributeError(le, "Probably this is not a debug build of Python, so it doesn't have a sys.gettotalrefcount function.")
     resiters = [None]*numsamples # values: iters
     resnumrefs = [None]*numsamples # values: numrefs
@@ -189,11 +200,13 @@ def measure_ref_leakage(f, numsamples=2**7, iterspersample=2**4, *args, **kwargs
 
     avex = float(reduce(operator.__add__, resiters)) / len(resiters)
     avey = float(reduce(operator.__add__, resnumrefs)) / len(resnumrefs)
-    sxy = reduce(operator.__add__, map(lambda a, avex=avex, avey=avey: (a[0] - avex) * (a[1] - avey), zip(resiters, resnumrefs)))
-    sxx = reduce(operator.__add__, map(lambda a, avex=avex: (a - avex) ** 2, resiters))
+    sxy = reduce(operator.__add__, list(
+        map(lambda a, avex=avex, avey=avey: (a[0] - avex) * (a[1] - avey), list(zip(resiters, resnumrefs)))))
+    sxx = reduce(operator.__add__, list(map(lambda a, avex=avex: (a - avex) ** 2, resiters)))
     return sxy / sxx
 
-class NotSupportedException(exceptions.StandardError):
+
+class NotSupportedException(exceptions.Exception):
     """
     Just an exception class. It is thrown by get_mem_usage if the OS does
     not support the operation.
@@ -302,7 +315,7 @@ class Measurer(object):
             self._invoke()
             return
 
-        self.d.callback(mathutil.linear_fit_slope(zip(self.resiters, self.resmemusage)))
+        self.d.callback(mathutil.linear_fit_slope(list(zip(self.resiters, self.resmemusage))))
 
 def measure_mem_leakage(f, numsamples=2**7, iterspersample=2**4, *args, **kwargs):
     """
@@ -341,8 +354,9 @@ def measure_mem_leakage(f, numsamples=2**7, iterspersample=2**4, *args, **kwargs
 
     avex = float(reduce(operator.__add__, resiters)) / len(resiters)
     avey = float(reduce(operator.__add__, resmemusage)) / len(resmemusage)
-    sxy = reduce(operator.__add__, map(lambda a, avex=avex, avey=avey: (a[0] - avex) * (a[1] - avey), zip(resiters, resmemusage)))
-    sxx = reduce(operator.__add__, map(lambda a, avex=avex: (a - avex) ** 2, resiters))
+    sxy = reduce(operator.__add__, list(
+        map(lambda a, avex=avex, avey=avey: (a[0] - avex) * (a[1] - avey), list(zip(resiters, resmemusage)))))
+    sxx = reduce(operator.__add__, list(map(lambda a, avex=avex: (a - avex) ** 2, resiters)))
     if sxx == 0:
         return None
     return sxy / sxx
@@ -356,12 +370,12 @@ def describe_object(o, FunctionType=types.FunctionType, MethodType=types.MethodT
     sl = []
     if isinstance(o, FunctionType):
         try:
-            sl.append("<type 'function' %s>" % str(o.func_name))
+            sl.append("<type 'function' %s>" % str(o.__name__))
         except:
             pass
     elif isinstance(o, MethodType):
         try:
-            sl.append("<type 'method' %s>" % str(o.im_func.func_name))
+            sl.append("<type 'method' %s>" % str(o.__func__.__name__))
         except:
             pass
     elif isinstance(o, InstanceType):
@@ -378,18 +392,19 @@ def describe_object(o, FunctionType=types.FunctionType, MethodType=types.MethodT
         pass
     return ''.join(sl)
 
-import dictutil
+
+from . import dictutil
 def describe_object_with_dict_details(o):
     sl = []
     sl.append(str(type(o)))
     if isinstance(o, types.FunctionType):
         try:
-            sl.append(str(o.func_name))
+            sl.append(str(o.__name__))
         except:
             pass
     elif isinstance(o, types.MethodType):
         try:
-            sl.append(str(o.im_func.func_name))
+            sl.append(str(o.__func__.__name__))
         except:
             pass
     try:
@@ -399,12 +414,12 @@ def describe_object_with_dict_details(o):
     if isinstance(o, dict) and o:
         sl.append('-')
         nd = dictutil.NumDict()
-        for k, v in o.iteritems():
+        for k, v in o.items():
             nd.inc((describe_object(k), describe_object(v),))
         k, v = nd.item_with_largest_value()
         sl.append("-")
-        iterator = o.iteritems()
-        k,v =  iterator.next()
+        iterator = iter(o.items())
+        k, v = next(iterator)
         sl.append(describe_object(k))
         sl.append(":")
         sl.append(describe_object(v))
@@ -416,7 +431,7 @@ def describe_dict(o):
     sl.append(str(l))
     if l:
         sl.append("-")
-        iterator = o.iteritems()
+        iterator = iter(o.items())
         firstitem=True
         try:
             while True:
@@ -424,7 +439,7 @@ def describe_dict(o):
                     firstitem = False
                 else:
                     sl.append(", ")
-                k,v =  iterator.next()
+                k, v = next(iterator)
                 sl.append(describe_object(k))
                 sl.append(": ")
                 sl.append(describe_object(v))
@@ -477,7 +492,7 @@ def get_all_objects():
     return objs
 
 def describe_all_objects():
-    import dictutil
+    from . import dictutil
     d = dictutil.NumDict()
     for o in get_all_objects():
         d.inc(describe_object(o))
@@ -495,7 +510,7 @@ def dump_description_of_object_refs(o, f):
 
     # First, any __dict__ items
     try:
-        itemsiter = o.__dict__.iteritems()
+        itemsiter = iter(o.__dict__.items())
     except:
         pass
     else:
@@ -534,7 +549,7 @@ def dump_descriptions_of_all_objects(f):
                 ids.add(id(so))
                 dump_description_of_object(so, f)
     ls = None # break reference cycle
-    return len(ids)  
+    return len(ids)
 
 def dump_description_of_object_with_refs(o, f):
     f.write("%0x" % (id(o),))
@@ -563,7 +578,7 @@ def dump_descriptions_of_all_objects_with_refs(f):
                 ids.add(id(so))
                 dump_description_of_object_with_refs(so, f)
     ls = None # break reference cycle
-    return len(ids)  
+    return len(ids)
 
 import re
 NRE = re.compile("[1-9][0-9]*$")
@@ -573,7 +588,7 @@ def undump_descriptions_of_all_objects(inf):
         dash=l.find('-')
         if dash == -1:
             raise l
-        mo = NRE.search(l) 
+        mo = NRE.search(l)
         if mo:
             typstr = l[dash+1:mo.start(0)]
             num=int(mo.group(0))

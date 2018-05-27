@@ -1,12 +1,11 @@
 from CodernityDB.database import RecordNotFound
+
 from couchpotato import Env, get_db
-from couchpotato.core.helpers.variable import getTitle, splitString
-
-from couchpotato.core.logger import CPLog
 from couchpotato.api import addApiView
-from couchpotato.core.event import fireEvent
+from couchpotato.core.event import fire_event
+from couchpotato.core.helpers.variable import get_title, split_string
+from couchpotato.core.logger import CPLog
 from couchpotato.core.plugins.base import Plugin
-
 
 log = CPLog(__name__)
 
@@ -21,8 +20,8 @@ class Charts(Plugin):
 
         db = get_db()
 
-        charts = fireEvent('automation.get_chart_list', merge = True)
-        ignored = splitString(Env.prop('charts_ignore', default = ''))
+        charts = fire_event('automation.get_chart_list', merge=True)
+        ignored = split_string(Env.prop('charts_ignore', default=''))
 
         # Create a list the movie/list.js can use
         for chart in charts:
@@ -48,12 +47,12 @@ class Charts(Plugin):
                 poster = [x for x in posters if 'tmdb' in x]
                 posters = poster if len(poster) > 0 else posters
 
-                cached_poster = fireEvent('file.download', url = posters[0], single = True) if len(posters) > 0 else False
+                cached_poster = fire_event('file.download', url=posters[0], single=True) if len(posters) > 0 else False
                 files = {'image_poster': [cached_poster] } if cached_poster else {}
 
                 medias.append({
                     'status': 'chart',
-                    'title': getTitle(media),
+                    'title': get_title(media),
                     'type': 'movie',
                     'info': media,
                     'files': files,
@@ -73,7 +72,7 @@ class Charts(Plugin):
 
     def ignoreView(self, imdb = None, **kwargs):
 
-        ignored = splitString(Env.prop('charts_ignore', default = ''))
+        ignored = split_string(Env.prop('charts_ignore', default=''))
 
         if imdb:
             ignored.append(imdb)

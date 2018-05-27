@@ -1,16 +1,15 @@
-from base64 import standard_b64encode
-from datetime import timedelta
 import re
 import shutil
 import socket
 import traceback
-import xmlrpclib
+import xmlrpc.client
+from base64 import standard_b64encode
+from datetime import timedelta
 
 from couchpotato.core._base.downloader.main import DownloaderBase, ReleaseDownloadList
 from couchpotato.core.helpers.encoding import ss, sp
-from couchpotato.core.helpers.variable import tryInt, md5, cleanHost
+from couchpotato.core.helpers.variable import try_int, md5, clean_host
 from couchpotato.core.logger import CPLog
-
 
 log = CPLog(__name__)
 
@@ -48,7 +47,7 @@ class NZBGet(DownloaderBase):
 
         nzb_name = ss('%s.nzb' % self.createNzbName(data, media))
 
-        rpc = self.getRPC()
+        rpc = self.get_rpc()
 
         try:
             if rpc.writelog('INFO', 'CouchPotato connected to drop off %s.' % nzb_name):
@@ -58,7 +57,7 @@ class NZBGet(DownloaderBase):
         except socket.error:
             log.error('NZBGet is not responding. Please ensure that NZBGet is running and host setting is correct.')
             return False
-        except xmlrpclib.ProtocolError as e:
+        except xmlrpc.client.ProtocolError as e:
             if e.errcode == 401:
                 log.error('Password is incorrect.')
             else:
@@ -68,7 +67,8 @@ class NZBGet(DownloaderBase):
         if re.search(r"^0", rpc.version()):
             xml_response = rpc.append(nzb_name, self.conf('category'), False, standard_b64encode(filedata.strip()))
         else:
-            xml_response = rpc.append(nzb_name, self.conf('category'), tryInt(self.conf('priority')), False, standard_b64encode(filedata.strip()))
+            xml_response = rpc.append(nzb_name, self.conf('category'), try_int(self.conf('priority')), False,
+                                      standard_b64encode(filedata.strip()))
 
         if xml_response:
             log.info('NZB sent successfully to NZBGet')
@@ -79,7 +79,7 @@ class NZBGet(DownloaderBase):
             confirmed = rpc.editqueue("GroupSetParameter", 0, couchpotato_id, file_id)
             if confirmed:
                 log.debug('couchpotato parameter set in nzbget download')
-            return self.downloadReturnId(nzb_id)
+            return self.download_return_id(nzb_id)
         else:
             log.error('NZBGet could not add %s to the queue.', nzb_name)
             return False
@@ -89,7 +89,7 @@ class NZBGet(DownloaderBase):
         :return: bool
         """
 
-        rpc = self.getRPC()
+        rpc = self.get_rpc()
 
         try:
             if rpc.writelog('INFO', 'CouchPotato connected to test connection'):
@@ -99,7 +99,7 @@ class NZBGet(DownloaderBase):
         except socket.error:
             log.error('NZBGet is not responding. Please ensure that NZBGet is running and host setting is correct.')
             return False
-        except xmlrpclib.ProtocolError as e:
+        except xmlrpc.client.ProtocolError as e:
             if e.errcode == 401:
                 log.error('Password is incorrect.')
             else:
@@ -108,7 +108,7 @@ class NZBGet(DownloaderBase):
 
         return True
 
-    def getAllDownloadStatus(self, ids):
+    def get_all_download_status(self, ids):
         """ Get status of all active downloads
 
         :param ids: list of (mixed) downloader ids
@@ -119,7 +119,7 @@ class NZBGet(DownloaderBase):
 
         log.debug('Checking NZBGet download status.')
 
-        rpc = self.getRPC()
+        rpc = self.get_rpc()
 
         try:
             if rpc.writelog('DETAIL', 'CouchPotato connected to check status'):
@@ -129,7 +129,7 @@ class NZBGet(DownloaderBase):
         except socket.error:
             log.error('NZBGet is not responding. Please ensure that NZBGet is running and host setting is correct.')
             return []
-        except xmlrpclib.ProtocolError as e:
+        except xmlrpc.client.ProtocolError as e:
             if e.errcode == 401:
                 log.error('Password is incorrect.')
             else:
@@ -200,11 +200,11 @@ class NZBGet(DownloaderBase):
 
         return release_downloads
 
-    def removeFailed(self, release_download):
+    def remove_failed(self, release_download):
 
         log.info('%s failed downloading, deleting...', release_download['name'])
 
-        rpc = self.getRPC()
+        rpc = self.get_rpc()
 
         try:
             if rpc.writelog('INFO', 'CouchPotato connected to delete some history'):
@@ -214,7 +214,7 @@ class NZBGet(DownloaderBase):
         except socket.error:
             log.error('NZBGet is not responding. Please ensure that NZBGet is running and host setting is correct.')
             return False
-        except xmlrpclib.ProtocolError as e:
+        except xmlrpc.client.ProtocolError as e:
             if e.errcode == 401:
                 log.error('Password is incorrect.')
             else:
@@ -232,7 +232,7 @@ class NZBGet(DownloaderBase):
                         nzb_id = hist['ID']
                         path = hist['DestDir']
 
-            if nzb_id and path and rpc.editqueue('HistoryDelete', 0, "", [tryInt(nzb_id)]):
+            if nzb_id and path and rpc.editqueue('HistoryDelete', 0, "", [try_int(nzb_id)]):
                 shutil.rmtree(path, True)
         except:
             log.error('Failed deleting: %s', traceback.format_exc(0))
@@ -240,9 +240,10 @@ class NZBGet(DownloaderBase):
 
         return True
 
-    def getRPC(self):
-        url = cleanHost(host = self.conf('host'), ssl = self.conf('ssl'), username = self.conf('username'), password = self.conf('password')) + self.rpc
-        return xmlrpclib.ServerProxy(url)
+    def get_rpc(self):
+        url = clean_host(host=self.conf('host'), ssl=self.conf('ssl'), username=self.conf('username'),
+                         password=self.conf('password')) + self.rpc
+        return xmlrpc.client.ServerProxy(url)
 
 
 config = [{

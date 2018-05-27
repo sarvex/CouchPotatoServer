@@ -1,12 +1,11 @@
 import re
 import traceback
 
-from couchpotato.core.event import fireEvent
-from couchpotato.core.helpers.encoding import simplifyString
-from couchpotato.core.helpers.variable import tryInt
+from couchpotato.core.event import fire_event
+from couchpotato.core.helpers.encoding import simplify_string
+from couchpotato.core.helpers.variable import try_int
 from couchpotato.core.logger import CPLog
 from couchpotato.environment import Env
-
 
 log = CPLog(__name__)
 
@@ -49,7 +48,7 @@ def nameScore(name, year, preferred_words):
             score += 5
 
         # Contains preferred word
-        nzb_words = re.split('\W+', simplifyString(name))
+        nzb_words = re.split('\W+', simplify_string(name))
         score += 100 * len(list(set(nzb_words) & set(preferred_words)))
 
         return score
@@ -61,8 +60,8 @@ def nameScore(name, year, preferred_words):
 
 def nameRatioScore(nzb_name, movie_name):
     try:
-        nzb_words = re.split('\W+', fireEvent('scanner.create_file_identifier', nzb_name, single = True))
-        movie_words = re.split('\W+', simplifyString(movie_name))
+        nzb_words = re.split('\W+', fire_event('scanner.create_file_identifier', nzb_name, single=True))
+        movie_words = re.split('\W+', simplify_string(movie_name))
 
         left_over = set(nzb_words) - set(movie_words)
         return 10 - len(left_over)
@@ -75,28 +74,28 @@ def nameRatioScore(nzb_name, movie_name):
 def namePositionScore(nzb_name, movie_name):
     score = 0
 
-    nzb_words = re.split('\W+', simplifyString(nzb_name))
-    qualities = fireEvent('quality.all', single = True)
+    nzb_words = re.split('\W+', simplify_string(nzb_name))
+    qualities = fire_event('quality.all', single=True)
 
     try:
         nzb_name = re.search(r'([\'"])[^\1]*\1', nzb_name).group(0)
     except:
         pass
 
-    name_year = fireEvent('scanner.name_year', nzb_name, single = True)
+    name_year = fire_event('scanner.name_year', nzb_name, single=True)
 
     # Give points for movies beginning with the correct name
-    split_by = simplifyString(movie_name)
+    split_by = simplify_string(movie_name)
     name_split = []
     if len(split_by) > 0:
-        name_split = simplifyString(nzb_name).split(split_by)
+        name_split = simplify_string(nzb_name).split(split_by)
         if name_split[0].strip() == '':
             score += 10
 
     # If year is second in line, give more points
     if len(name_split) > 1 and name_year:
         after_name = name_split[1].strip()
-        if tryInt(after_name[:4]) == name_year.get('year', None):
+        if try_int(after_name[:4]) == name_year.get('year', None):
             score += 10
             after_name = after_name[4:]
 
@@ -135,7 +134,7 @@ def sizeScore(size):
 def providerScore(provider):
 
     try:
-        score = tryInt(Env.setting('extra_score', section = provider.lower(), default = 0))
+        score = try_int(Env.setting('extra_score', section=provider.lower(), default=0))
     except:
         score = 0
 
@@ -145,8 +144,8 @@ def providerScore(provider):
 def duplicateScore(nzb_name, movie_name):
 
     try:
-        nzb_words = re.split('\W+', simplifyString(nzb_name))
-        movie_words = re.split('\W+', simplifyString(movie_name))
+        nzb_words = re.split('\W+', simplify_string(nzb_name))
+        movie_words = re.split('\W+', simplify_string(movie_name))
 
         # minus for duplicates
         duplicates = [x for i, x in enumerate(nzb_words) if nzb_words[i:].count(x) > 1]
@@ -220,10 +219,10 @@ def sceneScore(nzb_name):
 
         if len(year) > 0 and len(group) > 0:
             try:
-                validate = fireEvent('release.validate', name, single = True)
-                if validate and tryInt(validate.get('score')) != 0:
+                validate = fire_event('release.validate', name, single=True)
+                if validate and try_int(validate.get('score')) != 0:
                     log.debug('Release "%s" scored %s, reason: %s', (nzb_name, validate['score'], validate['reasons']))
-                    return tryInt(validate.get('score'))
+                    return try_int(validate.get('score'))
             except:
                 log.error('Failed scoring scene: %s', traceback.format_exc())
 

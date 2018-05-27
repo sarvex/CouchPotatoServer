@@ -1,16 +1,16 @@
-import htmlentitydefs
+import html.entities
 import json
 import re
 import time
 import traceback
 
-from couchpotato.core.helpers.encoding import tryUrlencode
-from couchpotato.core.helpers.variable import getTitle, tryInt, mergeDicts, getIdentifier
+import six
+from dateutil.parser import parse
+
+from couchpotato.core.helpers.encoding import try_url_encode
+from couchpotato.core.helpers.variable import get_title, try_int, merge_dictionaries, get_identifier
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.torrent.base import TorrentProvider
-from dateutil.parser import parse
-import six
-
 
 log = CPLog(__name__)
 
@@ -31,16 +31,16 @@ class Base(TorrentProvider):
 
     def _search(self, media, quality, results):
 
-        movie_title = getTitle(media)
+        movie_title = get_title(media)
         quality_id = quality['identifier']
 
-        params = mergeDicts(self.quality_search_params[quality_id].copy(), {
+        params = merge_dictionaries(self.quality_search_params[quality_id].copy(), {
             'order_by': 'relevance',
             'order_way': 'descending',
-            'searchstr': getIdentifier(media)
+            'searchstr': get_identifier(media)
         })
 
-        url = '%s?json=noredirect&%s' % (self.urls['torrent'], tryUrlencode(params))
+        url = '%s?json=noredirect&%s' % (self.urls['torrent'], try_url_encode(params))
         res = self.getJsonData(url)
 
         try:
@@ -57,7 +57,7 @@ class Base(TorrentProvider):
 
                 log.debug('Movie %s (%s) has %d torrents', (ptpmovie['Title'], ptpmovie['Year'], len(ptpmovie['Torrents'])))
                 for torrent in ptpmovie['Torrents']:
-                    torrent_id = tryInt(torrent['Id'])
+                    torrent_id = try_int(torrent['Id'])
                     torrentdesc = ''
                     torrentscore = 0
 
@@ -91,10 +91,10 @@ class Base(TorrentProvider):
                         'Resolution': torrent['Resolution'],
                         'url': '%s?action=download&id=%d&authkey=%s&torrent_pass=%s' % (self.urls['torrent'], torrent_id, authkey, passkey),
                         'detail_url': self.urls['detail'] % torrent_id,
-                        'date': tryInt(time.mktime(parse(torrent['UploadTime']).timetuple())),
-                        'size': tryInt(torrent['Size']) / (1024 * 1024),
-                        'seeders': tryInt(torrent['Seeders']),
-                        'leechers': tryInt(torrent['Leechers']),
+                        'date': try_int(time.mktime(parse(torrent['UploadTime']).timetuple())),
+                        'size': try_int(torrent['Size']) / (1024 * 1024),
+                        'seeders': try_int(torrent['Seeders']),
+                        'leechers': try_int(torrent['Leechers']),
                         'score': torrentscore,
                         'extra_check': extra_check,
                     })
@@ -113,7 +113,7 @@ class Base(TorrentProvider):
             log.debug('Config: Require staff-approval activated')
             reqs['Checked'] = ['true']
 
-        for field, specs in reqs.items():
+        for field, specs in list(reqs.items()):
             matches_one = False
             seen_one = False
 
@@ -147,15 +147,15 @@ class Base(TorrentProvider):
                 # character reference
                 try:
                     if txt[:3] == "&#x":
-                        return unichr(int(txt[3:-1], 16))
+                        return chr(int(txt[3:-1], 16))
                     else:
-                        return unichr(int(txt[2:-1]))
+                        return chr(int(txt[2:-1]))
                 except ValueError:
                     pass
             else:
                 # named entity
                 try:
-                    txt = unichr(htmlentitydefs.name2codepoint[txt[1:-1]])
+                    txt = chr(html.entities.name2codepoint[txt[1:-1]])
                 except KeyError:
                     pass
             return txt  # leave as is

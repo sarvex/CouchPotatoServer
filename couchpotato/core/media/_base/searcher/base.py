@@ -1,4 +1,4 @@
-from couchpotato.core.event import addEvent, fireEvent
+from couchpotato.core.event import add_event, fire_event
 from couchpotato.core.logger import CPLog
 from couchpotato.core.plugins.base import Plugin
 
@@ -12,8 +12,8 @@ class SearcherBase(Plugin):
     def __init__(self):
         super(SearcherBase, self).__init__()
 
-        addEvent('searcher.progress', self.getProgress)
-        addEvent('%s.searcher.progress' % self.getType(), self.getProgress)
+        add_event('searcher.progress', self.getProgress)
+        add_event('%s.searcher.progress' % self.getType(), self.getProgress)
 
         self.initCron()
 
@@ -25,13 +25,13 @@ class SearcherBase(Plugin):
         _type = self.getType()
 
         def setCrons():
-            fireEvent('schedule.cron', '%s.searcher.all' % _type, self.searchAll,
-                      day = self.conf('cron_day'), hour = self.conf('cron_hour'), minute = self.conf('cron_minute'))
+            fire_event('schedule.cron', '%s.searcher.all' % _type, self.searchAll,
+                       day=self.conf('cron_day'), hour=self.conf('cron_hour'), minute=self.conf('cron_minute'))
 
-        addEvent('app.load', setCrons)
-        addEvent('setting.save.%s_searcher.cron_day.after' % _type, setCrons)
-        addEvent('setting.save.%s_searcher.cron_hour.after' % _type, setCrons)
-        addEvent('setting.save.%s_searcher.cron_minute.after' % _type, setCrons)
+        add_event('app.load', setCrons)
+        add_event('setting.save.%s_searcher.cron_day.after' % _type, setCrons)
+        add_event('setting.save.%s_searcher.cron_hour.after' % _type, setCrons)
+        add_event('setting.save.%s_searcher.cron_minute.after' % _type, setCrons)
 
     def getProgress(self, **kwargs):
         """ Return progress of current searcher"""

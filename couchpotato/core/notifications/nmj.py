@@ -2,11 +2,10 @@ import re
 import telnetlib
 
 from couchpotato.api import addApiView
-from couchpotato.core.event import addEvent
-from couchpotato.core.helpers.encoding import tryUrlencode
+from couchpotato.core.event import add_event
+from couchpotato.core.helpers.encoding import try_url_encode
 from couchpotato.core.logger import CPLog
 from couchpotato.core.notifications.base import Notification
-
 
 try:
     import xml.etree.cElementTree as etree
@@ -25,7 +24,7 @@ class NMJ(Notification):
         addApiView(self.testNotifyName(), self.test)
         addApiView('notify.nmj.auto_config', self.autoConfig)
 
-        addEvent('renamer.after', self.addToLibrary)
+        add_event('renamer.after', self.addToLibrary)
 
     def autoConfig(self, host = 'localhost', **kwargs):
 
@@ -71,7 +70,7 @@ class NMJ(Notification):
         }
 
     def addToLibrary(self, message = None, group = None):
-        if self.isDisabled(): return
+        if self.is_disabled(): return
         if not group: group = {}
 
         host = self.conf('host')
@@ -91,7 +90,7 @@ class NMJ(Notification):
             'arg2': 'background',
             'arg3': '',
         }
-        params = tryUrlencode(params)
+        params = try_url_encode(params)
         update_url = 'http://%(host)s:8008/metadata_database?%(params)s' % {'host': host, 'params': params}
 
         try:

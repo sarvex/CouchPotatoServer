@@ -1,13 +1,13 @@
-from xml.etree.ElementTree import Element, SubElement, tostring
 import os
 import re
 import traceback
 import xml.dom.minidom
+from xml.etree.ElementTree import Element, SubElement, tostring
 
-from couchpotato.core.media.movie.providers.metadata.base import MovieMetaData
-from couchpotato.core.helpers.encoding import toUnicode
-from couchpotato.core.helpers.variable import getTitle
+from couchpotato.core.helpers.encoding import to_unicode
+from couchpotato.core.helpers.variable import get_title
 from couchpotato.core.logger import CPLog
+from couchpotato.core.media.movie.providers.metadata.base import MovieMetaData
 
 autoload = 'WdtvLive'
 
@@ -34,14 +34,14 @@ class WdtvLive(MovieMetaData):
         # Title
         try:
             el = SubElement(nfoxml, 'title')
-            el.text = toUnicode(getTitle(data))
+            el.text = to_unicode(get_title(data))
         except:
             pass
 
         # IMDB id
         try:
             el = SubElement(nfoxml, 'id')
-            el.text = toUnicode(data['identifier'])
+            el.text = to_unicode(data['identifier'])
         except:
             pass
 
@@ -64,7 +64,7 @@ class WdtvLive(MovieMetaData):
             try:
                 if movie_info.get(type):
                     el = SubElement(nfoxml, name)
-                    el.text = toUnicode(movie_info.get(type, ''))
+                    el.text = to_unicode(movie_info.get(type, ''))
             except:
                 pass
 
@@ -83,7 +83,7 @@ class WdtvLive(MovieMetaData):
         # Genre
         for genre in movie_info.get('genres', []):
             genres = SubElement(nfoxml, 'genre')
-            genres.text = toUnicode(genre)
+            genres.text = to_unicode(genre)
 
         # Actors
         for actor_name in movie_info.get('actor_roles', {}):
@@ -91,36 +91,36 @@ class WdtvLive(MovieMetaData):
 
             actor = SubElement(nfoxml, 'actor')
             name = SubElement(actor, 'name')
-            name.text = toUnicode(actor_name)
+            name.text = to_unicode(actor_name)
             if role_name:
                 role = SubElement(actor, 'role')
-                role.text = toUnicode(role_name)
+                role.text = to_unicode(role_name)
             if movie_info['images']['actors'].get(actor_name):
                 thumb = SubElement(actor, 'thumb')
-                thumb.text = toUnicode(movie_info['images']['actors'].get(actor_name))
+                thumb.text = to_unicode(movie_info['images']['actors'].get(actor_name))
 
         # Directors
         for director_name in movie_info.get('directors', []):
             director = SubElement(nfoxml, 'director')
-            director.text = toUnicode(director_name)
+            director.text = to_unicode(director_name)
 
         # Writers
         for writer in movie_info.get('writers', []):
             writers = SubElement(nfoxml, 'credits')
-            writers.text = toUnicode(writer)
+            writers.text = to_unicode(writer)
 
         # Sets or collections
         collection_name = movie_info.get('collection')
         if collection_name:
             collection = SubElement(nfoxml, 'set')
-            collection.text = toUnicode(collection_name)
+            collection.text = to_unicode(collection_name)
             sorttitle = SubElement(nfoxml, 'sorttitle')
-            sorttitle.text = '%s %s' % (toUnicode(collection_name), movie_info.get('year'))
+            sorttitle.text = '%s %s' % (to_unicode(collection_name), movie_info.get('year'))
 
         # Images
         for image_url in movie_info['images']['poster_original']:
             image = SubElement(nfoxml, 'thumb')
-            image.text = toUnicode(image_url)
+            image.text = to_unicode(image_url)
 
         image_types = [
             ('fanart', 'backdrop_original'),
@@ -139,7 +139,7 @@ class WdtvLive(MovieMetaData):
             sub_element = SubElement(nfoxml, sub)
             for image_url in movie_info['images'][type]:
                 image = SubElement(sub_element, 'thumb')
-                image.text = toUnicode(image_url)
+                image.text = to_unicode(image_url)
 
         # Add trailer if found
         trailer_found = False
@@ -147,11 +147,11 @@ class WdtvLive(MovieMetaData):
             for filename in data.get('renamed_files'):
                 if 'trailer' in filename:
                     trailer = SubElement(nfoxml, 'trailer')
-                    trailer.text = toUnicode(filename)
+                    trailer.text = to_unicode(filename)
                     trailer_found = True
         if not trailer_found and data['files'].get('trailer'):
             trailer = SubElement(nfoxml, 'trailer')
-            trailer.text = toUnicode(data['files']['trailer'][0])
+            trailer.text = to_unicode(data['files']['trailer'][0])
 
         # Add file metadata
         fileinfo = SubElement(nfoxml, 'fileinfo')
@@ -161,7 +161,7 @@ class WdtvLive(MovieMetaData):
         if data['meta_data'].get('video'):
             video = SubElement(streamdetails, 'video')
             codec = SubElement(video, 'codec')
-            codec.text = toUnicode(data['meta_data']['video'])
+            codec.text = to_unicode(data['meta_data']['video'])
             aspect = SubElement(video, 'aspect')
             aspect.text = str(data['meta_data']['aspect'])
             width = SubElement(video, 'width')
@@ -173,9 +173,9 @@ class WdtvLive(MovieMetaData):
         if data['meta_data'].get('audio'):
             audio = SubElement(streamdetails, 'audio')
             codec = SubElement(audio, 'codec')
-            codec.text = toUnicode(data['meta_data'].get('audio'))
+            codec.text = to_unicode(data['meta_data'].get('audio'))
             channels = SubElement(audio, 'channels')
-            channels.text = toUnicode(data['meta_data'].get('audio_channels'))
+            channels.text = to_unicode(data['meta_data'].get('audio_channels'))
 
         # Clean up the xml and return it
         nfoxml = xml.dom.minidom.parseString(tostring(nfoxml))

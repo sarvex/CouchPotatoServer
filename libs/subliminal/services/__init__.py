@@ -15,16 +15,16 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with subliminal.  If not, see <http://www.gnu.org/licenses/>.
+import logging
+import os
+import zipfile
+
+import requests
+
 from ..cache import Cache
 from ..exceptions import DownloadFailedError, ServiceError
 from ..language import language_set, Language
 from ..subtitles import EXTENSIONS
-import logging
-import os
-import requests
-import threading
-import zipfile
-
 
 __all__ = ['ServiceBase', 'ServiceConfig']
 logger = logging.getLogger(__name__)
@@ -80,7 +80,7 @@ class ServiceBase(object):
 
     def init(self):
         """Initialize connection"""
-        logger.debug(u'Initializing %s' % self.__class__.__name__)
+        logger.debug('Initializing %s' % self.__class__.__name__)
         self.session = requests.session()
         self.session.headers.update({'User-Agent': self.user_agent})
 
@@ -104,7 +104,7 @@ class ServiceBase(object):
 
     def terminate(self):
         """Terminate connection"""
-        logger.debug(u'Terminating %s' % self.__class__.__name__)
+        logger.debug('Terminating %s' % self.__class__.__name__)
 
     def get_code(self, language):
         """Get the service code for a :class:`~subliminal.language.Language`
@@ -136,7 +136,7 @@ class ServiceBase(object):
             return self.language_map[code]
         language = Language(code, strict=False)
         if language == Language('Undetermined'):
-            logger.warning(u'Code %s could not be identified as a language for %s' % (code, self.__class__.__name__))
+            logger.warning('Code %s could not be identified as a language for %s' % (code, self.__class__.__name__))
         return language
 
     def query(self, *args):
@@ -176,10 +176,10 @@ class ServiceBase(object):
         """
         languages = (languages & cls.languages) - language_set(['Undetermined'])
         if not languages:
-            logger.debug(u'No language available for service %s' % cls.__name__.lower())
+            logger.debug('No language available for service %s' % cls.__name__.lower())
             return False
         if cls.require_video and not video.exists or not isinstance(video, tuple(cls.videos)):
-            logger.debug(u'%r is not valid for service %s' % (video, cls.__name__.lower()))
+            logger.debug('%r is not valid for service %s' % (video, cls.__name__.lower()))
             return False
         return True
 
@@ -191,7 +191,7 @@ class ServiceBase(object):
         :param string data: data to add to the post request
 
         """
-        logger.info(u'Downloading %s in %s' % (url, filepath))
+        logger.info('Downloading %s in %s' % (url, filepath))
         try:
             headers = {'Referer': url, 'User-Agent': self.user_agent}
             if data:
@@ -201,11 +201,11 @@ class ServiceBase(object):
             with open(filepath, 'wb') as f:
                 f.write(r.content)
         except Exception as e:
-            logger.error(u'Download failed: %s' % e)
+            logger.error('Download failed: %s' % e)
             if os.path.exists(filepath):
                 os.remove(filepath)
             raise DownloadFailedError(str(e))
-        logger.debug(u'Download finished')
+        logger.debug('Download finished')
 
     def download_zip_file(self, url, filepath, data=None):
         """Attempt to download a zip file and extract any subtitle file from it, if any.
@@ -216,7 +216,7 @@ class ServiceBase(object):
         :param string data: data to add to the post request
 
         """
-        logger.info(u'Downloading %s in %s' % (url, filepath))
+        logger.info('Downloading %s in %s' % (url, filepath))
         try:
             zippath = filepath + '.zip'
             headers = {'Referer': url, 'User-Agent': self.user_agent}
@@ -240,13 +240,13 @@ class ServiceBase(object):
                     raise DownloadFailedError('No subtitles found in zip file')
             os.remove(zippath)
         except Exception as e:
-            logger.error(u'Download %s failed: %s' % (url, e))
+            logger.error('Download %s failed: %s' % (url, e))
             if os.path.exists(zippath):
                 os.remove(zippath)
             if os.path.exists(filepath):
                 os.remove(filepath)
             raise DownloadFailedError(str(e))
-        logger.debug(u'Download finished')
+        logger.debug('Download finished')
 
 
 class ServiceConfig(object):

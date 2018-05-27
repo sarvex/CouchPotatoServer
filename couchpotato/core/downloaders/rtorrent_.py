@@ -1,18 +1,18 @@
+import os
+import re
 from base64 import b16encode, b32decode
 from datetime import timedelta
 from hashlib import sha1
-from urlparse import urlparse
-import os
-import re
+from urllib.parse import urlparse
 
-from couchpotato.core._base.downloader.main import DownloaderBase, ReleaseDownloadList
-from couchpotato.core.event import addEvent
-from couchpotato.core.helpers.encoding import sp
-from couchpotato.core.helpers.variable import cleanHost, splitString
-from couchpotato.core.logger import CPLog
 from bencode import bencode, bdecode
 from rtorrent import RTorrent
 
+from couchpotato.core._base.downloader.main import DownloaderBase, ReleaseDownloadList
+from couchpotato.core.event import add_event
+from couchpotato.core.helpers.encoding import sp
+from couchpotato.core.helpers.variable import clean_host, split_string
+from couchpotato.core.logger import CPLog
 
 log = CPLog(__name__)
 
@@ -29,14 +29,14 @@ class rTorrent(DownloaderBase):
     def __init__(self):
         super(rTorrent, self).__init__()
 
-        addEvent('app.load', self.migrate)
-        addEvent('setting.save.rtorrent.*.after', self.settingsChanged)
+        add_event('app.load', self.migrate)
+        add_event('setting.save.rtorrent.*.after', self.settings_changed)
 
     def migrate(self):
 
         url = self.conf('url')
         if url:
-            host_split = splitString(url.split('://')[-1], split_on = '/')
+            host_split = split_string(url.split('://')[-1], split_on='/')
 
             self.conf('ssl', value = url.startswith('https'))
             self.conf('host', value = host_split[0].strip())
@@ -44,7 +44,7 @@ class rTorrent(DownloaderBase):
 
             self.deleteConf('url')
 
-    def settingsChanged(self):
+    def settings_changed(self):
         # Reset active connection if settings have changed
         if self.rt:
             log.debug('Settings have changed, closing active connection')
@@ -52,7 +52,7 @@ class rTorrent(DownloaderBase):
         self.rt = None
         return True
 
-    def getAuth(self):
+    def get_auth(self):
         if not self.conf('username') or not self.conf('password'):
             # Missing username or password parameter
             return None
@@ -64,7 +64,7 @@ class rTorrent(DownloaderBase):
             self.conf('password')
         )
 
-    def getVerifySsl(self):
+    def get_verify_ssl(self):
         # Ensure verification has been enabled
         if not self.conf('ssl_verify'):
             return False
@@ -83,7 +83,7 @@ class rTorrent(DownloaderBase):
         if not reconnect and self.rt is not None:
             return self.rt
 
-        url = cleanHost(self.conf('host'), protocol = True, ssl = self.conf('ssl'))
+        url = clean_host(self.conf('host'), protocol=True, ssl=self.conf('ssl'))
 
         # Automatically add '+https' to 'httprpc' protocol if SSL is enabled
         if self.conf('ssl') and url.startswith('httprpc://'):
@@ -97,8 +97,8 @@ class rTorrent(DownloaderBase):
 
         # Construct client
         self.rt = RTorrent(
-            url, self.getAuth(),
-            verify_ssl=self.getVerifySsl()
+            url, self.get_auth(),
+            verify_ssl=self.get_verify_ssl()
         )
 
         self.error_msg = ''
@@ -205,14 +205,13 @@ class rTorrent(DownloaderBase):
             if not self.conf('paused', default = 0):
                 torrent.start()
 
-            return self.downloadReturnId(torrent_hash)
+            return self.download_return_id(torrent_hash)
 
         except Exception as err:
             log.error('Failed to send torrent to rTorrent: %s', err)
             return False
 
-
-    def getTorrentStatus(self, torrent):
+    def get_torrent_status(self, torrent):
         if not torrent.complete:
             return 'busy'
 
@@ -221,7 +220,7 @@ class rTorrent(DownloaderBase):
 
         return 'completed'
 
-    def getAllDownloadStatus(self, ids):
+    def get_all_download_status(self, ids):
         """ Get status of all active downloads
 
         :param ids: list of (mixed) downloader ids
@@ -256,7 +255,7 @@ class rTorrent(DownloaderBase):
                     release_downloads.append({
                         'id': torrent.info_hash,
                         'name': torrent.name,
-                        'status': self.getTorrentStatus(torrent),
+                        'status': self.get_torrent_status(torrent),
                         'seed_ratio': torrent.ratio,
                         'original_status': torrent.state,
                         'timeleft': str(timedelta(seconds = float(torrent.left_bytes) / torrent.down_rate)) if torrent.down_rate > 0 else -1,
@@ -282,11 +281,11 @@ class rTorrent(DownloaderBase):
             return torrent.pause()
         return torrent.resume()
 
-    def removeFailed(self, release_download):
+    def remove_failed(self, release_download):
         log.info('%s failed downloading, deleting...', release_download['name'])
-        return self.processComplete(release_download, delete_files = True)
+        return self.process_complete(release_download, delete_files=True)
 
-    def processComplete(self, release_download, delete_files):
+    def process_complete(self, release_download, delete_files):
         log.debug('Requesting rTorrent to remove the torrent %s%s.',
                   (release_download['name'], ' and cleanup the downloaded files' if delete_files else ''))
 

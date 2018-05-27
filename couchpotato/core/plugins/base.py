@@ -1,21 +1,22 @@
-import threading
-from urllib import quote, getproxies
-from urlparse import urlparse
 import os.path
+import threading
 import time
 import traceback
+from urllib.parse import quote
+from urllib.parse import urlparse
 
-from couchpotato.core.event import fireEvent, addEvent
-from couchpotato.core.helpers.encoding import ss, toSafeString, \
-    toUnicode, sp
-from couchpotato.core.helpers.variable import md5, isLocalIP, scanForPassword, tryInt, getIdentifier, \
-    randomString
-from couchpotato.core.logger import CPLog
-from couchpotato.environment import Env
 import requests
 from requests.packages.urllib3 import Timeout
 from requests.packages.urllib3.exceptions import MaxRetryError
 from tornado import template
+
+from couchpotato.core.event import fire_event, add_event
+from couchpotato.core.helpers.encoding import ss, to_safe_string, \
+    to_unicode, sp
+from couchpotato.core.helpers.variable import md5, is_local_ip, scan_for_password, try_int, get_identifier, \
+    random_string
+from couchpotato.core.logger import CPLog
+from couchpotato.environment import Env
 
 log = CPLog(__name__)
 
@@ -47,20 +48,20 @@ class Plugin(object):
         return new_plugin
 
     def registerPlugin(self):
-        addEvent('app.do_shutdown', self.doShutdown)
-        addEvent('plugin.running', self.isRunning)
+        add_event('app.do_shutdown', self.do_shutdown)
+        add_event('plugin.running', self.isRunning)
         self._running = []
 
         # Setup database
         if self._database:
-            addEvent('database.setup', self.databaseSetup)
+            add_event('database.setup', self.databaseSetup)
 
     def databaseSetup(self):
 
         for index_name in self._database:
             klass = self._database[index_name]
 
-            fireEvent('database.setup_index', index_name, klass)
+            fire_event('database.setup_index', index_name, klass)
 
     def conf(self, attr, value = None, default = None, section = None):
         class_name = self.getName().lower().split(':')[0].lower()
@@ -217,7 +218,8 @@ class Plugin(object):
             }
             method = 'post' if len(data) > 0 or files else 'get'
 
-            log.info('Opening url: %s %s, data: %s', (method, url, [x for x in data.keys()] if isinstance(data, dict) else 'with data'))
+            log.info('Opening url: %s %s, data: %s',
+                     (method, url, [x for x in list(data.keys())] if isinstance(data, dict) else 'with data'))
             response = r.request(method, url, **kwargs)
 
             status_code = response.status_code
@@ -245,7 +247,7 @@ class Plugin(object):
                     self.http_failed_request[host] += 1
 
                     # Disable temporarily
-                    if self.http_failed_request[host] > 5 and not isLocalIP(host):
+                    if self.http_failed_request[host] > 5 and not is_local_ip(host):
                         self.http_failed_disabled[host] = time.time()
 
             except:
@@ -292,7 +294,7 @@ class Plugin(object):
     def afterCall(self, handler):
         self.isRunning('%s.%s' % (self.getName(), handler.__name__), False)
 
-    def doShutdown(self, *args, **kwargs):
+    def do_shutdown(self, *args, **kwargs):
         self.shuttingDown(True)
         return True
 
@@ -356,7 +358,7 @@ class Plugin(object):
         tag = self.cpTag(media, unique_tag = unique_tag)
 
         # Check if password is filename
-        name_password = scanForPassword(data.get('name'))
+        name_password = scan_for_password(data.get('name'))
         if name_password:
             release_name, password = name_password
             tag += '{{%s}}' % password
@@ -364,7 +366,7 @@ class Plugin(object):
             tag += '{{%s}}' % data.get('password')
 
         max_length = 127 - len(tag)  # Some filesystems don't support 128+ long filenames
-        return '%s%s' % (toSafeString(toUnicode(release_name)[:max_length]), tag)
+        return '%s%s' % (to_safe_string(to_unicode(release_name)[:max_length]), tag)
 
     def createFileName(self, data, filedata, media, unique_tag = False):
         name = self.createNzbName(data, media, unique_tag = unique_tag)
@@ -376,13 +378,13 @@ class Plugin(object):
 
         tag = ''
         if Env.setting('enabled', 'renamer') or unique_tag:
-            identifier = getIdentifier(media) or ''
-            unique_tag = ', ' + randomString() if unique_tag else ''
+            identifier = get_identifier(media) or ''
+            unique_tag = ', ' + random_string() if unique_tag else ''
 
             tag = '.cp('
             tag += identifier
             tag += ', ' if unique_tag and identifier else ''
-            tag += randomString() if unique_tag else ''
+            tag += random_string() if unique_tag else ''
             tag += ')'
 
         return tag if len(tag) > 7 else ''
@@ -403,7 +405,7 @@ class Plugin(object):
             file_time = self.getFileTimes(cur_file)
             for t in file_time:
                 if t > now - unchanged_for:
-                    file_too_new = tryInt(time.time() - t)
+                    file_too_new = try_int(time.time() - t)
                     break
 
             if file_too_new:
@@ -425,10 +427,10 @@ class Plugin(object):
     def getFileTimes(self, file_path):
         return [os.path.getmtime(file_path), os.path.getctime(file_path) if os.name != 'posix' else 0]
 
-    def isDisabled(self):
-        return not self.isEnabled()
+    def is_disabled(self):
+        return not self.is_enabled()
 
-    def isEnabled(self):
+    def is_enabled(self):
         return self.conf(self.enabled_option) or self.conf(self.enabled_option) is None
 
     def acquireLock(self, key):

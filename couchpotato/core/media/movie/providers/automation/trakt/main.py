@@ -1,15 +1,14 @@
 import json
-import traceback
 import time
+import traceback
 
-from couchpotato import Env, fireEvent
+from couchpotato import Env, fire_event
 from couchpotato.api import addApiView
-from couchpotato.core.event import addEvent
-from couchpotato.core.helpers.variable import cleanHost
+from couchpotato.core.event import add_event
+from couchpotato.core.helpers.variable import clean_host
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.base import Provider
 from couchpotato.core.media.movie.providers.automation.base import Automation
-
 
 log = CPLog(__name__)
 
@@ -48,8 +47,8 @@ class Trakt(Automation, TraktBase):
         addApiView('automation.trakt.auth_url', self.getAuthorizationUrl)
         addApiView('automation.trakt.credentials', self.getCredentials)
 
-        fireEvent('schedule.interval', 'updater.check', self.refreshToken, hours = 24)
-        addEvent('app.load', self.refreshToken)
+        fire_event('schedule.interval', 'updater.check', self.refreshToken, hours=24)
+        add_event('app.load', self.refreshToken)
 
     def refreshToken(self):
 
@@ -64,7 +63,7 @@ class Trakt(Automation, TraktBase):
                 log.debug('Refreshing trakt token')
 
                 url = self.urls['refresh_token'] + '?token=' + self.conf('automation_oauth_refresh')
-                data = fireEvent('cp.api_call', url, cache_timeout = 0, single = True)
+                data = fire_event('cp.api_call', url, cache_timeout=0, single=True)
                 if data and 'oauth' in data and 'refresh' in data:
                     log.debug('Oauth refresh: %s', data)
                     self.conf('automation_oauth_token', value = data.get('oauth'))
@@ -87,7 +86,7 @@ class Trakt(Automation, TraktBase):
         return self.call(self.urls['watchlist'])
 
     def getAuthorizationUrl(self, host = None, **kwargs):
-        callback_url = cleanHost(host) + '%sautomation.trakt.credentials/' % (Env.get('api_base').lstrip('/'))
+        callback_url = clean_host(host) + '%sautomation.trakt.credentials/' % (Env.get('api_base').lstrip('/'))
         log.debug('callback_url is %s', callback_url)
 
         target_url = self.urls['oauth'] + "?target=" + callback_url

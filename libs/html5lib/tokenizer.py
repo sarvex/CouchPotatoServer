@@ -1,21 +1,19 @@
-from __future__ import absolute_import, division, unicode_literals
+
 
 try:
-    chr = unichr # flake8: noqa
+    chr = chr  # flake8: noqa
 except NameError:
     pass
 
 from collections import deque
 
-from .constants import spaceCharacters
-from .constants import entities
 from .constants import asciiLetters, asciiUpper2Lower
 from .constants import digits, hexDigits, EOF
-from .constants import tokenTypes, tagTokenTypes
+from .constants import entities
 from .constants import replacementCharacters
-
+from .constants import spaceCharacters
+from .constants import tokenTypes, tagTokenTypes
 from .inputstream import HTMLInputStream
-
 from .trie import Trie
 
 entitiesTrie = Trie(entities)

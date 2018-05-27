@@ -2,13 +2,12 @@ import xml.etree.ElementTree as XMLTree
 
 from couchpotato.core.logger import CPLog
 
-
 log = CPLog(__name__)
 
 
 class RSS(object):
 
-    def getTextElements(self, xml, path):
+    def get_text_elements(self, xml, path):
         """ Find elements and return tree"""
 
         textelements = []
@@ -20,7 +19,7 @@ class RSS(object):
             textelements.append(element.text)
         return textelements
 
-    def getElements(self, xml, path):
+    def get_elements(self, xml, path):
 
         elements = None
         try:
@@ -30,7 +29,7 @@ class RSS(object):
 
         return elements
 
-    def getElement(self, xml, path):
+    def get_element(self, xml, path):
         """ Find element and return text"""
 
         try:
@@ -38,7 +37,7 @@ class RSS(object):
         except:
             return
 
-    def getTextElement(self, xml, path):
+    def get_text_element(self, xml, path):
         """ Find element and return text"""
 
         try:
@@ -46,7 +45,7 @@ class RSS(object):
         except:
             return
 
-    def getItems(self, data, path = 'channel/item'):
+    def get_items(self, data, path='channel/item'):
         try:
             return XMLTree.parse(data).findall(path)
         except Exception as e:

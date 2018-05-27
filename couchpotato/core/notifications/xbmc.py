@@ -2,14 +2,16 @@ import base64
 import json
 import socket
 import traceback
-import urllib
+import urllib.error
+import urllib.parse
+import urllib.request
 
-from couchpotato.core.helpers.variable import splitString, getTitle
-from couchpotato.core.logger import CPLog
-from couchpotato.core.notifications.base import Notification
 from requests.exceptions import ConnectionError, Timeout
 from requests.packages.urllib3.exceptions import MaxRetryError
 
+from couchpotato.core.helpers.variable import split_string, get_title
+from couchpotato.core.logger import CPLog
+from couchpotato.core.notifications.base import Notification
 
 log = CPLog(__name__)
 
@@ -25,7 +27,7 @@ class XBMC(Notification):
     def notify(self, message = '', data = None, listener = None):
         if not data: data = {}
 
-        hosts = splitString(self.conf('host'))
+        hosts = split_string(self.conf('host'))
 
         successful = 0
         max_successful = 0
@@ -135,7 +137,9 @@ class XBMC(Notification):
         server = 'http://%s/xbmcCmds/' % host
 
         # Notification(title, message [, timeout , image])
-        cmd = "xbmcHttp?command=ExecBuiltIn(Notification(%s,%s,'',%s))" % (urllib.quote(getTitle(data)), urllib.quote(data['message']), urllib.quote(self.getNotificationImage('medium')))
+        cmd = "xbmcHttp?command=ExecBuiltIn(Notification(%s,%s,'',%s))" % (
+        urllib.parse.quote(get_title(data)), urllib.parse.quote(data['message']),
+        urllib.parse.quote(self.getNotificationImage('medium')))
         server += cmd
 
         # I have no idea what to set to, just tried text/plain and seems to be working :)

@@ -1,15 +1,15 @@
-import traceback
 import re
+import traceback
 
 from bs4 import BeautifulSoup
-from couchpotato import fireEvent
+
+from couchpotato import fire_event
 from couchpotato.core.helpers.encoding import ss
 from couchpotato.core.helpers.rss import RSS
-from couchpotato.core.helpers.variable import getImdb, splitString, tryInt
+from couchpotato.core.helpers.variable import get_imdb, split_string, try_int
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.base import MultiProvider
 from couchpotato.core.media.movie.providers.automation.base import Automation
-
 
 log = CPLog(__name__)
 
@@ -45,18 +45,18 @@ class IMDBBase(Automation, RSS):
     }
 
     def getInfo(self, imdb_id):
-        return fireEvent('movie.info', identifier = imdb_id, extended = False, adding = False, merge = True)
+        return fire_event('movie.info', identifier=imdb_id, extended=False, adding=False, merge=True)
 
     def getFromURL(self, url):
         log.debug('Getting IMDBs from: %s', url)
         html = self.getHTMLData(url)
 
         try:
-            split = splitString(html, split_on = "<div class=\"list compact\">")[1]
-            html = splitString(split, split_on = "<div class=\"pages\">")[0]
+            split = split_string(html, split_on="<div class=\"list compact\">")[1]
+            html = split_string(split, split_on="<div class=\"pages\">")[0]
         except:
             try:
-                split = splitString(html, split_on = "<div id=\"main\">")
+                split = split_string(html, split_on="<div id=\"main\">")
 
                 if len(split) < 2:
                     log.error('Failed parsing IMDB page "%s", unexpected html.', url)
@@ -76,7 +76,7 @@ class IMDBBase(Automation, RSS):
                 log.error('Failed parsing IMDB page "%s": %s', (url, traceback.format_exc()))
 
         html = ss(html)
-        imdbs = getImdb(html, multiple = True) if html else []
+        imdbs = get_imdb(html, multiple=True) if html else []
 
         return imdbs
 
@@ -89,8 +89,8 @@ class IMDBWatchlist(IMDBBase):
 
         movies = []
 
-        watchlist_enablers = [tryInt(x) for x in splitString(self.conf('automation_urls_use'))]
-        watchlist_urls = splitString(self.conf('automation_urls'))
+        watchlist_enablers = [try_int(x) for x in split_string(self.conf('automation_urls_use'))]
+        watchlist_urls = split_string(self.conf('automation_urls'))
 
         index = -1
         for watchlist_url in watchlist_urls:
@@ -197,7 +197,7 @@ class IMDBCharts(IMDBBase):
                 try:
                     for imdb_id in imdb_ids[0:max_items]:
 
-                        is_movie = fireEvent('movie.is_movie', identifier = imdb_id, adding = False, single = True)
+                        is_movie = fire_event('movie.is_movie', identifier=imdb_id, adding=False, single=True)
                         if not is_movie:
                             continue
 

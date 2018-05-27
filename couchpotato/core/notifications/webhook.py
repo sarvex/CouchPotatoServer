@@ -1,10 +1,9 @@
 import traceback
 
-from couchpotato.core.helpers.encoding import toUnicode
-from couchpotato.core.helpers.variable import getIdentifier
+from couchpotato.core.helpers.encoding import to_unicode
+from couchpotato.core.helpers.variable import get_identifier
 from couchpotato.core.logger import CPLog
 from couchpotato.core.notifications.base import Notification
-
 
 log = CPLog(__name__)
 
@@ -16,12 +15,12 @@ class Webhook(Notification):
         if not data: data = {}
 
         post_data = {
-            'message': toUnicode(message)
+            'message': to_unicode(message)
         }
 
-        if getIdentifier(data):
+        if get_identifier(data):
             post_data.update({
-                'imdb_id': getIdentifier(data)
+                'imdb_id': get_identifier(data)
             })
 
         headers = {

@@ -1,12 +1,11 @@
 import time
 import unicodedata
 
-from couchpotato.core.event import addEvent, fireEvent
+from couchpotato.core.event import add_event, fire_event
+from couchpotato.core.helpers.variable import split_string
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.automation.base import AutomationBase
 from couchpotato.environment import Env
-from couchpotato.core.helpers.variable import splitString
-
 
 log = CPLog(__name__)
 
@@ -21,12 +20,12 @@ class Automation(AutomationBase):
     last_checked = 0
 
     def __init__(self):
-        addEvent('automation.get_movies', self._getMovies)
-        addEvent('automation.get_chart_list', self._getChartList)
+        add_event('automation.get_movies', self._getMovies)
+        add_event('automation.get_chart_list', self._getChartList)
 
     def _getMovies(self):
 
-        if self.isDisabled():
+        if self.is_disabled():
             return
 
         if not self.canCheck():
@@ -56,7 +55,7 @@ class Automation(AutomationBase):
         if cached_imdb and imdb_only:
             return cached_imdb
 
-        result = fireEvent('movie.search', q = '%s %s' % (name, year if year else ''), limit = 1, merge = True)
+        result = fire_event('movie.search', q='%s %s' % (name, year if year else ''), limit=1, merge=True)
 
         if len(result) > 0:
             if imdb_only and result[0].get('imdb'):
@@ -83,12 +82,12 @@ class Automation(AutomationBase):
                 return False
 
         movie_genres = [genre.lower() for genre in movie['genres']]
-        required_genres = splitString(self.getMinimal('required_genres').lower())
-        ignored_genres = splitString(self.getMinimal('ignored_genres').lower())
+        required_genres = split_string(self.getMinimal('required_genres').lower())
+        ignored_genres = split_string(self.getMinimal('ignored_genres').lower())
 
         req_match = 0
         for req_set in required_genres:
-            req = splitString(req_set, '&')
+            req = split_string(req_set, '&')
             req_match += len(list(set(movie_genres) & set(req))) == len(req)
 
         if self.getMinimal('required_genres') and req_match == 0:
@@ -96,7 +95,7 @@ class Automation(AutomationBase):
             return False
 
         for ign_set in ignored_genres:
-            ign = splitString(ign_set, '&')
+            ign = split_string(ign_set, '&')
             if len(list(set(movie_genres) & set(ign))) == len(ign):
                 log.info2('%s has blacklisted genre(s): %s', (movie['original_title'], ign))
                 return False

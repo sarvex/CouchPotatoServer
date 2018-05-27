@@ -18,10 +18,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import unicode_literals
-from guessit import Guess
-import unicodedata
+
 import logging
+
+from guessit import Guess
 
 log = logging.getLogger(__name__)
 

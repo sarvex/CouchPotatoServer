@@ -18,16 +18,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import unicode_literals
-from guessit import Guess
-from guessit.patterns import (subtitle_exts, info_exts, video_exts, episode_rexps,
-                              find_properties, compute_canonical_form)
-from guessit.date import valid_year
-from guessit.textutils import clean_string
+
+import logging
+import mimetypes
 import os.path
 import re
-import mimetypes
-import logging
+
+from guessit import Guess
+from guessit.date import valid_year
+from guessit.patterns import (subtitle_exts, info_exts, video_exts, episode_rexps,
+                              find_properties, compute_canonical_form)
+from guessit.textutils import clean_string
 
 log = logging.getLogger(__name__)
 

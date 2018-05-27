@@ -1,10 +1,10 @@
 import json
 
-from couchpotato import CPLog
-from couchpotato.core.event import addEvent
-from couchpotato.core.helpers.encoding import tryUrlencode
 import requests
 
+from couchpotato import CPLog
+from couchpotato.core.event import add_event
+from couchpotato.core.helpers.encoding import try_url_encode
 
 log = CPLog(__name__)
 
@@ -13,7 +13,7 @@ class PlexClientProtocol(object):
     def __init__(self, plex):
         self.plex = plex
 
-        addEvent('notify.plex.notifyClient', self.notify)
+        add_event('notify.plex.notifyClient', self.notify)
 
     def notify(self, client, message):
         raise NotImplementedError()
@@ -24,7 +24,7 @@ class PlexClientHTTP(PlexClientProtocol):
         url = 'http://%s:%s/xbmcCmds/xbmcHttp/?%s' % (
             client['address'],
             client['port'],
-            tryUrlencode(command)
+            try_url_encode(command)
         )
 
         headers = {}

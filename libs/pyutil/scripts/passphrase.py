@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import argparse, math, random
-
-from pyutil.mathutil import div_ceil
+import argparse
+import math
+import random
 
 from pkg_resources import resource_stream
+from pyutil.mathutil import div_ceil
+
 
 def recursive_subset_sum(entropy_needed, wordlists):
     # Pick a minimalish set of numbers which sum to at least
@@ -51,8 +53,8 @@ def gen_passphrase(entropy, allwords):
     for (wle, wl) in wordlists_to_use:
         passphrase.append(sr.choice(wl))
         passphraseentropy += wle
-            
-    return (u".".join(passphrase), passphraseentropy)
+
+    return (".".join(passphrase), passphraseentropy)
 
 def main():
     parser = argparse.ArgumentParser(prog="chbs", description="Create a random passphrase by picking a few random words.")
@@ -68,4 +70,4 @@ def main():
 
     passphrase, bits = gen_passphrase(args.bits, allwords)
 
-    print u"Your new password is: '%s'. It is worth about %s bits." % (passphrase, bits)
+    print("Your new password is: '%s'. It is worth about %s bits." % (passphrase, bits))

@@ -22,15 +22,17 @@
 
 # Low level interface - see UnRARDLL\UNRARDLL.TXT
 
-from __future__ import generators
-from couchpotato.environment import Env
+
+import ctypes
+import ctypes.wintypes
+import os
+import os.path
+import re
+import time
 from shutil import copyfile
 
-import ctypes, ctypes.wintypes
-import os, os.path, re
-import time
-
-from rar_exceptions import *
+from couchpotato.environment import Env
+from .rar_exceptions import *
 
 ERAR_END_ARCHIVE = 10
 ERAR_NO_MEMORY = 11
@@ -85,7 +87,7 @@ volume_naming3 = re.compile("\.part([0-9]+).rar$")
 unrar = ctypes.WinDLL(dll_copy)
 
 class RAROpenArchiveDataEx(ctypes.Structure):
-    def __init__(self, ArcName=None, ArcNameW=u'', OpenMode=RAR_OM_LIST):
+    def __init__(self, ArcName=None, ArcNameW='', OpenMode=RAR_OM_LIST):
         self.CmtBuf = ctypes.c_buffer(64*1024)
         ctypes.Structure.__init__(self, ArcName=ArcName, ArcNameW=ArcNameW, OpenMode=OpenMode, _CmtBuf=ctypes.addressof(self.CmtBuf), CmtBufSize=ctypes.sizeof(self.CmtBuf))
 
@@ -207,7 +209,7 @@ class RarInfoIterator(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         if self.index>0:
             if self.arc.needskip:
                 RARProcessFile(self.arc._handle, RAR_SKIP, None, None)
@@ -307,7 +309,8 @@ class RarFileImplementation(object):
                         fn = os.path.split(fn)[-1]
                     target = os.path.join(path, fn)
                 else:
-                    raise DeprecationWarning, "Condition callbacks returning strings are deprecated and only supported in Windows"
+                    raise DeprecationWarning(
+                        "Condition callbacks returning strings are deprecated and only supported in Windows")
                     target = checkres
                 if overwrite or (not os.path.exists(target)):
                     tmpres = RARProcessFile(self._handle, RAR_EXTRACT, None, target)

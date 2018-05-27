@@ -11,12 +11,12 @@ f = open("my_document.html")
 tree = html5lib.parse(f)
 """
 
-from __future__ import absolute_import, division, unicode_literals
+
 
 from .html5parser import HTMLParser, parse, parseFragment
+from .serializer import serialize
 from .treebuilders import getTreeBuilder
 from .treewalkers import getTreeWalker
-from .serializer import serialize
 
 __all__ = ["HTMLParser", "parse", "parseFragment", "getTreeBuilder",
            "getTreeWalker", "serialize"]

@@ -13,12 +13,12 @@
 # limitations under the License.
 
 
-from logr import Logr
 from caper import CaperClosure, CaperFragment
+from caper.constraint import CaptureConstraint
 from caper.helpers import clean_dict
 from caper.result import CaperFragmentNode, CaperClosureNode
 from caper.step import CaptureStep
-from caper.constraint import CaptureConstraint
+from logr import Logr
 
 
 class CaptureGroup(object):
@@ -264,7 +264,7 @@ class CaptureGroup(object):
 
                 Logr.debug(node)
 
-                next_subject = node.next()
+                next_subject = next(node)
 
                 Logr.debug('----------[%s] (%s)----------' % (next_subject, repr(next_subject.value) if next_subject else None))
 

@@ -18,10 +18,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import unicode_literals
+
+import logging
+
 from guessit.patterns import subtitle_exts
 from guessit.textutils import reorder_title, find_words
-import logging
 
 log = logging.getLogger(__name__)
 

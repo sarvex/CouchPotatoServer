@@ -1,16 +1,15 @@
-from base64 import b64encode
-import os
-from uuid import uuid4
 import hashlib
+import os
 import traceback
+from base64 import b64encode
+from uuid import uuid4
 
 from requests import HTTPError
 
 from couchpotato.core._base.downloader.main import DownloaderBase, ReleaseDownloadList
-from couchpotato.core.helpers.encoding import tryUrlencode, sp
-from couchpotato.core.helpers.variable import cleanHost
+from couchpotato.core.helpers.encoding import try_url_encode, sp
+from couchpotato.core.helpers.variable import clean_host
 from couchpotato.core.logger import CPLog
-
 
 log = CPLog(__name__)
 
@@ -50,7 +49,7 @@ class NZBVortex(DownloaderBase):
             })
 
             if response and response.get('result', '').lower() == 'ok':
-                return self.downloadReturnId(nzb_filename)
+                return self.download_return_id(nzb_filename)
 
             log.error('Something went wrong sending the NZB file. Response: %s', response)
             return False
@@ -70,7 +69,7 @@ class NZBVortex(DownloaderBase):
 
         return login_result
 
-    def getAllDownloadStatus(self, ids):
+    def get_all_download_status(self, ids):
         """ Get status of all active downloads
 
         :param ids: list of (mixed) downloader ids
@@ -105,7 +104,7 @@ class NZBVortex(DownloaderBase):
 
         return release_downloads
 
-    def removeFailed(self, release_download):
+    def remove_failed(self, release_download):
 
         log.info('%s failed downloading, deleting...', release_download['name'])
 
@@ -150,9 +149,9 @@ class NZBVortex(DownloaderBase):
         if self.session_id:
             parameters['sessionid'] = self.session_id
 
-        params = tryUrlencode(parameters)
+        params = try_url_encode(parameters)
 
-        url = cleanHost(self.conf('host')) + 'api/' + call
+        url = clean_host(self.conf('host')) + 'api/' + call
 
         try:
             data = self.getJsonData('%s%s' % (url, '?' + params if params else ''), *args, cache_timeout = 0, show_error = False, **kwargs)
@@ -173,7 +172,7 @@ class NZBVortex(DownloaderBase):
 
         return {}
 
-    def getApiLevel(self):
+    def get_api_level(self):
 
         if not self.api_level:
 
@@ -189,9 +188,9 @@ class NZBVortex(DownloaderBase):
 
         return self.api_level
 
-    def isEnabled(self, manual = False, data = None):
+    def is_enabled(self, manual=False, data=None):
         if not data: data = {}
-        return super(NZBVortex, self).isEnabled(manual, data) and self.getApiLevel()
+        return super(NZBVortex, self).is_enabled(manual, data) and self.get_api_level()
 
 
 config = [{

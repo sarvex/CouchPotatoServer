@@ -19,8 +19,6 @@
 From bytes to a number, number to bytes, etc.
 '''
 
-from __future__ import absolute_import
-
 try:
     # We'll use psyco if available on 32-bit architectures to speed up code.
     # Using psyco (if available) cuts down the execution time on Python 2.5
@@ -32,6 +30,7 @@ except ImportError:
 
 import binascii
 from struct import pack
+
 from rsa import common
 from rsa._compat import is_integer, b, byte, get_word_alignment, ZERO_BYTE, EMPTY_BYTE
 

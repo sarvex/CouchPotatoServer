@@ -1,5 +1,6 @@
-from apscheduler.scheduler import Scheduler as Sched
-from couchpotato.core.event import addEvent
+from apscheduler.schedulers.background import BackgroundScheduler
+
+from couchpotato.core.event import add_event
 from couchpotato.core.logger import CPLog
 from couchpotato.core.plugins.base import Plugin
 
@@ -16,12 +17,12 @@ class Scheduler(Plugin):
 
     def __init__(self):
 
-        addEvent('schedule.cron', self.cron)
-        addEvent('schedule.interval', self.interval)
-        addEvent('schedule.remove', self.remove)
-        addEvent('schedule.queue', self.queue)
+        add_event('schedule.cron', self.cron)
+        add_event('schedule.interval', self.interval)
+        add_event('schedule.remove', self.remove)
+        add_event('schedule.queue', self.queue)
 
-        self.sched = Sched(misfire_grace_time = 60)
+        self.sched = BackgroundScheduler(misfire_grace_time=60)
         self.sched.start()
         self.started = True
 
@@ -33,9 +34,9 @@ class Scheduler(Plugin):
             except:
                 pass
 
-    def doShutdown(self, *args, **kwargs):
+    def do_shutdown(self, *args, **kwargs):
         self.stop()
-        return super(Scheduler, self).doShutdown(*args, **kwargs)
+        return super(Scheduler, self).do_shutdown(*args, **kwargs)
 
     def stop(self):
         if self.started:

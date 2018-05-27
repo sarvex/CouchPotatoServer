@@ -3,12 +3,11 @@ import re
 import traceback
 
 from couchpotato.api import addApiView
-from couchpotato.core.helpers.encoding import toUnicode
-from couchpotato.core.helpers.variable import tryInt, splitString
+from couchpotato.core.helpers.encoding import to_unicode
+from couchpotato.core.helpers.variable import try_int, split_string
 from couchpotato.core.logger import CPLog
 from couchpotato.core.plugins.base import Plugin
 from couchpotato.environment import Env
-
 
 log = CPLog(__name__)
 
@@ -59,7 +58,7 @@ class Logging(Plugin):
 
     def get(self, nr = 0, **kwargs):
 
-        nr = tryInt(nr)
+        nr = try_int(nr)
         current_path = None
 
         total = 1
@@ -90,8 +89,8 @@ class Logging(Plugin):
 
     def partial(self, type = 'all', lines = 30, offset = 0, **kwargs):
 
-        total_lines = tryInt(lines)
-        offset = tryInt(offset)
+        total_lines = try_int(lines)
+        offset = try_int(offset)
 
         log_lines = []
 
@@ -104,7 +103,7 @@ class Logging(Plugin):
                 break
 
             f = open(path, 'r')
-            log_content = toUnicode(f.read())
+            log_content = to_unicode(f.read())
             raw_lines = self.toList(log_content)
             raw_lines.reverse()
 
@@ -131,7 +130,7 @@ class Logging(Plugin):
 
     def toList(self, log_content = ''):
 
-        logs_raw = re.split(r'\[0m\n', toUnicode(log_content))
+        logs_raw = re.split(r'\[0m\n', to_unicode(log_content))
 
         logs = []
         re_split = r'\x1b'
@@ -139,7 +138,7 @@ class Logging(Plugin):
             split = re.split(re_split, log_line)
             if split and len(split) == 3:
                 try:
-                    date, time, log_type = splitString(split[0], ' ')
+                    date, time, log_type = split_string(split[0], ' ')
                     timestamp = '%s %s' % (date, time)
                 except:
                     timestamp = 'UNKNOWN'

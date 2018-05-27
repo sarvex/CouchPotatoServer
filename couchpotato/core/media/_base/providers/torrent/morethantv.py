@@ -1,12 +1,11 @@
 import traceback
 
 from bs4 import BeautifulSoup
-from couchpotato.core.helpers.encoding import toUnicode, tryUrlencode
-from couchpotato.core.helpers.variable import tryInt
+
+from couchpotato.core.helpers.encoding import try_url_encode
+from couchpotato.core.helpers.variable import try_int
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.torrent.base import TorrentProvider
-import six
-
 
 log = CPLog(__name__)
 
@@ -27,7 +26,7 @@ class Base(TorrentProvider):
 
     def _searchOnTitle(self, title, movie, quality, results):
 
-        movieTitle = tryUrlencode('%s %s' % (title.replace(':', ''), movie['info']['year']))
+        movieTitle = try_url_encode('%s %s' % (title.replace(':', ''), movie['info']['year']))
         url = self.urls['search'] % (self.getSceneOnly(), movieTitle)
         data = self.getHTMLData(url)
 
@@ -53,8 +52,8 @@ class Base(TorrentProvider):
                         'url': self.urls['download'] % url['href'],
                         'detail_url': self.urls['download'] % link['href'],
                         'size': self.parseSize(size),
-                        'seeders': tryInt(tds[len(tds)-2].string),
-                        'leechers': tryInt(tds[len(tds)-1].string),
+                        'seeders': try_int(tds[len(tds) - 2].string),
+                        'leechers': try_int(tds[len(tds) - 1].string),
                     })
             except:
                 log.error('Failed to parsing %s: %s', (self.getName(), traceback.format_exc()))

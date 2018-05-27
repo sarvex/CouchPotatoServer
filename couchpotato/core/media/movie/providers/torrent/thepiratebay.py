@@ -1,6 +1,6 @@
-from couchpotato.core.helpers.encoding import tryUrlencode
+from couchpotato.core.event import fire_event
+from couchpotato.core.helpers.encoding import try_url_encode
 from couchpotato.core.logger import CPLog
-from couchpotato.core.event import fireEvent
 from couchpotato.core.media._base.providers.torrent.thepiratebay import Base
 from couchpotato.core.media.movie.providers.base import MovieProvider
 
@@ -21,7 +21,7 @@ class ThePirateBay(MovieProvider, Base):
 
     def buildUrl(self, media, page, cats):
         return (
-            tryUrlencode('"%s"' % fireEvent('library.query', media, single = True)),
+            try_url_encode('"%s"' % fire_event('library.query', media, single=True)),
             page,
             ','.join(str(x) for x in cats)
         )

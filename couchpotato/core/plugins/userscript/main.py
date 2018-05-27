@@ -1,17 +1,17 @@
 import os
-import traceback
 import time
+import traceback
 from base64 import b64encode, b64decode
+
+from tornado.web import RequestHandler
 
 from couchpotato import index
 from couchpotato.api import addApiView
-from couchpotato.core.event import fireEvent, addEvent
-from couchpotato.core.helpers.variable import isDict
+from couchpotato.core.event import fire_event, add_event
+from couchpotato.core.helpers.variable import is_dictionary
 from couchpotato.core.logger import CPLog
 from couchpotato.core.plugins.base import Plugin
 from couchpotato.environment import Env
-from tornado.web import RequestHandler
-
 
 log = CPLog(__name__)
 
@@ -28,14 +28,14 @@ class Userscript(Plugin):
         addApiView('userscript.includes', self.getIncludes)
         addApiView('userscript.bookmark', self.bookmark)
 
-        addEvent('userscript.get_version', self.getVersion)
-        addEvent('app.test', self.doTest)
+        add_event('userscript.get_version', self.getVersion)
+        add_event('app.test', self.doTest)
 
     def bookmark(self, host = None, **kwargs):
 
         params = {
-            'includes': fireEvent('userscript.get_includes', merge = True),
-            'excludes': fireEvent('userscript.get_excludes', merge = True),
+            'includes': fire_event('userscript.get_includes', merge=True),
+            'excludes': fire_event('userscript.get_excludes', merge=True),
             'host': host,
         }
 
@@ -44,8 +44,8 @@ class Userscript(Plugin):
     def getIncludes(self, **kwargs):
 
         return {
-            'includes': fireEvent('userscript.get_includes', merge = True),
-            'excludes': fireEvent('userscript.get_excludes', merge = True),
+            'includes': fire_event('userscript.get_includes', merge=True),
+            'excludes': fire_event('userscript.get_excludes', merge=True),
         }
 
     def getUserScript(self, script_route, **kwargs):
@@ -60,8 +60,8 @@ class Userscript(Plugin):
                 loc = bookmarklet_host if bookmarklet_host else "{0}://{1}".format(self.request.protocol, self.request.headers.get('X-Forwarded-Host') or self.request.headers.get('host'))
 
                 params = {
-                    'includes': fireEvent('userscript.get_includes', merge = True),
-                    'excludes': fireEvent('userscript.get_excludes', merge = True),
+                    'includes': fire_event('userscript.get_includes', merge=True),
+                    'excludes': fire_event('userscript.get_excludes', merge=True),
                     'version': klass.getVersion(),
                     'api': '%suserscript/' % Env.get('api_base'),
                     'host': loc,
@@ -76,7 +76,7 @@ class Userscript(Plugin):
 
     def getVersion(self):
 
-        versions = fireEvent('userscript.get_provider_version')
+        versions = fire_event('userscript.get_provider_version')
 
         version = self.version
         for v in versions:
@@ -91,9 +91,9 @@ class Userscript(Plugin):
 
         params = {
             'url': url,
-            'movie': fireEvent('userscript.get_movie_via_url', url = url, single = True)
+            'movie': fire_event('userscript.get_movie_via_url', url=url, single=True)
         }
-        if not isDict(params['movie']):
+        if not is_dictionary(params['movie']):
             log.error('Failed adding movie via url: %s', url)
             params['error'] = params['movie'] if params['movie'] else 'Failed getting movie info'
 

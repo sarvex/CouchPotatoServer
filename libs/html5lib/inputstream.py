@@ -1,15 +1,13 @@
-from __future__ import absolute_import, division, unicode_literals
+import codecs
+import re
+from io import StringIO
+
 from six import text_type
 from six.moves import http_client
 
-import codecs
-import re
-
+from . import utils
 from .constants import EOF, spaceCharacters, asciiLetters, asciiUppercase
 from .constants import encodings, ReparseException
-from . import utils
-
-from io import StringIO
 
 try:
     from io import BytesIO
@@ -570,7 +568,7 @@ class EncodingBytes(bytes):
             raise TypeError
         return self[p:p + 1]
 
-    def next(self):
+    def __next__(self):
         # Py2 compat
         return self.__next__()
 

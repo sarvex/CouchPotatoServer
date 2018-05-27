@@ -20,13 +20,14 @@
 # along with enzyme.  If not, see <http://www.gnu.org/licenses/>.
 __all__ = ['Parser']
 
-import struct
+import logging
+import os
 import re
 import stat
-import os
-import logging
-from exceptions import ParseError
-import core
+import struct
+
+from . import core
+from .exceptions import ParseError
 
 # get logging object
 log = logging.getLogger(__name__)
@@ -101,22 +102,22 @@ class Ogm(core.AVContainer):
             for i in range(len(self.all_header)):
 
                 # get meta info
-                for key in self.all_streams[i].keys():
-                    if self.all_header[i].has_key(key):
+                for key in list(self.all_streams[i].keys()):
+                    if key in self.all_header[i]:
                         self.all_streams[i][key] = self.all_header[i][key]
                         del self.all_header[i][key]
-                    if self.all_header[i].has_key(key.upper()):
+                    if key.upper() in self.all_header[i]:
                         asi = self.all_header[i][key.upper()]
                         self.all_streams[i][key] = asi
                         del self.all_header[i][key.upper()]
 
                 # Chapter parser
-                if self.all_header[i].has_key('CHAPTER01') and \
-                       not self.chapters:
+                if 'CHAPTER01' in self.all_header[i] and \
+                    not self.chapters:
                     while 1:
                         s = 'CHAPTER%02d' % (len(self.chapters) + 1)
-                        if self.all_header[i].has_key(s) and \
-                               self.all_header[i].has_key(s + 'NAME'):
+                        if s in self.all_header[i] and \
+                            s + 'NAME' in self.all_header[i]:
                             pos = self.all_header[i][s]
                             try:
                                 pos = int(pos)
@@ -151,15 +152,15 @@ class Ogm(core.AVContainer):
             # Regular File end
             return None, None
         elif len(h) < 27:
-            log.debug(u'%d Bytes of Garbage found after End.' % len(h))
+            log.debug('%d Bytes of Garbage found after End.' % len(h))
             return None, None
         if h[:4] != "OggS":
-            log.debug(u'Invalid Ogg')
+            log.debug('Invalid Ogg')
             raise ParseError()
 
         version = ord(h[4])
         if version != 0:
-            log.debug(u'Unsupported OGG/OGM Version %d' % version)
+            log.debug('Unsupported OGG/OGM Version %d' % version)
             return None, None
 
         head = struct.unpack('<BQIIIB', h[5:])
@@ -274,7 +275,7 @@ class Ogm(core.AVContainer):
                 (type, ssize, timeunit, ai.samplerate, ai.length, buffersize, \
                  ai.bitrate, ai.channels, bloc, ai.bitrate) = streamheader
                 self.samplerate = ai.samplerate
-                log.debug(u'Samplerate %d' % self.samplerate)
+                log.debug('Samplerate %d' % self.samplerate)
                 self.audio.append(ai)
                 self.all_streams.append(ai)
 
@@ -285,13 +286,13 @@ class Ogm(core.AVContainer):
                 self.all_streams.append(subtitle)
 
         else:
-            log.debug(u'Unknown Header')
+            log.debug('Unknown Header')
 
 
     def _extractHeaderString(self, header):
         len = struct.unpack('<I', header[:4])[0]
         try:
-            return (len + 4, unicode(header[4:4 + len], 'utf-8'))
+            return (len + 4, str(header[4:4 + len], 'utf-8'))
         except (KeyError, IndexError, UnicodeDecodeError):
             return (len + 4, None)
 

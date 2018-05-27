@@ -1,16 +1,16 @@
-from base64 import b16encode, b32decode
-from hashlib import sha1
-from datetime import timedelta
 import os
 import re
+from base64 import b16encode, b32decode
+from datetime import timedelta
+from hashlib import sha1
 
 from bencode import bencode, bdecode
+from qbittorrent.client import Client
+
 from couchpotato.core._base.downloader.main import DownloaderBase, ReleaseDownloadList
 from couchpotato.core.helpers.encoding import sp
-from couchpotato.core.helpers.variable import cleanHost
+from couchpotato.core.helpers.variable import clean_host
 from couchpotato.core.logger import CPLog
-from qbittorrent.client import QBittorrentClient
-
 
 log = CPLog(__name__)
 
@@ -29,13 +29,13 @@ class qBittorrent(DownloaderBase):
         if self.qb is not None:
             self.qb.logout()
 
-        url = cleanHost(self.conf('host'), protocol = True, ssl = False)
+        url = clean_host(self.conf('host'), protocol=True, ssl=False)
 
         if self.conf('username') and self.conf('password'):
-            self.qb = QBittorrentClient(url)
+            self.qb = Client(url)
             self.qb.login(username=self.conf('username'), password=self.conf('password'))
         else:
-            self.qb = QBittorrentClient(url)
+            self.qb = Client(url)
 
         return self.qb._is_authenticated
 
@@ -78,7 +78,7 @@ class qBittorrent(DownloaderBase):
                 self.qb.download_from_link(data.get('url'), label=self.conf('label'))
                 torrent_hash = re.findall('urn:btih:([\w]{32,40})', data.get('url'))[0].upper()
                 log.info('Torrent [magnet] sent to QBittorrent successfully.')
-                return self.downloadReturnId(torrent_hash)
+                return self.download_return_id(torrent_hash)
 
             except Exception as e:
                 log.error('Failed to send torrent to qBittorrent: %s', e)
@@ -96,12 +96,12 @@ class qBittorrent(DownloaderBase):
              try:
                 self.qb.download_from_file(filedata, label=self.conf('label'))
                 log.info('Torrent [file] sent to QBittorrent successfully.')
-                return self.downloadReturnId(torrent_hash)
+                return self.download_return_id(torrent_hash)
              except Exception as e:
                 log.error('Failed to send torrent to qBittorrent: %s', e)
                 return False
 
-    def getTorrentStatus(self, torrent):
+    def get_torrent_status(self, torrent):
 
         if torrent['state'] in ('uploading', 'queuedUP', 'stalledUP'):
             return 'seeding'
@@ -111,7 +111,7 @@ class qBittorrent(DownloaderBase):
 
         return 'busy'
 
-    def getAllDownloadStatus(self, ids):
+    def get_all_download_status(self, ids):
         """ Get status of all active downloads
 
         :param ids: list of (mixed) downloader ids
@@ -154,7 +154,7 @@ class qBittorrent(DownloaderBase):
                     release_downloads.append({
                         'id': torrent['hash'],
                         'name': torrent['name'],
-                        'status': self.getTorrentStatus(torrent),
+                        'status': self.get_torrent_status(torrent),
                         'seed_ratio': torrent['ratio'],
                         'original_status': torrent['state'],
                         'timeleft': str(timedelta(seconds = torrent['eta'])),
@@ -180,11 +180,11 @@ class qBittorrent(DownloaderBase):
             return self.qb.pause(release_download['id'])
         return self.qb.resume(release_download['id'])
 
-    def removeFailed(self, release_download):
+    def remove_failed(self, release_download):
         log.info('%s failed downloading, deleting...', release_download['name'])
-        return self.processComplete(release_download, delete_files = True)
+        return self.process_complete(release_download, delete_files=True)
 
-    def processComplete(self, release_download, delete_files):
+    def process_complete(self, release_download, delete_files):
         log.debug('Requesting qBittorrent to remove the torrent %s%s.',
                   (release_download['name'], ' and cleanup the downloaded files' if delete_files else ''))
 

@@ -1,11 +1,13 @@
+import datetime
+
+from pio import api as pio
+
 from couchpotato.api import addApiView
-from couchpotato.core.event import addEvent, fireEventAsync
 from couchpotato.core._base.downloader.main import DownloaderBase, ReleaseDownloadList
-from couchpotato.core.helpers.variable import cleanHost
+from couchpotato.core.event import add_event, fire_event_async
+from couchpotato.core.helpers.variable import clean_host
 from couchpotato.core.logger import CPLog
 from couchpotato.environment import Env
-from pio import api as pio
-import datetime
 
 log = CPLog(__name__)
 
@@ -24,7 +26,7 @@ class PutIO(DownloaderBase):
         })
         addApiView('downloader.putio.auth_url', self.getAuthorizationUrl)
         addApiView('downloader.putio.credentials', self.getCredentials)
-        addEvent('putio.download', self.putioDownloader)
+        add_event('putio.download', self.putioDownloader)
 
         return super(PutIO, self).__init__()
 
@@ -68,7 +70,7 @@ class PutIO(DownloaderBase):
         log.debug('callbackurl is %s', callbackurl)
         resp = client.Transfer.add_url(url, callback_url = callbackurl, parent_id = putioFolder)
         log.debug('resp is %s', resp.id)
-        return self.downloadReturnId(resp.id)
+        return self.download_return_id(resp.id)
 
     def test(self):
         try:
@@ -81,7 +83,7 @@ class PutIO(DownloaderBase):
 
     def getAuthorizationUrl(self, host = None, **kwargs):
 
-        callback_url = cleanHost(host) + '%sdownloader.putio.credentials/' % (Env.get('api_base').lstrip('/'))
+        callback_url = clean_host(host) + '%sdownloader.putio.credentials/' % (Env.get('api_base').lstrip('/'))
         log.debug('callback_url is %s', callback_url)
 
         target_url = self.oauth_authenticate + "?target=" + callback_url
@@ -101,7 +103,7 @@ class PutIO(DownloaderBase):
         self.conf('oauth_token', value = oauth_token);
         return 'redirect', Env.get('web_base') + 'settings/downloaders/'
 
-    def getAllDownloadStatus(self, ids):
+    def get_all_download_status(self, ids):
 
         log.debug('Checking putio download status.')
         client = pio.Client(self.conf('oauth_token'))
@@ -174,7 +176,7 @@ class PutIO(DownloaderBase):
         log.info('Put.io Download has been called file_id is %s', file_id)
         if file_id not in self.downloading_list:
             self.downloading_list.append(file_id)
-            fireEventAsync('putio.download',fid = file_id)
+            fire_event_async('putio.download', fid=file_id)
             return {
                'success': True,
             }

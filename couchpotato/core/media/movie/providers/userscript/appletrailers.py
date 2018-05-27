@@ -1,7 +1,7 @@
 import re
 import traceback
 
-from couchpotato import tryInt, CPLog
+from couchpotato import try_int, CPLog
 from couchpotato.core.media._base.providers.userscript.base import UserscriptBase
 
 log = CPLog(__name__)
@@ -27,7 +27,7 @@ class AppleTrailers(UserscriptBase):
             data = self.getJsonData('https://trailers.apple.com/trailers/feeds/data/%s.json' % id)
 
             name = data['page']['movie_title']
-            year = tryInt(data['page']['release_date'][0:4])
+            year = try_int(data['page']['release_date'][0:4])
 
             return self.search(name, year)
         except:

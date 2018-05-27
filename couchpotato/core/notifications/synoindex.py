@@ -2,10 +2,9 @@ import os
 import subprocess
 
 from couchpotato.api import addApiView
-from couchpotato.core.event import addEvent
+from couchpotato.core.event import add_event
 from couchpotato.core.logger import CPLog
 from couchpotato.core.notifications.base import Notification
-
 
 log = CPLog(__name__)
 
@@ -19,10 +18,10 @@ class Synoindex(Notification):
     def __init__(self):
         addApiView(self.testNotifyName(), self.test)
 
-        addEvent('renamer.after', self.addToLibrary)
+        add_event('renamer.after', self.addToLibrary)
 
     def addToLibrary(self, message = None, group = None):
-        if self.isDisabled(): return
+        if self.is_disabled(): return
         if not group: group = {}
 
         command = [self.index_path, '-A', group.get('destination_dir')]

@@ -1,13 +1,13 @@
 import traceback
 
-from couchpotato.core.event import addEvent
-from couchpotato.core.helpers.encoding import toUnicode, sp
-from couchpotato.core.helpers.variable import splitString
+import subliminal
+
+from couchpotato.core.event import add_event
+from couchpotato.core.helpers.encoding import to_unicode, sp
+from couchpotato.core.helpers.variable import split_string
 from couchpotato.core.logger import CPLog
 from couchpotato.core.plugins.base import Plugin
 from couchpotato.environment import Env
-import subliminal
-
 
 log = CPLog(__name__)
 
@@ -19,15 +19,15 @@ class Subtitle(Plugin):
     services = ['opensubtitles', 'thesubdb', 'subswiki', 'subscenter', 'wizdom']
 
     def __init__(self):
-        addEvent('renamer.before', self.searchSingle)
+        add_event('renamer.before', self.searchSingle)
 
     def searchSingle(self, group):
-        if self.isDisabled(): return
+        if self.is_disabled(): return
 
         try:
-            available_languages = sum(group['subtitle_language'].values(), [])
+            available_languages = sum(list(group['subtitle_language'].values()), [])
             downloaded = []
-            files = [toUnicode(x) for x in group['files']['movie']]
+            files = [to_unicode(x) for x in group['files']['movie']]
             log.debug('Searching for subtitles for: %s', files)
 
             for lang in self.getLanguages():
@@ -50,7 +50,7 @@ class Subtitle(Plugin):
         return False
 
     def getLanguages(self):
-        return splitString(self.conf('languages'))
+        return split_string(self.conf('languages'))
 
 
 config = [{

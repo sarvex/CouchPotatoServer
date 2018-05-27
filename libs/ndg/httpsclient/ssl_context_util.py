@@ -13,7 +13,7 @@ import sys
 if sys.version_info[0] > 2:
     import urllib.parse as urlparse_
 else:
-    import urlparse as urlparse_
+    import urllib.parse as urlparse_
 
 from OpenSSL import SSL
 

@@ -1,12 +1,11 @@
 import base64
 import time
 
-from couchpotato.core.event import addEvent, fireEvent
-from couchpotato.core.helpers.encoding import tryUrlencode, ss
+from couchpotato.core.event import add_event, fire_event
+from couchpotato.core.helpers.encoding import try_url_encode, ss
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media.movie.providers.base import MovieProvider
 from couchpotato.environment import Env
-
 
 log = CPLog(__name__)
 
@@ -29,42 +28,43 @@ class CouchPotatoApi(MovieProvider):
     api_version = 1
 
     def __init__(self):
-        addEvent('movie.info', self.getInfo, priority = 2)
-        addEvent('movie.info.release_date', self.getReleaseDate)
+        add_event('movie.info', self.getInfo, priority=2)
+        add_event('movie.info.release_date', self.getReleaseDate)
 
-        addEvent('info.search', self.search, priority = 1)
-        addEvent('movie.search', self.search, priority = 1)
+        add_event('info.search', self.search, priority=1)
+        add_event('movie.search', self.search, priority=1)
 
-        addEvent('movie.suggest', self.getSuggestions)
-        addEvent('movie.is_movie', self.isMovie)
+        add_event('movie.suggest', self.getSuggestions)
+        add_event('movie.is_movie', self.isMovie)
 
-        addEvent('release.validate', self.validate)
+        add_event('release.validate', self.validate)
 
-        addEvent('cp.api_call', self.call)
+        add_event('cp.api_call', self.call)
 
-        addEvent('cp.source_url', self.getSourceUrl)
-        addEvent('cp.messages', self.getMessages)
+        add_event('cp.source_url', self.getSourceUrl)
+        add_event('cp.messages', self.getMessages)
 
     def call(self, url, **kwargs):
         return self.getJsonData(url, headers = self.getRequestHeaders(), **kwargs)
 
     def getMessages(self, last_check = 0):
 
-        data = self.getJsonData(self.urls['messages'] % tryUrlencode({
+        data = self.getJsonData(self.urls['messages'] % try_url_encode({
             'last_check': last_check,
         }), headers = self.getRequestHeaders(), cache_timeout = 10)
 
         return data
 
     def getSourceUrl(self, repo = None, repo_name = None, branch = None):
-        return self.getJsonData(self.urls['updater'] % tryUrlencode({
+        return self.getJsonData(self.urls['updater'] % try_url_encode({
             'repo': repo,
             'name': repo_name,
             'branch': branch,
         }), headers = self.getRequestHeaders())
 
     def search(self, q, limit = 5):
-        return self.getJsonData(self.urls['search'] % tryUrlencode(q) + ('?limit=%s' % limit), headers = self.getRequestHeaders())
+        return self.getJsonData(self.urls['search'] % try_url_encode(q) + ('?limit=%s' % limit),
+                                headers=self.getRequestHeaders())
 
     def validate(self, name = None):
 
@@ -98,7 +98,7 @@ class CouchPotatoApi(MovieProvider):
 
         result = self.getJsonData(url, headers = self.getRequestHeaders())
         if result:
-            return dict((k, v) for k, v in result.items() if v)
+            return dict((k, v) for k, v in list(result.items()) if v)
 
         return {}
 
@@ -124,7 +124,7 @@ class CouchPotatoApi(MovieProvider):
 
     def getRequestHeaders(self):
         return {
-            'X-CP-Version': fireEvent('app.version', single = True),
+            'X-CP-Version': fire_event('app.version', single=True),
             'X-CP-API': self.api_version,
             'X-CP-Time': time.time(),
             'X-CP-Identifier': '+%s' % Env.setting('api_key', 'core')[:10],  # Use first 10 as identifier, so we don't need to use IP address in api stats

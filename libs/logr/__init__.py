@@ -215,11 +215,11 @@ class LogrFormatter(logging.Formatter):
 def xrange_six(start, stop=None, step=None):
     if stop is not None and step is not None:
         if PY3:
-            return range(start, stop, step)
+            return list(range(start, stop, step))
         else:
-            return xrange(start, stop, step)
+            return range(start, stop, step)
     else:
         if PY3:
-            return range(start)
+            return list(range(start))
         else:
-            return xrange(start)
+            return range(start)

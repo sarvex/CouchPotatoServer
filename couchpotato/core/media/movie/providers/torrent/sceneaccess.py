@@ -1,4 +1,4 @@
-from couchpotato.core.helpers.encoding import tryUrlencode
+from couchpotato.core.helpers.encoding import try_url_encode
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.torrent.sceneaccess import Base
 from couchpotato.core.media.movie.providers.base import MovieProvider
@@ -20,7 +20,7 @@ class SceneAccess(MovieProvider, Base):
         cat_id = self.getCatId(quality)[0]
         url = self.urls['search'] % (cat_id, cat_id)
 
-        arguments = tryUrlencode({
+        arguments = try_url_encode({
             'search': '%s %s' % (title, media['info']['year']),
             'method': 2,
         })

@@ -3,9 +3,12 @@
 Test time_format.py
 """
 
-import os, time, unittest
+import os
+import time
+import unittest
 
 from pyutil import time_format, increasing_timer
+
 
 class TimeUtilTestCase(unittest.TestCase):
     def setUp(self):
@@ -30,11 +33,11 @@ class TimeUtilTestCase(unittest.TestCase):
         t1 = int(timer.time() - (365*3600*2/3))
         iso_utc_t1 = time_format.iso_utc(t1)
         t1_2 = time_format.iso_utc_time_to_seconds(iso_utc_t1)
-        self.failUnlessEqual(t1, t1_2)
+        self.assertEqual(t1, t1_2)
         t1 = int(timer.time())
         iso_utc_t1 = time_format.iso_utc(t1)
         t1_2 = time_format.iso_utc_time_to_seconds(iso_utc_t1)
-        self.failUnlessEqual(t1, t1_2)
+        self.assertEqual(t1, t1_2)
 
     def test_epoch(self):
         return self._help_test_epoch()
@@ -66,32 +69,33 @@ class TimeUtilTestCase(unittest.TestCase):
     def _help_test_epoch(self):
         origtzname = time.tzname
         s = time_format.iso_utc_time_to_seconds("1970-01-01T00:00:01Z")
-        self.failUnlessEqual(s, 1.0)
+        self.assertEqual(s, 1.0)
         s = time_format.iso_utc_time_to_seconds("1970-01-01_00:00:01Z")
-        self.failUnlessEqual(s, 1.0)
+        self.assertEqual(s, 1.0)
         s = time_format.iso_utc_time_to_seconds("1970-01-01 00:00:01Z")
-        self.failUnlessEqual(s, 1.0)
+        self.assertEqual(s, 1.0)
 
-        self.failUnlessEqual(time_format.iso_utc(1.0), "1970-01-01 00:00:01Z")
-        self.failUnlessEqual(time_format.iso_utc(1.0, sep="_"),
+        self.assertEqual(time_format.iso_utc(1.0), "1970-01-01 00:00:01Z")
+        self.assertEqual(time_format.iso_utc(1.0, sep="_"),
                              "1970-01-01_00:00:01Z")
 
         now = time.time()
         isostr = time_format.iso_utc(now)
         timestamp = time_format.iso_utc_time_to_seconds(isostr)
-        self.failUnlessEqual(int(timestamp), int(now))
+        self.assertEqual(int(timestamp), int(now))
 
         def my_time():
             return 1.0
-        self.failUnlessEqual(time_format.iso_utc(t=my_time),
+
+        self.assertEqual(time_format.iso_utc(t=my_time),
                              "1970-01-01 00:00:01Z")
-        self.failUnlessRaises(ValueError,
-                                  time_format.iso_utc_time_to_seconds,
+        self.assertRaises(ValueError,
+                          time_format.iso_utc_time_to_seconds,
                                   "invalid timestring")
         s = time_format.iso_utc_time_to_seconds("1970-01-01 00:00:01.500Z")
-        self.failUnlessEqual(s, 1.5)
+        self.assertEqual(s, 1.5)
 
         # Look for daylight-savings-related errors.
         thatmomentinmarch = time_format.iso_utc_time_to_seconds("2009-03-20 21:49:02.226536Z")
-        self.failUnlessEqual(thatmomentinmarch, 1237585742.226536)
-        self.failUnlessEqual(origtzname, time.tzname)
+        self.assertEqual(thatmomentinmarch, 1237585742.226536)
+        self.assertEqual(origtzname, time.tzname)

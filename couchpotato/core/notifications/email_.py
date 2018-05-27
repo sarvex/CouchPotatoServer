@@ -1,14 +1,13 @@
-from email.mime.text import MIMEText
-from email.utils import formatdate, make_msgid
 import smtplib
 import traceback
+from email.mime.text import MIMEText
+from email.utils import formatdate, make_msgid
 
-from couchpotato.core.helpers.encoding import toUnicode
-from couchpotato.core.helpers.variable import splitString
+from couchpotato.core.helpers.encoding import to_unicode
+from couchpotato.core.helpers.variable import split_string
 from couchpotato.core.logger import CPLog
 from couchpotato.core.notifications.base import Notification
 from couchpotato.environment import Env
-
 
 log = CPLog(__name__)
 
@@ -31,8 +30,8 @@ class Email(Notification):
         starttls = self.conf('starttls')
 
         # Make the basic message
-        email = MIMEText(toUnicode(message), _charset = Env.get('encoding'))
-        email['Subject'] = '%s: %s' % (self.default_title, toUnicode(message))
+        email = MIMEText(to_unicode(message), _charset=Env.get('encoding'))
+        email['Subject'] = '%s: %s' % (self.default_title, to_unicode(message))
         email['From'] = from_address
         email['To'] = to_address
         email['Date'] = formatdate(localtime = 1)
@@ -58,7 +57,7 @@ class Email(Notification):
 
             # Send the e-mail
             log.debug("Sending the email")
-            mailserver.sendmail(from_address, splitString(to_address), email.as_string())
+            mailserver.sendmail(from_address, split_string(to_address), email.as_string())
 
             # Close the SMTP connection
             mailserver.quit()

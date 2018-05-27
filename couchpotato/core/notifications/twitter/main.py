@@ -1,14 +1,14 @@
-from urlparse import parse_qsl
+from urllib.parse import parse_qsl
+
+import oauth2
+from pytwitter import Api
 
 from couchpotato.api import addApiView
-from couchpotato.core.helpers.encoding import tryUrlencode
-from couchpotato.core.helpers.variable import cleanHost
+from couchpotato.core.helpers.encoding import try_url_encode
+from couchpotato.core.helpers.variable import clean_host
 from couchpotato.core.logger import CPLog
 from couchpotato.core.notifications.base import Notification
 from couchpotato.environment import Env
-from pytwitter import Api
-import oauth2
-
 
 log = CPLog(__name__)
 
@@ -74,12 +74,14 @@ class Twitter(Notification):
 
     def getAuthorizationUrl(self, host = None, **kwargs):
 
-        callback_url = cleanHost(host) + '%snotify.%s.credentials/' % (Env.get('api_base').lstrip('/'), self.getName().lower())
+        callback_url = clean_host(host) + '%snotify.%s.credentials/' % (
+        Env.get('api_base').lstrip('/'), self.getName().lower())
 
         oauth_consumer = oauth2.Consumer(self.consumer_key, self.consumer_secret)
         oauth_client = oauth2.Client(oauth_consumer)
 
-        resp, content = oauth_client.request(self.urls['request'], 'POST', body = tryUrlencode({'oauth_callback': callback_url}))
+        resp, content = oauth_client.request(self.urls['request'], 'POST',
+                                             body=try_url_encode({'oauth_callback': callback_url}))
 
         if resp['status'] != '200':
             log.error('Invalid response from Twitter requesting temp token: %s', resp['status'])

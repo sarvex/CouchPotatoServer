@@ -1,5 +1,5 @@
-from couchpotato.core.helpers.encoding import tryUrlencode
-from couchpotato.core.helpers.variable import getIdentifier
+from couchpotato.core.helpers.encoding import try_url_encode
+from couchpotato.core.helpers.variable import get_identifier
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.nzb.newznab import Base
 from couchpotato.core.media.movie.providers.base import MovieProvider
@@ -13,9 +13,9 @@ class Newznab(MovieProvider, Base):
 
     def buildUrl(self, media, host):
 
-        query = tryUrlencode({
+        query = try_url_encode({
             't': 'movie',
-            'imdbid': getIdentifier(media).replace('tt', ''),
+            'imdbid': get_identifier(media).replace('tt', ''),
             'apikey': host['api_key'],
             'extended': 1
         })

@@ -28,7 +28,7 @@ class CaptureConstraint(object):
         self.comparisons = comparisons if comparisons else []
         self.kwargs = {}
 
-        for orig_key, value in kwargs.items():
+        for orig_key, value in list(kwargs.items()):
             key = orig_key.split('__')
             if len(key) != 2:
                 self.kwargs[orig_key] = value
@@ -105,7 +105,7 @@ class CaptureConstraint(object):
             if tag != ctag:
                 continue
 
-            if not ckey or ckey in result.keys():
+            if not ckey or ckey in list(result.keys()):
                 return 1.0, True
 
         return 0.0, False

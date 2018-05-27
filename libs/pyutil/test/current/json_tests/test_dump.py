@@ -1,13 +1,14 @@
+from io import StringIO
 from unittest import TestCase
-from cStringIO import StringIO
 
 from pyutil import jsonutil as json
+
 
 class TestDump(TestCase):
     def test_dump(self):
         sio = StringIO()
         json.dump({}, sio)
-        self.assertEquals(sio.getvalue(), '{}')
+        self.assertEqual(sio.getvalue(), '{}')
 
     def test_dumps(self):
-        self.assertEquals(json.dumps({}), '{}')
+        self.assertEqual(json.dumps({}), '{}')

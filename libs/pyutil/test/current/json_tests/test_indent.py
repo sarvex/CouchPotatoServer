@@ -1,7 +1,8 @@
+import textwrap
 from unittest import TestCase
 
 from pyutil import jsonutil as json
-import textwrap
+
 
 class TestIndent(TestCase):
     def test_indent(self):
@@ -36,6 +37,6 @@ class TestIndent(TestCase):
         h1 = json.loads(d1)
         h2 = json.loads(d2)
 
-        self.assertEquals(h1, h)
-        self.assertEquals(h2, h)
-        self.assertEquals(d2, expect)
+        self.assertEqual(h1, h)
+        self.assertEqual(h2, h)
+        self.assertEqual(d2, expect)

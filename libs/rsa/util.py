@@ -16,12 +16,13 @@
 
 '''Utility functions.'''
 
-from __future__ import with_statement
+
 
 import sys
 from optparse import OptionParser
 
 import rsa.key
+
 
 def private_to_public():
     '''Reads a private key and outputs the corresponding public key.'''
@@ -49,13 +50,13 @@ def private_to_public():
 
     # Read the input data
     if cli.infilename:
-        print >>sys.stderr, 'Reading private key from %s in %s format' % \
-            (cli.infilename, cli.inform)
+        print('Reading private key from %s in %s format' % \
+              (cli.infilename, cli.inform), file=sys.stderr)
         with open(cli.infilename) as infile:
             in_data = infile.read()
     else:
-        print >>sys.stderr, 'Reading private key from stdin in %s format' % \
-            cli.inform
+        print('Reading private key from stdin in %s format' % \
+              cli.inform, file=sys.stderr)
         in_data = sys.stdin.read()
 
 
@@ -67,13 +68,11 @@ def private_to_public():
     out_data = pub_key.save_pkcs1(cli.outform)
 
     if cli.outfilename:
-        print >>sys.stderr, 'Writing public key to %s in %s format' % \
-            (cli.outfilename, cli.outform)
+        print('Writing public key to %s in %s format' % \
+              (cli.outfilename, cli.outform), file=sys.stderr)
         with open(cli.outfilename, 'w') as outfile:
             outfile.write(out_data)
     else:
-        print >>sys.stderr, 'Writing public key to stdout in %s format' % \
-            cli.outform
+        print('Writing public key to stdout in %s format' % \
+              cli.outform, file=sys.stderr)
         sys.stdout.write(out_data)
-
-    

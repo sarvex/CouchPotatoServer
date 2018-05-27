@@ -1,10 +1,10 @@
-from __future__ import absolute_import, division, unicode_literals
-from six import text_type
+from gettext import gettext
 
 from lxml import etree
+from six import text_type
+
 from ..treebuilders.etree import tag_regexp
 
-from gettext import gettext
 _ = gettext
 
 from . import _base

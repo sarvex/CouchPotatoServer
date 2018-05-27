@@ -1,4 +1,4 @@
-from couchpotato.core.event import fireEvent, addEvent
+from couchpotato.core.event import fire_event, add_event
 from couchpotato.core.logger import CPLog
 from couchpotato.core.plugins.base import Plugin
 from couchpotato.environment import Env
@@ -16,22 +16,22 @@ if Env.get('desktop'):
 
             desktop = Env.get('desktop')
             desktop.setSettings({
-                'base_url': fireEvent('app.base_url', single = True),
-                'api_url': fireEvent('app.api_url', single = True),
+                'base_url': fire_event('app.base_url', single=True),
+                'api_url': fire_event('app.api_url', single=True),
                 'api': Env.setting('api'),
             })
 
             # Events from desktop
             desktop.addEvents({
-                'onClose': self.onClose,
+                'onClose': self.on_close,
             })
 
             # Events to desktop
-            addEvent('app.after_shutdown', desktop.afterShutdown)
-            addEvent('app.load', desktop.onAppLoad, priority = 110)
+            add_event('app.after_shutdown', desktop.afterShutdown)
+            add_event('app.load', desktop.onAppLoad, priority=110)
 
-        def onClose(self, event):
-            return fireEvent('app.shutdown', single = True)
+        def on_close(self, event):
+            return fire_event('app.shutdown', single=True)
 
 else:
 

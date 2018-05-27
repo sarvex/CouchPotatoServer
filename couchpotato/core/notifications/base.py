@@ -1,5 +1,5 @@
 from couchpotato.api import addApiView
-from couchpotato.core.event import addEvent
+from couchpotato.core.event import add_event
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.base import Provider
 from couchpotato.environment import Env
@@ -23,14 +23,14 @@ class Notification(Provider):
     dont_listen_to = []
 
     def __init__(self):
-        addEvent('notify.%s' % self.getName().lower(), self._notify)
+        add_event('notify.%s' % self.getName().lower(), self._notify)
 
         addApiView(self.testNotifyName(), self.test)
 
         # Attach listeners
         for listener in self.listen_to:
             if not listener in self.dont_listen_to:
-                addEvent(listener, self.createNotifyHandler(listener))
+                add_event(listener, self.createNotifyHandler(listener))
 
     def createNotifyHandler(self, listener):
         def notify(message = None, group = None, data = None):
@@ -46,7 +46,7 @@ class Notification(Provider):
         return 'https://raw.github.com/CouchPotato/CouchPotatoServer/master/couchpotato/static/images/notify.couch.%s.png' % size
 
     def _notify(self, *args, **kwargs):
-        if self.isEnabled():
+        if self.is_enabled():
             return self.notify(*args, **kwargs)
         return False
 

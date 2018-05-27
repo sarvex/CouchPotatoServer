@@ -1,11 +1,10 @@
 import os
 
-from couchpotato.core.event import addEvent
-from couchpotato.core.helpers.variable import tryInt
+from couchpotato.core.event import add_event
+from couchpotato.core.helpers.variable import try_int
 from couchpotato.core.logger import CPLog
 from couchpotato.core.plugins.base import Plugin
 from couchpotato.environment import Env
-
 
 log = CPLog(__name__)
 
@@ -26,28 +25,28 @@ class ClientScript(Plugin):
     }
 
     def __init__(self):
-        addEvent('clientscript.get_styles', self.getStyles)
-        addEvent('clientscript.get_scripts', self.getScripts)
+        add_event('clientscript.get_styles', self.get_styles)
+        add_event('clientscript.get_scripts', self.get_scripts)
 
-        self.makeRelative()
+        self.make_relative()
 
-    def makeRelative(self):
+    def make_relative(self):
 
         for static_type in self.paths:
 
             updates_paths = []
             for rel_path in self.paths.get(static_type):
                 file_path = os.path.join(Env.get('app_dir'), 'couchpotato', 'static', rel_path)
-                core_url = 'static/%s?%d' % (rel_path, tryInt(os.path.getmtime(file_path)))
+                core_url = 'static/%s?%d' % (rel_path, try_int(os.path.getmtime(file_path)))
 
                 updates_paths.append(core_url)
 
             self.paths[static_type] = updates_paths
 
-    def getStyles(self, *args, **kwargs):
+    def get_styles(self, *args, **kwargs):
         return self.get('style', *args, **kwargs)
 
-    def getScripts(self, *args, **kwargs):
+    def get_scripts(self, *args, **kwargs):
         return self.get('script', *args, **kwargs)
 
     def get(self, type):

@@ -1,12 +1,12 @@
 import traceback
 
 from bs4 import BeautifulSoup
-from couchpotato import fireEvent
+
+from couchpotato import fire_event
 from couchpotato.core.helpers.rss import RSS
-from couchpotato.core.helpers.variable import tryInt
+from couchpotato.core.helpers.variable import try_int
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media.movie.providers.automation.base import Automation
-
 
 log = CPLog(__name__)
 
@@ -44,7 +44,7 @@ class Bluray(Automation, RSS):
                         if h3.parent.name != 'a':
 
                             try:
-                                page_year = tryInt(h3.get_text()[-4:])
+                                page_year = try_int(h3.get_text()[-4:])
                                 if page_year > 0 and page_year < self.getMinimal('year'):
                                     brk = True
                             except:
@@ -68,7 +68,7 @@ class Bluray(Automation, RSS):
 
                                 year = h3.parent.parent.small.get_text().split('|')[1].strip()
 
-                                if tryInt(year) < self.getMinimal('year'):
+                                if try_int(year) < self.getMinimal('year'):
                                     continue
 
                                 imdb = self.search(name, year)
@@ -88,13 +88,13 @@ class Bluray(Automation, RSS):
         rss_movies = self.getRSSData(self.rss_url)
 
         for movie in rss_movies:
-            name = self.getTextElement(movie, 'title').lower().split('blu-ray')[0].strip('(').rstrip()
-            year = self.getTextElement(movie, 'description').split('|')[1].strip('(').strip()
+            name = self.get_text_element(movie, 'title').lower().split('blu-ray')[0].strip('(').rstrip()
+            year = self.get_text_element(movie, 'description').split('|')[1].strip('(').strip()
 
             if not name.find('/') == -1:  # make sure it is not a double movie release
                 continue
 
-            if tryInt(year) < self.getMinimal('year'):
+            if try_int(year) < self.getMinimal('year'):
                 continue
 
             imdb = self.search(name, year)
@@ -120,8 +120,8 @@ class Bluray(Automation, RSS):
             rss_movies = self.getRSSData(self.rss_url)
 
             for movie in rss_movies:
-                name = self.getTextElement(movie, 'title').lower().split('blu-ray')[0].strip('(').rstrip()
-                year = self.getTextElement(movie, 'description').split('|')[1].strip('(').strip()
+                name = self.get_text_element(movie, 'title').lower().split('blu-ray')[0].strip('(').rstrip()
+                year = self.get_text_element(movie, 'description').split('|')[1].strip('(').strip()
 
                 if not name.find('/') == -1: # make sure it is not a double movie release
                     continue
@@ -133,7 +133,7 @@ class Bluray(Automation, RSS):
                     if movie.get('imdb') in movie_ids:
                         continue
 
-                    is_movie = fireEvent('movie.is_movie', identifier = movie.get('imdb'), single = True)
+                    is_movie = fire_event('movie.is_movie', identifier=movie.get('imdb'), single=True)
                     if not is_movie:
                         continue
 

@@ -1,10 +1,14 @@
 import json
-import urllib, urllib2
+import urllib.error
+import urllib.error
+import urllib.parse
+import urllib.parse
+import urllib.request
+import urllib.request
 
-from couchpotato.core.helpers.variable import cleanHost
+from couchpotato.core.helpers.variable import clean_host
 from couchpotato.core.logger import CPLog
 from couchpotato.core.notifications.base import Notification
-
 
 log = CPLog(__name__)
 
@@ -17,21 +21,21 @@ class Emby(Notification):
         host = self.conf('host')
         apikey = self.conf('apikey')
 
-        host = cleanHost(host)
+        host = clean_host(host)
         url = '%semby/Library/Movies/Updated' % (host)
         values = {}
-        data = urllib.urlencode(values)
+        data = urllib.parse.urlencode(values)
 
         try:
-            req = urllib2.Request(url, data)
+            req = urllib.request.Request(url, data)
             req.add_header('X-MediaBrowser-Token', apikey)
 
-            response = urllib2.urlopen(req)
+            response = urllib.request.urlopen(req)
             result = response.read()
             response.close()
             return True
 
-        except (urllib2.URLError, IOError), e:
+        except (urllib.error.URLError, IOError) as e:
             return False
 
     def test(self, **kwargs):
@@ -39,24 +43,24 @@ class Emby(Notification):
         apikey = self.conf('apikey')
         message = self.test_message
 
-        host = cleanHost(host)
+        host = clean_host(host)
         url = '%semby/Notifications/Admin' % (host)
         values = {'Name': 'CouchPotato', 'Description': message, 'ImageUrl': 'https://raw.githubusercontent.com/CouchPotato/CouchPotatoServer/master/couchpotato/static/images/notify.couch.small.png'}
         data = json.dumps(values)
 
         try:
-            req = urllib2.Request(url, data)
+            req = urllib.request.Request(url, data)
             req.add_header('X-MediaBrowser-Token', apikey)
             req.add_header('Content-Type', 'application/json')
 
-            response = urllib2.urlopen(req)
+            response = urllib.request.urlopen(req)
             result = response.read()
             response.close()
             return {
                 'success': True
             }
 
-        except (urllib2.URLError, IOError), e:
+        except (urllib.error.URLError, IOError) as e:
             return False
 
 

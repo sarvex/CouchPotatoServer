@@ -2,11 +2,11 @@ import re
 import traceback
 
 from bs4 import BeautifulSoup
-from couchpotato.core.helpers.encoding import toUnicode, tryUrlencode
-from couchpotato.core.helpers.variable import tryInt, splitString
+
+from couchpotato.core.helpers.encoding import to_unicode, try_url_encode
+from couchpotato.core.helpers.variable import try_int, split_string
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.torrent.base import TorrentProvider
-
 
 log = CPLog(__name__)
 
@@ -43,7 +43,7 @@ class Base(TorrentProvider):
 
         while page < total_pages:
 
-            movieTitle = tryUrlencode('"%s" %s' % (title, movie['info']['year']))
+            movieTitle = try_url_encode('"%s" %s' % (title, movie['info']['year']))
             search_url = self.urls['search'] % (movieTitle, page, cats[0])
             page += 1
 
@@ -53,7 +53,7 @@ class Base(TorrentProvider):
 
                     results_table = None
 
-                    data_split = splitString(data, '<table')
+                    data_split = split_string(data, '<table')
                     soup = None
                     for x in data_split:
                         soup = BeautifulSoup(x)
@@ -94,12 +94,12 @@ class Base(TorrentProvider):
                             fileSize = self.parseSize(result.select('td.rowhead')[8].text)
                             results.append({
                                 'id': id,
-                                'name': toUnicode(prelink.find('b').text),
+                                'name': to_unicode(prelink.find('b').text),
                                 'url': url,
                                 'detail_url': self.urls['detail'] % link,
                                 'size': fileSize,
-                                'seeders': tryInt(result.find_all('td')[2].string),
-                                'leechers': tryInt(result.find_all('td')[3].string),
+                                'seeders': try_int(result.find_all('td')[2].string),
+                                'leechers': try_int(result.find_all('td')[3].string),
                                 'extra_score': extra_score,
                                 'get_more_info': self.getMoreInfo
                             })
@@ -124,7 +124,7 @@ class Base(TorrentProvider):
                 full_description = self.getHTMLData(item['detail_url'])
                 html = BeautifulSoup(full_description)
                 nfo_pre = html.find('td', attrs = {'class': 'main'}).findAll('table')[1]
-                description = toUnicode(nfo_pre.text) if nfo_pre else ''
+                description = to_unicode(nfo_pre.text) if nfo_pre else ''
             except:
                 log.error('Failed getting more info for %s', item['name'])
                 description = ''

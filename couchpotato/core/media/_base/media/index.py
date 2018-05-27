@@ -1,8 +1,9 @@
-from string import ascii_letters
 from hashlib import md5
+from string import ascii_letters
 
 from CodernityDB.tree_index import MultiTreeBasedIndex, TreeBasedIndex
-from couchpotato.core.helpers.encoding import toUnicode, simplifyString
+
+from couchpotato.core.helpers.encoding import to_unicode, simplify_string
 
 
 class MediaIndex(MultiTreeBasedIndex):
@@ -78,7 +79,7 @@ from couchpotato.core.helpers.encoding import simplifyString"""
         if data.get('_t') == 'media' and len(data.get('title', '')) > 0:
 
             out = set()
-            title = str(simplifyString(data.get('title').lower()))
+            title = str(simplify_string(data.get('title').lower()))
             l = self.__l
             title_split = title.split()
 
@@ -118,10 +119,10 @@ from couchpotato.core.helpers.encoding import toUnicode, simplifyString"""
 
     def simplify(self, title):
 
-        title = toUnicode(title)
+        title = to_unicode(title)
 
         nr_prefix = '' if title and len(title) > 0 and title[0] in ascii_letters else '#'
-        title = simplifyString(title)
+        title = simplify_string(title)
 
         for prefix in ['the ', 'an ', 'a ']:
             if prefix == title[:len(prefix)]:
@@ -150,8 +151,8 @@ from couchpotato.core.helpers.encoding import toUnicode, simplifyString"""
             return self.first(data['title']), None
 
     def first(self, title):
-        title = toUnicode(title)
-        title = simplifyString(title)
+        title = to_unicode(title)
+        title = simplify_string(title)
 
         for prefix in ['the ', 'an ', 'a ']:
             if prefix == title[:len(prefix)]:

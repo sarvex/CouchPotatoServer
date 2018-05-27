@@ -18,11 +18,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import unicode_literals
+
+import logging
+
 from guessit import base_text_type, Guess
 from guessit.patterns import canonical_form
 from guessit.textutils import clean_string
-import logging
 
 log = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ def format_guess(guess):
 
     Note that this modifies the dictionary given as input.
     """
-    for prop, value in guess.items():
+    for prop, value in list(guess.items()):
         if prop in ('season', 'episodeNumber', 'year', 'cdNumber',
                     'cdNumberTotal', 'bonusNumber', 'filmNumber'):
             guess[prop] = int(guess[prop])

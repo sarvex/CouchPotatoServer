@@ -5,7 +5,11 @@
 Futz with files like a pro.
 """
 
-import errno, exceptions, os, stat, tempfile
+import errno
+import exceptions
+import os
+import stat
+import tempfile
 
 try:
     import bsddb
@@ -174,7 +178,8 @@ class ReopenableNamedTemporaryFile:
     def shutdown(self):
         remove(self.name)
 
-def make_dirs(dirname, mode=0777):
+
+def make_dirs(dirname, mode=0o777):
     """
     An idempotent version of os.makedirs().  If the dir already exists, do
     nothing and return without raising an exception.  If this call creates the
@@ -185,13 +190,14 @@ def make_dirs(dirname, mode=0777):
     tx = None
     try:
         os.makedirs(dirname, mode)
-    except OSError, x:
+    except OSError as x:
         tx = x
 
     if not os.path.isdir(dirname):
         if tx:
             raise tx
-        raise exceptions.IOError, "unknown error prevented creation of directory, or deleted the directory immediately after creation: %s" % dirname # careful not to construct an IOError with a 2-tuple, as that has a special meaning...
+        raise exceptions.IOError(
+            "unknown error prevented creation of directory, or deleted the directory immediately after creation: %s" % dirname)  # careful not to construct an IOError with a 2-tuple, as that has a special meaning...
 
 def rmtree(dirname):
     """
@@ -212,11 +218,11 @@ def rmtree(dirname):
             else:
                 remove(fullname)
         os.rmdir(dirname)
-    except EnvironmentError, le:
+    except EnvironmentError as le:
         # Ignore "No such file or directory", collect any other exception.
         if (le.args[0] != 2 and le.args[0] != 3) or (le.args[0] != errno.ENOENT):
             excs.append(le)
-    except Exception, le:
+    except Exception as le:
         excs.append(le)
 
     # Okay, now we've recursively removed everything, ignoring any "No
@@ -226,8 +232,8 @@ def rmtree(dirname):
         if len(excs) == 1:
             raise excs[0]
         if len(excs) == 0:
-            raise OSError, "Failed to remove dir for unknown reason."
-        raise OSError, excs
+            raise OSError("Failed to remove dir for unknown reason.")
+        raise OSError(excs)
 
 def rm_dir(dirname):
     # Renamed to be like shutil.rmtree and unlike rmdir.
@@ -242,7 +248,7 @@ def remove_if_possible(f):
 def remove_if_present(f):
     try:
         remove(f)
-    except EnvironmentError, le:
+    except EnvironmentError as le:
         # Ignore "No such file or directory", re-raise any other exception.
         if (le.args[0] != 2 and le.args[0] != 3) or (le.args[0] != errno.ENOENT):
             raise

@@ -57,13 +57,13 @@ def to_unicode(data):
     :rtype: unicode
 
     """
-    if not isinstance(data, basestring):
+    if not isinstance(data, str):
         raise ValueError('Basestring expected')
-    if isinstance(data, unicode):
+    if isinstance(data, str):
         return data
     for encoding in ('utf-8', 'latin-1'):
         try:
-            return unicode(data, encoding)
+            return str(data, encoding)
         except UnicodeDecodeError:
             pass
-    return unicode(data, 'utf-8', 'replace')
+    return str(data, 'utf-8', 'replace')

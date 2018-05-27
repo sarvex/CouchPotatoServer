@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import shutil
 import tarfile
 import time
@@ -7,20 +8,18 @@ import traceback
 import zipfile
 from datetime import datetime
 from threading import RLock
-import re
 
+from dateutil.parser import parse
+from git.repository import LocalRepository
+
+import version
 from couchpotato.api import addApiView
-from couchpotato.core.event import addEvent, fireEvent, fireEventAsync
+from couchpotato.core.event import add_event, fire_event, fire_event_async
 from couchpotato.core.helpers.encoding import sp
-from couchpotato.core.helpers.variable import removePyc, tryInt
+from couchpotato.core.helpers.variable import remove_pyc, try_int
 from couchpotato.core.logger import CPLog
 from couchpotato.core.plugins.base import Plugin
 from couchpotato.environment import Env
-from dateutil.parser import parse
-from git.repository import LocalRepository
-import version
-from six.moves import filter
-
 
 log = CPLog(__name__)
 
@@ -43,9 +42,9 @@ class Updater(Plugin):
         else:
             self.updater = SourceUpdater()
 
-        addEvent('app.load', self.logVersion, priority = 10000)
-        addEvent('app.load', self.setCrons)
-        addEvent('updater.info', self.info)
+        add_event('app.load', self.log_version, priority=10000)
+        add_event('app.load', self.set_crons)
+        add_event('updater.info', self.info)
 
         addApiView('updater.info', self.info, docs = {
             'desc': 'Get updater information',
@@ -57,31 +56,31 @@ class Updater(Plugin):
         'version': current_cp_version
 }"""}
         })
-        addApiView('updater.update', self.doUpdateView)
-        addApiView('updater.check', self.checkView, docs = {
+        addApiView('updater.update', self.do_update_view)
+        addApiView('updater.check', self.check_view, docs={
             'desc': 'Check for available update',
             'return': {'type': 'see updater.info'}
         })
 
-        addEvent('setting.save.updater.enabled.after', self.setCrons)
+        add_event('setting.save.updater.enabled.after', self.set_crons)
 
-    def logVersion(self):
+    def log_version(self):
         info = self.info()
         log.info('=== VERSION %s, using %s ===', (info.get('version', {}).get('repr', 'UNKNOWN'), self.updater.getName()))
 
-    def setCrons(self):
+    def set_crons(self):
 
-        fireEvent('schedule.remove', 'updater.check', single = True)
-        if self.isEnabled():
-            fireEvent('schedule.interval', 'updater.check', self.autoUpdate, hours = 24)
-            self.autoUpdate()  # Check after enabling
+        fire_event('schedule.remove', 'updater.check', single=True)
+        if self.is_enabled():
+            fire_event('schedule.interval', 'updater.check', self.auto_update, hours=24)
+            self.auto_update()  # Check after enabling
 
-    def autoUpdate(self):
+    def auto_update(self):
         do_check = True
 
         try:
-            last_check = tryInt(Env.prop(self.last_check, default = 0))
-            now = tryInt(time.time())
+            last_check = try_int(Env.prop(self.last_check, default=0))
+            now = try_int(time.time())
             do_check = last_check < now - 43200
 
             if do_check:
@@ -89,34 +88,39 @@ class Updater(Plugin):
         except:
             log.error('Failed checking last time to update: %s', traceback.format_exc())
 
-        if do_check and self.isEnabled() and self.check() and self.conf('automatic') and not self.updater.update_failed:
+        if do_check and self.is_enabled() and self.check() and self.conf(
+            'automatic') and not self.updater.update_failed:
 
-            if self.updater.doUpdate():
+            if self.updater.do_update():
 
                 # Notify before restarting
                 try:
                     if self.conf('notification'):
                         info = self.updater.info()
                         version_date = datetime.fromtimestamp(info['update_version']['date'])
-                        fireEvent('updater.updated', 'CouchPotato: Updated to a new version with hash "%s", this version is from %s' % (info['update_version']['hash'], version_date), data = info)
+                        fire_event('updater.updated',
+                                   'CouchPotato: Updated to a new version with hash "%s", this version is from %s' % (
+                                   info['update_version']['hash'], version_date), data=info)
                 except:
                     log.error('Failed notifying for update: %s', traceback.format_exc())
 
-                fireEventAsync('app.restart')
+                fire_event_async('app.restart')
 
                 return True
 
         return False
 
     def check(self, force = False):
-        if not force and self.isDisabled():
+        if not force and self.is_disabled():
             return
 
         if self.updater.check():
             if not self.available_notified and self.conf('notification') and not self.conf('automatic'):
                 info = self.updater.info()
                 version_date = datetime.fromtimestamp(info['update_version']['date'])
-                fireEvent('updater.available', message = 'A new update with hash "%s" is available, this version is from %s' % (info['update_version']['hash'], version_date), data = info)
+                fire_event('updater.available',
+                           message='A new update with hash "%s" is available, this version is from %s' % (
+                           info['update_version']['hash'], version_date), data=info)
                 self.available_notified = True
             return True
 
@@ -135,22 +139,22 @@ class Updater(Plugin):
 
         return info
 
-    def checkView(self, **kwargs):
+    def check_view(self, **kwargs):
         return {
             'update_available': self.check(force = True),
             'info': self.updater.info()
         }
 
-    def doUpdateView(self, **kwargs):
+    def do_update_view(self, **kwargs):
 
         self.check()
         if not self.updater.update_version:
             log.error('Trying to update when no update is available.')
             success = False
         else:
-            success = self.updater.doUpdate()
+            success = self.updater.do_update()
             if success:
-                fireEventAsync('app.restart')
+                fire_event_async('app.restart')
 
             # Assume the updater handles things
             if not success:
@@ -160,11 +164,11 @@ class Updater(Plugin):
             'success': success
         }
 
-    def doShutdown(self, *args, **kwargs):
+    def do_shutdown(self, *args, **kwargs):
         if not Env.get('dev') and not Env.get('desktop'):
-            removePyc(Env.get('app_dir'), show_logs = False)
+            remove_pyc(Env.get('app_dir'), show_logs=False)
 
-        return super(Updater, self).doShutdown(*args, **kwargs)
+        return super(Updater, self).do_shutdown(*args, **kwargs)
 
 
 class BaseUpdater(Plugin):
@@ -178,12 +182,11 @@ class BaseUpdater(Plugin):
     update_version = None
     last_check = 0
 
-    def doUpdate(self):
+    def do_update(self):
         pass
 
     def info(self):
-
-        current_version = self.getVersion()
+        current_version = self.get_version()
 
         return {
             'last_check': self.last_check,
@@ -193,7 +196,7 @@ class BaseUpdater(Plugin):
             'branch': current_version.get('branch', self.branch),
         }
 
-    def getVersion(self):
+    def get_version(self):
         pass
 
     def check(self):
@@ -215,7 +218,7 @@ class GitUpdater(BaseUpdater):
             new_url = remote.url.replace(self.old_repo, self.new_repo)
             self.repo._executeGitCommandAssertSuccess("remote set-url %s %s" % (remote_name, new_url))
 
-    def doUpdate(self):
+    def do_update(self):
 
         try:
             log.info('Updating to latest version')
@@ -229,7 +232,7 @@ class GitUpdater(BaseUpdater):
 
         return False
 
-    def getVersion(self):
+    def get_version(self):
 
         if not self.version:
 
@@ -294,20 +297,21 @@ class SourceUpdater(BaseUpdater):
         # Create version file in cache
         self.version_file = os.path.join(Env.get('cache_dir'), 'version')
         if not os.path.isfile(self.version_file):
-            self.createFile(self.version_file, json.dumps(self.latestCommit()))
+            self.createFile(self.version_file, json.dumps(self.latest_commit()))
 
-    def doUpdate(self):
+    def do_update(self):
 
         try:
-            download_data = fireEvent('cp.source_url', repo = self.repo_user, repo_name = self.repo_name, branch = self.branch, single = True)
+            download_data = fire_event('cp.source_url', repo=self.repo_user, repo_name=self.repo_name,
+                                       branch=self.branch, single=True)
             destination = os.path.join(Env.get('cache_dir'), self.update_version.get('hash')) + '.' + download_data.get('type')
 
             extracted_path = os.path.join(Env.get('cache_dir'), 'temp_updater')
-            destination = fireEvent('file.download', url = download_data.get('url'), dest = destination, single = True)
+            destination = fire_event('file.download', url=download_data.get('url'), dest=destination, single=True)
 
             # Cleanup leftover from last time
             if os.path.isdir(extracted_path):
-                self.removeDir(extracted_path)
+                self.remove_directory(extracted_path)
             self.makeDir(extracted_path)
 
             # Extract
@@ -322,8 +326,8 @@ class SourceUpdater(BaseUpdater):
 
             os.remove(destination)
 
-            if self.replaceWith(os.path.join(extracted_path, os.listdir(extracted_path)[0])):
-                self.removeDir(extracted_path)
+            if self.replace_with(os.path.join(extracted_path, os.listdir(extracted_path)[0])):
+                self.remove_directory(extracted_path)
 
                 # Write update version to file
                 self.createFile(self.version_file, json.dumps(self.update_version))
@@ -335,13 +339,13 @@ class SourceUpdater(BaseUpdater):
         self.update_failed = True
         return False
 
-    def replaceWith(self, path):
+    def replace_with(self, path):
         path = sp(path)
         app_dir = Env.get('app_dir')
         data_dir = Env.get('data_dir')
 
         # Get list of files we want to overwrite
-        removePyc(app_dir)
+        remove_pyc(app_dir)
         existing_files = []
         for root, subfiles, filenames in os.walk(app_dir):
             for filename in filenames:
@@ -382,15 +386,15 @@ class SourceUpdater(BaseUpdater):
 
         return True
 
-    def removeDir(self, path):
+    def remove_directory(self, path):
         try:
             if os.path.isdir(path):
                 shutil.rmtree(path)
         except OSError as inst:
             os.chmod(inst.filename, 0o777)
-            self.removeDir(path)
+            self.remove_directory(path)
 
-    def getVersion(self):
+    def get_version(self):
 
         if not self.version:
             try:
@@ -410,10 +414,10 @@ class SourceUpdater(BaseUpdater):
 
     def check(self):
 
-        current_version = self.getVersion()
+        current_version = self.get_version()
 
         try:
-            latest = self.latestCommit()
+            latest = self.latest_commit()
 
             if latest.get('hash') != current_version.get('hash') and latest.get('date') >= current_version.get('date'):
                 self.update_version = latest
@@ -424,7 +428,7 @@ class SourceUpdater(BaseUpdater):
 
         return self.update_version is not None
 
-    def latestCommit(self):
+    def latest_commit(self):
         try:
             url = 'https://api.github.com/repos/%s/%s/commits?per_page=1&sha=%s' % (self.repo_user, self.repo_name, self.branch)
             data = self.getCache('github.commit', url = url)
@@ -445,11 +449,11 @@ class DesktopUpdater(BaseUpdater):
     def __init__(self):
         self.desktop = Env.get('desktop')
 
-    def doUpdate(self):
+    def do_update(self):
         try:
             def do_restart(e):
                 if e['status'] == 'done':
-                    fireEventAsync('app.restart')
+                    fire_event_async('app.restart')
                 elif e['status'] == 'error':
                     log.error('Failed updating desktop: %s', e['exception'])
                     self.update_failed = True
@@ -465,12 +469,12 @@ class DesktopUpdater(BaseUpdater):
         return {
             'last_check': self.last_check,
             'update_version': self.update_version,
-            'version': self.getVersion(),
+            'version': self.get_version(),
             'branch': self.branch,
         }
 
     def check(self):
-        current_version = self.getVersion()
+        current_version = self.get_version()
         try:
             latest = self.desktop._esky.find_update()
 
@@ -487,7 +491,7 @@ class DesktopUpdater(BaseUpdater):
 
         return self.update_version is not None
 
-    def getVersion(self):
+    def get_version(self):
         return {
             'repr': 'desktop: %s' % self.desktop._esky.active_version,
             'hash': self.desktop._esky.active_version,

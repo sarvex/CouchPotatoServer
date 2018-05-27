@@ -2,12 +2,11 @@ import datetime
 import re
 
 from couchpotato.api import addApiView
-from couchpotato.core.event import addEvent, fireEvent
-from couchpotato.core.helpers.encoding import simplifyString
-from couchpotato.core.helpers.variable import splitString, removeEmpty, removeDuplicate
+from couchpotato.core.event import add_event, fire_event
+from couchpotato.core.helpers.encoding import simplify_string
+from couchpotato.core.helpers.variable import split_string, remove_empty, remove_duplicate
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.searcher.base import SearcherBase
-
 
 log = CPLog(__name__)
 
@@ -16,13 +15,13 @@ class Searcher(SearcherBase):
 
     # noinspection PyMissingConstructor
     def __init__(self):
-        addEvent('searcher.protocols', self.getSearchProtocols)
-        addEvent('searcher.contains_other_quality', self.containsOtherQuality)
-        addEvent('searcher.correct_3d', self.correct3D)
-        addEvent('searcher.correct_year', self.correctYear)
-        addEvent('searcher.correct_name', self.correctName)
-        addEvent('searcher.correct_words', self.correctWords)
-        addEvent('searcher.search', self.search)
+        add_event('searcher.protocols', self.getSearchProtocols)
+        add_event('searcher.contains_other_quality', self.containsOtherQuality)
+        add_event('searcher.correct_3d', self.correct3D)
+        add_event('searcher.correct_year', self.correctYear)
+        add_event('searcher.correct_name', self.correctName)
+        add_event('searcher.correct_words', self.correctWords)
+        add_event('searcher.search', self.search)
 
         addApiView('searcher.full_search', self.searchAllView, docs = {
             'desc': 'Starts a full search for all media',
@@ -39,20 +38,21 @@ class Searcher(SearcherBase):
     def searchAllView(self):
 
         results = {}
-        for _type in fireEvent('media.types'):
-            results[_type] = fireEvent('%s.searcher.all_view' % _type)
+        for _type in fire_event('media.types'):
+            results[_type] = fire_event('%s.searcher.all_view' % _type)
 
         return results
 
     def getProgressForAll(self):
-        progress = fireEvent('searcher.progress', merge = True)
+        progress = fire_event('searcher.progress', merge=True)
         return progress
 
     def search(self, protocols, media, quality):
         results = []
 
         for search_protocol in protocols:
-            protocol_results = fireEvent('provider.search.%s.%s' % (search_protocol, media.get('type')), media, quality, merge = True)
+            protocol_results = fire_event('provider.search.%s.%s' % (search_protocol, media.get('type')), media,
+                                          quality, merge=True)
             if protocol_results:
                 results += protocol_results
 
@@ -66,8 +66,8 @@ class Searcher(SearcherBase):
 
     def getSearchProtocols(self):
 
-        download_protocols = fireEvent('download.enabled_protocols', merge = True)
-        provider_protocols = fireEvent('provider.enabled_protocols', merge = True)
+        download_protocols = fire_event('download.enabled_protocols', merge=True)
+        provider_protocols = fire_event('provider.enabled_protocols', merge=True)
 
         if download_protocols and len(list(set(provider_protocols) & set(download_protocols))) == 0:
             log.error('There aren\'t any providers enabled for your downloader (%s). Check your settings.', ','.join(download_protocols))
@@ -90,7 +90,7 @@ class Searcher(SearcherBase):
         found = {}
 
         # Try guessing via quality tags
-        guess = fireEvent('quality.guess', files = [nzb.get('name')], size = nzb.get('size', None), single = True)
+        guess = fire_event('quality.guess', files=[nzb.get('name')], size=nzb.get('size', None), single=True)
         if guess:
             found[guess['identifier']] = True
 
@@ -98,7 +98,7 @@ class Searcher(SearcherBase):
         name = nzb['name']
         size = nzb.get('size', 0)
 
-        year_name = fireEvent('scanner.name_year', name, single = True)
+        year_name = fire_event('scanner.name_year', name, single=True)
         if len(found) == 0 and movie_year < datetime.datetime.now().year - 3 and not year_name.get('year', None):
             if size > 20000:  # Assume bd50
                 log.info('Quality was missing in name, assuming it\'s a BR-Disk based on the size: %s', size)
@@ -127,7 +127,7 @@ class Searcher(SearcherBase):
         threed = preferred_quality['custom'].get('3d')
 
         # Try guessing via quality tags
-        guess = fireEvent('quality.guess', [nzb.get('name')], single = True)
+        guess = fire_event('quality.guess', [nzb.get('name')], single=True)
 
         if guess:
             return threed == guess.get('is_3d')
@@ -143,7 +143,7 @@ class Searcher(SearcherBase):
         year_name = {}
         for string in haystack:
 
-            year_name = fireEvent('scanner.name_year', string, single = True)
+            year_name = fire_event('scanner.name_year', string, single=True)
 
             if year_name and ((year - year_range) <= year_name.get('year') <= (year + year_range)):
                 log.debug('Movie year matches range: %s looking for %s', (year_name.get('year'), year))
@@ -164,12 +164,12 @@ class Searcher(SearcherBase):
         try: check_names.append(max(re.findall(r'[^[]*\[([^]]*)\]', check_name), key = len).strip())
         except: pass
 
-        for check_name in removeDuplicate(check_names):
-            check_movie = fireEvent('scanner.name_year', check_name, single = True)
+        for check_name in remove_duplicate(check_names):
+            check_movie = fire_event('scanner.name_year', check_name, single=True)
 
             try:
-                check_words = removeEmpty(re.split('\W+', check_movie.get('name', '')))
-                movie_words = removeEmpty(re.split('\W+', simplifyString(movie_name)))
+                check_words = remove_empty(re.split('\W+', check_movie.get('name', '')))
+                movie_words = remove_empty(re.split('\W+', simplify_string(movie_name)))
 
                 if len(check_words) > 0 and len(movie_words) > 0 and len(list(set(check_words) - set(movie_words))) == 0:
                     return True
@@ -181,8 +181,9 @@ class Searcher(SearcherBase):
     def containsWords(self, rel_name, rel_words, conf, media):
 
         # Make sure it has required words
-        words = splitString(self.conf('%s_words' % conf, section = 'searcher').lower())
-        try: words = removeDuplicate(words + splitString(media['category'][conf].lower()))
+        words = split_string(self.conf('%s_words' % conf, section='searcher').lower())
+        try:
+            words = remove_duplicate(words + split_string(media['category'][conf].lower()))
         except: pass
 
         req_match = 0
@@ -192,16 +193,16 @@ class Searcher(SearcherBase):
                     log.debug('Regex match: %s', req_set[1:-1])
                     req_match += 1
             else:
-                req = splitString(req_set, '&')
+                req = split_string(req_set, '&')
                 req_match += len(list(set(rel_words) & set(req))) == len(req)
 
         return words, req_match > 0
 
     def correctWords(self, rel_name, media):
-        media_title = fireEvent('searcher.get_search_title', media, single = True)
-        media_words = re.split('\W+', simplifyString(media_title))
+        media_title = fire_event('searcher.get_search_title', media, single=True)
+        media_words = re.split('\W+', simplify_string(media_title))
 
-        rel_name = simplifyString(rel_name)
+        rel_name = simplify_string(rel_name)
         rel_words = re.split('\W+', rel_name)
 
         required_words, contains_required = self.containsWords(rel_name, rel_words, 'required', media)

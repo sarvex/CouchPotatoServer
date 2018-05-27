@@ -1,16 +1,18 @@
 # Copyright (c) 2002-2012 Zooko Wilcox-O'Hearn
 #  This file is part of pyutil; see README.rst for licensing terms.
 
+import os
+import random
 import warnings
-import os, random
 
 try:
-    import hashexpand
+    from . import hashexpand
     class SHA256Random(hashexpand.SHA256Expander, random.Random):
         def __init__(self, seed=None, deterministic=True):
             warnings.warn("deprecated", DeprecationWarning)
             if not deterministic:
-                raise NotImplementedError, "SHA256Expander is always deterministic.  For non-deterministic, try urandomRandom."
+                raise NotImplementedError(
+                    "SHA256Expander is always deterministic.  For non-deterministic, try urandomRandom.")
 
             hashexpand.SHA256Expander.__init__(self)
             random.Random.__init__(self, seed)
@@ -18,7 +20,7 @@ try:
 
         def seed(self, seed=None):
             if seed is None:
-                import increasing_timer
+                from . import increasing_timer
                 seed = repr(increasing_timer.time())
             hashexpand.SHA256Expander.seed(self, seed)
 
@@ -33,13 +35,13 @@ try:
             if seed is None:
                 seed = os.urandom(32)
             hashexpand.SHA256Expander.seed(self, seed)
-except ImportError, le:
+except ImportError as le:
     class InsecureSHA256Random:
         def __init__(self, seed=None):
-            raise ImportError, le
+            raise ImportError(le)
     class SHA256Random:
         def __init__(self, seed=""):
-            raise ImportError, le
+            raise ImportError(le)
 
 class devrandomRandom(random.Random):
     """ The problem with using this one, of course, is that it blocks.  This
@@ -78,7 +80,7 @@ choice = randobj.choice
 seed = randobj.seed
 
 def randstr(n):
-    return ''.join(map(chr, map(randrange, [0]*n, [256]*n)))
+    return ''.join(map(chr, list(map(randrange, [0] * n, [256] * n))))
 
 def insecurerandstr(n):
     return os.urandom(n)

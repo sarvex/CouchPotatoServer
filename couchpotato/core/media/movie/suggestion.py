@@ -1,10 +1,10 @@
 import time
+
 from couchpotato.api import addApiView
-from couchpotato.core.event import fireEvent, addEvent
-from couchpotato.core.helpers.variable import splitString, removeDuplicate, getIdentifier, getTitle
+from couchpotato.core.event import fire_event, add_event
+from couchpotato.core.helpers.variable import split_string, remove_duplicate, get_identifier, get_title
 from couchpotato.core.plugins.base import Plugin
 from couchpotato.environment import Env
-
 
 autoload = 'Suggestion'
 
@@ -20,18 +20,18 @@ class Suggestion(Plugin):
             time.sleep(1)
             self.suggestView()
 
-        addEvent('app.load', test)
+        add_event('app.load', test)
 
     def suggestView(self, limit = 6, **kwargs):
-        if self.isDisabled():
+        if self.is_disabled():
             return {
                 'success': True,
                 'movies': []
             }
 
-        movies = splitString(kwargs.get('movies', ''))
-        ignored = splitString(kwargs.get('ignored', ''))
-        seen = splitString(kwargs.get('seen', ''))
+        movies = split_string(kwargs.get('movies', ''))
+        ignored = split_string(kwargs.get('ignored', ''))
+        seen = split_string(kwargs.get('seen', ''))
 
         cached_suggestion = self.getCache('suggestion_cached')
         if cached_suggestion:
@@ -39,15 +39,15 @@ class Suggestion(Plugin):
         else:
 
             if not movies or len(movies) == 0:
-                active_movies = fireEvent('media.with_status', ['active', 'done'], types = 'movie', single = True)
-                movies = [getIdentifier(x) for x in active_movies]
+                active_movies = fire_event('media.with_status', ['active', 'done'], types='movie', single=True)
+                movies = [get_identifier(x) for x in active_movies]
 
             if not ignored or len(ignored) == 0:
-                ignored = splitString(Env.prop('suggest_ignore', default = ''))
+                ignored = split_string(Env.prop('suggest_ignore', default=''))
             if not seen or len(seen) == 0:
-                movies.extend(splitString(Env.prop('suggest_seen', default = '')))
+                movies.extend(split_string(Env.prop('suggest_seen', default='')))
 
-            suggestions = fireEvent('movie.suggest', movies = movies, ignore = ignored, single = True)
+            suggestions = fire_event('movie.suggest', movies=movies, ignore=ignored, single=True)
             self.setCache('suggestion_cached', suggestions, timeout = 6048000)  # Cache for 10 weeks
 
         medias = []
@@ -58,12 +58,12 @@ class Suggestion(Plugin):
             poster = [x for x in posters if 'tmdb' in x]
             posters = poster if len(poster) > 0 else posters
 
-            cached_poster = fireEvent('file.download', url = posters[0], single = True) if len(posters) > 0 else False
+            cached_poster = fire_event('file.download', url=posters[0], single=True) if len(posters) > 0 else False
             files = {'image_poster': [cached_poster] } if cached_poster else {}
 
             medias.append({
                 'status': 'suggested',
-                'title': getTitle(suggestion),
+                'title': get_title(suggestion),
                 'type': 'movie',
                 'info': suggestion,
                 'files': files,
@@ -79,8 +79,8 @@ class Suggestion(Plugin):
 
     def ignoreView(self, imdb = None, limit = 6, remove_only = False, mark_seen = False, **kwargs):
 
-        ignored = splitString(Env.prop('suggest_ignore', default = ''))
-        seen = splitString(Env.prop('suggest_seen', default = ''))
+        ignored = split_string(Env.prop('suggest_ignore', default=''))
+        seen = split_string(Env.prop('suggest_seen', default=''))
 
         new_suggestions = []
         if imdb:
@@ -101,7 +101,7 @@ class Suggestion(Plugin):
         # Only return new (last) item
         media = {
             'status': 'suggested',
-            'title': getTitle(new_suggestions[limit]),
+            'title': get_title(new_suggestions[limit]),
             'type': 'movie',
             'info': new_suggestions[limit],
             'identifiers': {
@@ -131,12 +131,12 @@ class Suggestion(Plugin):
 
         # Get new results and add them
         if len(new_suggestions) - 1 < limit:
-            active_movies = fireEvent('media.with_status', ['active', 'done'], single = True)
-            movies = [getIdentifier(x) for x in active_movies]
+            active_movies = fire_event('media.with_status', ['active', 'done'], single=True)
+            movies = [get_identifier(x) for x in active_movies]
             movies.extend(seen)
 
             ignored.extend([x.get('imdb') for x in cached_suggestion])
-            suggestions = fireEvent('movie.suggest', movies = movies, ignore = removeDuplicate(ignored), single = True)
+            suggestions = fire_event('movie.suggest', movies=movies, ignore=remove_duplicate(ignored), single=True)
 
             if suggestions:
                 new_suggestions.extend(suggestions)

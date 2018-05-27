@@ -1,13 +1,12 @@
-from urlparse import urlparse
 import re
 import traceback
+from urllib.parse import urlparse
 
-from couchpotato.core.helpers.encoding import toUnicode
-from couchpotato.core.helpers.variable import splitString, tryInt, tryFloat
+from couchpotato.core.helpers.encoding import to_unicode
+from couchpotato.core.helpers.variable import split_string, try_int, try_float
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.base import ResultList
 from couchpotato.core.media._base.providers.torrent.base import TorrentProvider
-
 
 log = CPLog(__name__)
 
@@ -25,7 +24,7 @@ class Base(TorrentProvider):
         results = ResultList(self, media, quality, imdb_results = True)
 
         for host in hosts:
-            if self.isDisabled(host):
+            if self.is_disabled(host):
                 continue
 
             self._searchOnHost(host, media, quality, results)
@@ -46,7 +45,7 @@ class Base(TorrentProvider):
                             'id': torrent.get('torrent_id'),
                             'protocol': 'torrent' if re.match('^(http|https|ftp)://.*$', torrent.get('download_url')) else 'torrent_magnet',
                             'provider_extra': urlparse(host['host']).hostname or host['host'],
-                            'name': toUnicode(torrent.get('release_name')),
+                            'name': to_unicode(torrent.get('release_name')),
                             'url': torrent.get('download_url'),
                             'detail_url': torrent.get('details_url'),
                             'size': torrent.get('size'),
@@ -62,13 +61,13 @@ class Base(TorrentProvider):
 
     def getHosts(self):
 
-        uses = splitString(str(self.conf('use')), clean = False)
-        hosts = splitString(self.conf('host'), clean = False)
-        names = splitString(self.conf('name'), clean = False)
-        seed_times = splitString(self.conf('seed_time'), clean = False)
-        seed_ratios = splitString(self.conf('seed_ratio'), clean = False)
-        pass_keys = splitString(self.conf('pass_key'), clean = False)
-        extra_score = splitString(self.conf('extra_score'), clean = False)
+        uses = split_string(str(self.conf('use')), clean=False)
+        hosts = split_string(self.conf('host'), clean=False)
+        names = split_string(self.conf('name'), clean=False)
+        seed_times = split_string(self.conf('seed_time'), clean=False)
+        seed_ratios = split_string(self.conf('seed_ratio'), clean=False)
+        pass_keys = split_string(self.conf('pass_key'), clean=False)
+        extra_score = split_string(self.conf('extra_score'), clean=False)
 
         host_list = []
         for nr in range(len(hosts)):
@@ -92,10 +91,10 @@ class Base(TorrentProvider):
                 'use': uses[nr],
                 'host': host,
                 'name': name,
-                'seed_ratio': tryFloat(ratio),
-                'seed_time': tryInt(seed_time),
+                'seed_ratio': try_float(ratio),
+                'seed_time': try_int(seed_time),
                 'pass_key': key,
-                'extra_score': tryInt(extra_score[nr]) if len(extra_score) > nr else 0
+                'extra_score': try_int(extra_score[nr]) if len(extra_score) > nr else 0
             })
 
         return host_list
@@ -109,19 +108,19 @@ class Base(TorrentProvider):
             if result:
                 return result
 
-    def isDisabled(self, host = None):
-        return not self.isEnabled(host)
+    def is_disabled(self, host=None):
+        return not self.is_enabled(host)
 
-    def isEnabled(self, host = None):
+    def is_enabled(self, host=None):
 
     # Return true if at least one is enabled and no host is given
         if host is None:
             for host in self.getHosts():
-                if self.isEnabled(host):
+                if self.is_enabled(host):
                     return True
             return False
 
-        return TorrentProvider.isEnabled(self) and host['host'] and host['pass_key'] and int(host['use'])
+    return TorrentProvider.is_enabled(self) and host['host'] and host['pass_key'] and int(host['use'])
 
 
 config = [{

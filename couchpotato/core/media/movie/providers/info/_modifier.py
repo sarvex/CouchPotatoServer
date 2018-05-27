@@ -2,12 +2,12 @@ import copy
 import traceback
 
 from CodernityDB.database import RecordNotFound
+
 from couchpotato import get_db
-from couchpotato.core.event import addEvent, fireEvent
-from couchpotato.core.helpers.variable import mergeDicts, randomString
+from couchpotato.core.event import add_event, fire_event
+from couchpotato.core.helpers.variable import merge_dictionaries
 from couchpotato.core.logger import CPLog
 from couchpotato.core.plugins.base import Plugin
-
 
 log = CPLog(__name__)
 
@@ -46,9 +46,9 @@ class MovieResultModifier(Plugin):
     }
 
     def __init__(self):
-        addEvent('result.modify.info.search', self.returnByType)
-        addEvent('result.modify.movie.search', self.combineOnIMDB)
-        addEvent('result.modify.movie.info', self.checkLibrary)
+        add_event('result.modify.info.search', self.returnByType)
+        add_event('result.modify.movie.search', self.combineOnIMDB)
+        add_event('result.modify.movie.info', self.checkLibrary)
 
     def returnByType(self, results):
 
@@ -73,7 +73,7 @@ class MovieResultModifier(Plugin):
 
         # Combine on imdb id
         for item in results:
-            random_string = randomString()
+            random_string = random_string()
             imdb = item.get('imdb', random_string)
             imdb = imdb if imdb else random_string
 
@@ -82,7 +82,7 @@ class MovieResultModifier(Plugin):
                 order.append(imdb)
 
             # Merge dicts
-            temp[imdb] = mergeDicts(temp[imdb], item)
+            temp[imdb] = merge_dictionaries(temp[imdb], item)
 
         # Make it a list again
         temp_list = [temp[x] for x in order]
@@ -114,7 +114,7 @@ class MovieResultModifier(Plugin):
                     try: temp['in_wanted']['profile'] = db.get('id', media['profile_id'])
                     except: temp['in_wanted']['profile'] = {'label': ''}
 
-                for release in fireEvent('release.for_media', media['_id'], single = True):
+                for release in fire_event('release.for_media', media['_id'], single=True):
                     if release.get('status') == 'done':
                         if not temp['in_library']:
                             temp['in_library'] = media
@@ -128,8 +128,8 @@ class MovieResultModifier(Plugin):
 
     def checkLibrary(self, result):
 
-        result = mergeDicts(copy.deepcopy(self.default_info), copy.deepcopy(result))
+        result = merge_dictionaries(copy.deepcopy(self.default_info), copy.deepcopy(result))
 
         if result and result.get('imdb'):
-            return mergeDicts(result, self.getLibraryTags(result['imdb']))
+            return merge_dictionaries(result, self.getLibraryTags(result['imdb']))
         return result

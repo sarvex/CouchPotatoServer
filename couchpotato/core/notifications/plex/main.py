@@ -1,4 +1,4 @@
-from couchpotato.core.event import addEvent, fireEvent
+from couchpotato.core.event import add_event, fire_event
 from couchpotato.core.logger import CPLog
 from couchpotato.core.notifications.base import Notification
 from .client import PlexClientHTTP, PlexClientJSON
@@ -21,10 +21,10 @@ class Plex(Notification):
             'json': PlexClientJSON(self)
         }
 
-        addEvent('renamer.after', self.addToLibrary)
+        add_event('renamer.after', self.addToLibrary)
 
     def addToLibrary(self, message = None, group = None):
-        if self.isDisabled(): return
+        if self.is_disabled(): return
         if not group: group = {}
 
         return self.server.refresh()
@@ -44,7 +44,7 @@ class Plex(Notification):
             client = self.server.clients.get(client_name)
 
             if client and client['found']:
-                client_success = fireEvent('notify.plex.notifyClient', client, message, single = True)
+                client_success = fire_event('notify.plex.notifyClient', client, message, single=True)
 
             if not client_success:
                 if self.server.staleClients() or not client:

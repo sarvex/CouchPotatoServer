@@ -18,12 +18,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import unicode_literals
-from guessit import Guess
-from guessit.transfo import SingleNodeGuesser
-from guessit.patterns import episode_rexps
-import re
+
 import logging
+import re
+
+from guessit import Guess
+from guessit.patterns import episode_rexps
+from guessit.transfo import SingleNodeGuesser
 
 log = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ def number_list(s):
 
     if len(l) == 2:
         # it is an episode interval, return all numbers in between
-        return range(l[0], l[1]+1)
+        return list(range(l[0], l[1] + 1))
 
     return l
 
@@ -40,7 +41,7 @@ def guess_episodes_rexps(string):
     for rexp, confidence, span_adjust in episode_rexps:
         match = re.search(rexp, string, re.IGNORECASE)
         if match:
-            span = (match.start() + span_adjust[0], 
+            span = (match.start() + span_adjust[0],
                     match.end() + span_adjust[1])
             guess = Guess(match.groupdict(), confidence=confidence, raw=string[span[0]:span[1]])
 

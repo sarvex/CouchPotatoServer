@@ -19,7 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import unicode_literals
+
 import re
 
 
@@ -184,23 +184,23 @@ def _to_rexp(prop):
 # containing the rexps compiled from both prop_multi and prop_single
 properties_rexps = dict((type, dict((canonical_form,
                                      [ _to_rexp(pattern) for pattern in patterns ])
-                                    for canonical_form, patterns in props.items()))
-                        for type, props in prop_multi.items())
+                                    for canonical_form, patterns in list(props.items())))
+                        for type, props in list(prop_multi.items()))
 
 properties_rexps.update(dict((type, dict((canonical_form, [ _to_rexp(canonical_form) ])
                                          for canonical_form in props))
-                             for type, props in prop_single.items()))
+                             for type, props in list(prop_single.items())))
 
 
 
 def find_properties(string):
     result = []
-    for property_name, props in properties_rexps.items():
+    for property_name, props in list(properties_rexps.items()):
         # FIXME: this should be done in a more flexible way...
         if property_name in ['weakReleaseGroup']:
             continue
 
-        for canonical_form, rexps in props.items():
+        for canonical_form, rexps in list(props.items()):
             for value_rexp in rexps:
                 match = value_rexp.search(string)
                 if match:
@@ -225,7 +225,7 @@ property_synonyms = { 'Special Edition': [ 'Special' ],
 def revert_synonyms():
     reverse = {}
 
-    for canonical, synonyms in property_synonyms.items():
+    for canonical, synonyms in list(property_synonyms.items()):
         for synonym in synonyms:
             reverse[synonym.lower()] = canonical
 
@@ -242,8 +242,8 @@ def canonical_form(string):
 def compute_canonical_form(property_name, value):
     """Return the canonical form of a property given its type if it is a valid
     one, None otherwise."""
-    if isinstance(value, basestring):
-        for canonical_form, rexps in properties_rexps[property_name].items():
+    if isinstance(value, str):
+        for canonical_form, rexps in list(properties_rexps[property_name].items()):
             for rexp in rexps:
                 if rexp.match(value):
                     return canonical_form

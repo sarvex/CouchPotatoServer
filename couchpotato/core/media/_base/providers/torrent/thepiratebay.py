@@ -1,14 +1,14 @@
 import re
 import traceback
 
+import six
 from bs4 import BeautifulSoup
-from couchpotato.core.event import addEvent
-from couchpotato.core.helpers.encoding import toUnicode
-from couchpotato.core.helpers.variable import tryInt
+
+from couchpotato.core.event import add_event
+from couchpotato.core.helpers.encoding import to_unicode
+from couchpotato.core.helpers.variable import try_int
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.torrent.base import TorrentMagnetProvider
-import six
-
 
 log = CPLog(__name__)
 
@@ -42,7 +42,7 @@ class Base(TorrentMagnetProvider):
     def __init__(self):
         super(Base, self).__init__()
 
-        addEvent('app.test', self.doTest)
+        add_event('app.test', self.doTest)
 
     def _search(self, media, quality, results):
 
@@ -106,8 +106,8 @@ class Base(TorrentMagnetProvider):
                                 'url': download['href'],
                                 'detail_url': self.getDomain(link['href']),
                                 'size': self.parseSize(size),
-                                'seeders': tryInt(result.find_all('td')[2].string),
-                                'leechers': tryInt(result.find_all('td')[3].string),
+                                'seeders': try_int(result.find_all('td')[2].string),
+                                'leechers': try_int(result.find_all('td')[3].string),
                                 'extra_score': extra_score,
                                 'get_more_info': self.getMoreInfo
                             })
@@ -115,8 +115,8 @@ class Base(TorrentMagnetProvider):
                 except:
                     log.error('Failed getting results from %s: %s', (self.getName(), traceback.format_exc()))
 
-    def isEnabled(self):
-        return super(Base, self).isEnabled() and self.getDomain()
+    def is_enabled(self):
+        return super(Base, self).is_enabled() and self.getDomain()
 
     def correctProxy(self, data):
         return 'title="Pirate Search"' in data
@@ -127,7 +127,7 @@ class Base(TorrentMagnetProvider):
         nfo_pre = html.find('div', attrs = {'class': 'nfo'})
         description = ''
         try:
-            description = toUnicode(nfo_pre.text)
+            description = to_unicode(nfo_pre.text)
         except:
             pass
 

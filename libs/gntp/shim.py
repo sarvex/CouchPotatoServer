@@ -22,24 +22,18 @@ if PY3:
 		if isinstance(s, bytes):
 			return s.decode('utf8', 'replace')
 		return s
-
-	from io import BytesIO as StringIO
-	from configparser import RawConfigParser
 else:
 	def b(s):
-		if isinstance(s, unicode):
+        if isinstance(s, str):
 			return s.encode('utf8', 'replace')
 		return s
 
 	def u(s):
-		if isinstance(s, unicode):
+        if isinstance(s, str):
 			return s
 		if isinstance(s, int):
 			s = str(s)
-		return unicode(s, "utf8", "replace")
-
-	from StringIO import StringIO
-	from ConfigParser import RawConfigParser
+        return str(s, "utf8", "replace")
 
 b.__doc__ = "Ensure we have a byte string"
 u.__doc__ = "Ensure we have a unicode string"

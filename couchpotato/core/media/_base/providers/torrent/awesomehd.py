@@ -2,10 +2,10 @@ import re
 import traceback
 
 from bs4 import BeautifulSoup
-from couchpotato.core.helpers.variable import tryInt, getIdentifier
+
+from couchpotato.core.helpers.variable import try_int, get_identifier
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.torrent.base import TorrentProvider
-
 
 log = CPLog(__name__)
 
@@ -23,7 +23,8 @@ class Base(TorrentProvider):
 
     def _search(self, movie, quality, results):
 
-        data = self.getHTMLData(self.urls['search'] % (self.conf('passkey'), getIdentifier(movie), self.conf('only_internal')))
+        data = self.getHTMLData(
+            self.urls['search'] % (self.conf('passkey'), get_identifier(movie), self.conf('only_internal')))
 
         if data:
             if self.login_fail_msg in data:
@@ -74,9 +75,9 @@ class Base(TorrentProvider):
                         'name': '%s.%s.%s' % (name, year, torrent_desc),
                         'url': self.urls['download'] % (torrent_id, authkey, self.conf('passkey')),
                         'detail_url': self.urls['detail'] % torrent_id,
-                        'size': tryInt(entry.find('size').get_text()) / 1048576,
-                        'seeders': tryInt(entry.find('seeders').get_text()),
-                        'leechers': tryInt(entry.find('leechers').get_text()),
+                        'size': try_int(entry.find('size').get_text()) / 1048576,
+                        'seeders': try_int(entry.find('seeders').get_text()),
+                        'leechers': try_int(entry.find('leechers').get_text()),
                         'score': torrentscore
                     })
 

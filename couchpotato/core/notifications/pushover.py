@@ -1,5 +1,5 @@
-from couchpotato.core.helpers.encoding import toUnicode
-from couchpotato.core.helpers.variable import getTitle, getIdentifier
+from couchpotato.core.helpers.encoding import to_unicode
+from couchpotato.core.helpers.variable import get_title, get_identifier
 from couchpotato.core.logger import CPLog
 from couchpotato.core.notifications.base import Notification
 
@@ -19,15 +19,15 @@ class Pushover(Notification):
         api_data = {
             'user': self.conf('user_key'),
             'token': self.conf('api_token'),
-            'message': toUnicode(message),
+            'message': to_unicode(message),
             'priority': self.conf('priority'),
             'sound': self.conf('sound'),
         }
 
-        if data and getIdentifier(data):
+        if data and get_identifier(data):
             api_data.update({
-                'url': toUnicode('http://www.imdb.com/title/%s/' % getIdentifier(data)),
-                'url_title': toUnicode('%s on IMDb' % getTitle(data)),
+                'url': to_unicode('http://www.imdb.com/title/%s/' % get_identifier(data)),
+                'url_title': to_unicode('%s on IMDb' % get_title(data)),
             })
 
         try:

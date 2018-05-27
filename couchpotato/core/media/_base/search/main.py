@@ -1,6 +1,6 @@
 from couchpotato.api import addApiView
-from couchpotato.core.event import fireEvent, addEvent
-from couchpotato.core.helpers.variable import mergeDicts, getImdb
+from couchpotato.core.event import fire_event, add_event
+from couchpotato.core.helpers.variable import merge_dictionaries, get_imdb
 from couchpotato.core.logger import CPLog
 from couchpotato.core.plugins.base import Plugin
 
@@ -25,33 +25,33 @@ class Search(Plugin):
 }"""}
         })
 
-        addEvent('app.load', self.addSingleSearches)
+        add_event('app.load', self.addSingleSearches)
 
     def search(self, q = '', types = None, **kwargs):
 
         # Make sure types is the correct instance
-        if isinstance(types, (str, unicode)):
+        if isinstance(types, str):
             types = [types]
         elif isinstance(types, (list, tuple, set)):
             types = list(types)
 
-        imdb_identifier = getImdb(q)
+        imdb_identifier = get_imdb(q)
 
         if not types:
             if imdb_identifier:
-                result = fireEvent('movie.info', identifier = imdb_identifier, merge = True)
+                result = fire_event('movie.info', identifier=imdb_identifier, merge=True)
                 result = {result['type']: [result]}
             else:
-                result = fireEvent('info.search', q = q, merge = True)
+                result = fire_event('info.search', q=q, merge=True)
         else:
             result = {}
             for media_type in types:
                 if imdb_identifier:
-                    result[media_type] = fireEvent('%s.info' % media_type, identifier = imdb_identifier)
+                    result[media_type] = fire_event('%s.info' % media_type, identifier=imdb_identifier)
                 else:
-                    result[media_type] = fireEvent('%s.search' % media_type, q = q)
+                    result[media_type] = fire_event('%s.search' % media_type, q=q)
 
-        return mergeDicts({
+        return merge_dictionaries({
             'success': True,
         }, result)
 
@@ -64,5 +64,5 @@ class Search(Plugin):
 
     def addSingleSearches(self):
 
-        for media_type in fireEvent('media.types', merge = True):
+        for media_type in fire_event('media.types', merge=True):
             addApiView('%s.search' % media_type, self.createSingleSearch(media_type))

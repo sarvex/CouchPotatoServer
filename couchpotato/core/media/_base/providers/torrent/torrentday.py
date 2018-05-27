@@ -1,5 +1,6 @@
 import re
-from couchpotato.core.helpers.variable import tryInt
+
+from couchpotato.core.helpers.variable import try_int
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.torrent.base import TorrentProvider
 
@@ -50,8 +51,8 @@ class Base(TorrentProvider):
                 'url': self.urls['download'] % (torrent['id'], torrent['fname']),
                 'detail_url': self.urls['detail'] % torrent['id'],
                 'size': self.parseSize(torrent.get('size')),
-                'seeders': tryInt(torrent.get('seed')),
-                'leechers': tryInt(torrent.get('leech')),
+                'seeders': try_int(torrent.get('seed')),
+                'leechers': try_int(torrent.get('leech')),
             })
 
     def getRequestHeaders(self):

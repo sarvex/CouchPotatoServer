@@ -20,9 +20,8 @@
 # along with enzyme.  If not, see <http://www.gnu.org/licenses/>.
 import mimetypes
 import os
-import sys
-from exceptions import *
 
+from .exceptions import *
 
 PARSERS = [('asf', ['video/asf'], ['asf', 'wmv', 'wma']),
            ('flv', ['video/flv'], ['flv']),

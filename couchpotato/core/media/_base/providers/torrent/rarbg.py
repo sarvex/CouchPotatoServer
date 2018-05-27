@@ -1,10 +1,10 @@
+import random
 import re
 import traceback
-import random
 from datetime import datetime
 
-from couchpotato import fireEvent
-from couchpotato.core.helpers.variable import tryInt, getIdentifier
+from couchpotato import fire_event
+from couchpotato.core.helpers.variable import try_int, get_identifier
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.torrent.base import TorrentMagnetProvider
 
@@ -25,7 +25,7 @@ class Base(TorrentMagnetProvider):
     def _search(self, movie, quality, results):
         hasresults = 0
         curryear = datetime.now().year
-        movieid = getIdentifier(movie)
+        movieid = get_identifier(movie)
 
         try:
             movieyear = movie['info']['year']
@@ -72,24 +72,24 @@ class Base(TorrentMagnetProvider):
                                 age = 0
 
                             torrentscore = self.conf('extra_score')
-                            seeders = tryInt(result['seeders'])
+                            seeders = try_int(result['seeders'])
                             torrent_desc = '/ %s / %s / %s / %s seeders' % (releasegroup, resolution, encoding, seeders)
 
                             if seeders == 0:
                                 torrentscore = 0
 
                             sliceyear = result['pubdate'][0:4]
-                            year = tryInt(sliceyear)
+                            year = try_int(sliceyear)
 
                             results.append({
                                 'id': random.randint(100, 9999),
                                 'name': re.sub('[^A-Za-z0-9\-_ \(\).]+', '', '%s (%s) %s' % (name, year, torrent_desc)),
                                 'url': result['download'],
                                 'detail_url': result['info_page'],
-                                'size': tryInt(result['size']/1048576),  # rarbg sends in bytes
-                                'seeders': tryInt(result['seeders']),
-                                'leechers': tryInt(result['leechers']),
-                                'age': tryInt(age),
+                                'size': try_int(result['size'] / 1048576),  # rarbg sends in bytes
+                                'seeders': try_int(result['seeders']),
+                                'leechers': try_int(result['leechers']),
+                                'age': try_int(age),
                                 'score': torrentscore
                             })
 
@@ -110,7 +110,7 @@ class Base(TorrentMagnetProvider):
 
     def getRequestHeaders(self):
         return {
-            'User-Agent': fireEvent('app.version', single = True)
+            'User-Agent': fire_event('app.version', single=True)
         }
 
     @staticmethod

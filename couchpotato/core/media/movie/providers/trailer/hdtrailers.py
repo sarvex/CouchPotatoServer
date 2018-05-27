@@ -1,13 +1,13 @@
-from string import digits, ascii_letters
 import re
+from string import digits, ascii_letters
 
 from bs4 import SoupStrainer, BeautifulSoup
-from couchpotato.core.helpers.encoding import tryUrlencode
-from couchpotato.core.helpers.variable import mergeDicts, getTitle, getIdentifier
-from couchpotato.core.logger import CPLog
-from couchpotato.core.media.movie.providers.trailer.base import TrailerProvider
 from requests import HTTPError
 
+from couchpotato.core.helpers.encoding import try_url_encode
+from couchpotato.core.helpers.variable import merge_dictionaries, get_title, get_identifier
+from couchpotato.core.logger import CPLog
+from couchpotato.core.media.movie.providers.trailer.base import TrailerProvider
 
 log = CPLog(__name__)
 
@@ -25,11 +25,11 @@ class HDTrailers(TrailerProvider):
 
     def search(self, group):
 
-        movie_name = getTitle(group)
+        movie_name = get_title(group)
 
         url = self.urls['api'] % self.movieUrlName(movie_name)
         try:
-            data = self.getCache('hdtrailers.%s' % getIdentifier(group), url, show_error = False)
+            data = self.getCache('hdtrailers.%s' % get_identifier(group), url, show_error=False)
         except HTTPError:
             log.debug('No page found for: %s', movie_name)
             data = None
@@ -48,18 +48,18 @@ class HDTrailers(TrailerProvider):
                 results = self.findViaAlternative(group)
                 did_alternative = True
 
-            result_data = mergeDicts(result_data, results)
+            result_data = merge_dictionaries(result_data, results)
 
         return result_data
 
     def findViaAlternative(self, group):
         results = {'480p': [], '720p': [], '1080p': []}
 
-        movie_name = getTitle(group)
+        movie_name = get_title(group)
 
-        url = "%s?%s" % (self.urls['backup'], tryUrlencode({'s':movie_name}))
+        url = "%s?%s" % (self.urls['backup'], try_url_encode({'s': movie_name}))
         try:
-            data = self.getCache('hdtrailers.alt.%s' % getIdentifier(group), url, show_error = False)
+            data = self.getCache('hdtrailers.alt.%s' % get_identifier(group), url, show_error=False)
         except HTTPError:
             log.debug('No alternative page found for: %s', movie_name)
             data = None

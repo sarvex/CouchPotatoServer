@@ -1,18 +1,18 @@
-from urlparse import urlparse
+import re
 import time
 import traceback
-import re
+from urllib.parse import urlparse
 
-from couchpotato.core.helpers.encoding import tryUrlencode, toUnicode
+from dateutil.parser import parse
+from requests import HTTPError
+
+from couchpotato.core.helpers.encoding import try_url_encode, to_unicode
 from couchpotato.core.helpers.rss import RSS
-from couchpotato.core.helpers.variable import cleanHost, splitString, tryInt
+from couchpotato.core.helpers.variable import clean_host, split_string, try_int
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.base import ResultList
 from couchpotato.core.media._base.providers.nzb.base import NZBProvider
 from couchpotato.environment import Env
-from dateutil.parser import parse
-from requests import HTTPError
-
 
 log = CPLog(__name__)
 
@@ -35,7 +35,7 @@ class Base(NZBProvider, RSS):
         results = ResultList(self, media, quality, imdb_results = True)
 
         for host in hosts:
-            if self.isDisabled(host):
+            if self.is_disabled(host):
                 continue
 
             self._searchOnHost(host, media, quality, results)
@@ -66,22 +66,23 @@ class Base(NZBProvider, RSS):
                         continue
 
             if not date:
-                date = self.getTextElement(nzb, 'pubDate')
+                date = self.get_text_element(nzb, 'pubDate')
 
-            name = self.getTextElement(nzb, 'title')
-            detail_url = self.getTextElement(nzb, 'guid')
+            name = self.get_text_element(nzb, 'title')
+            detail_url = self.get_text_element(nzb, 'guid')
             nzb_id = detail_url.split('/')[-1:].pop()
 
             try:
-                link = self.getElement(nzb, 'enclosure').attrib['url']
+                link = self.get_element(nzb, 'enclosure').attrib['url']
             except:
-                link = self.getTextElement(nzb, 'link')
+                link = self.get_text_element(nzb, 'link')
 
             if '://' not in detail_url:
-                detail_url = (cleanHost(host['host']) + self.urls['detail']) % tryUrlencode(nzb_id)
+                detail_url = (clean_host(host['host']) + self.urls['detail']) % try_url_encode(nzb_id)
 
             if not link:
-                link = ((self.getUrl(host['host']) + self.urls['download']) % tryUrlencode(nzb_id)) + self.getApiExt(host)
+                link = ((self.getUrl(host['host']) + self.urls['download']) % try_url_encode(nzb_id)) + self.getApiExt(
+                    host)
 
             if not name:
                 continue
@@ -98,7 +99,7 @@ class Base(NZBProvider, RSS):
                     url = '%s%s' % (self.getUrl(host['host']), query)
                     nzb_details = self.getRSSData(url, cache_timeout = 1800, headers = {'User-Agent': Env.getIdentifier()})[0]
 
-                    description = self.getTextElement(nzb_details, 'description')
+                    description = self.get_text_element(nzb_details, 'description')
 
                     # Extract a password from the description
                     password = re.search('(?:' + self.passwords_regex + ')(?: *)(?:\:|\=)(?: *)(.*?)\<br\>|\n|$', description, flags = re.I).group(1)
@@ -110,25 +111,25 @@ class Base(NZBProvider, RSS):
             results.append({
                 'id': nzb_id,
                 'provider_extra': urlparse(host['host']).hostname or host['host'],
-                'name': toUnicode(name),
+                'name': to_unicode(name),
                 'name_extra': name_extra,
                 'age': self.calculateAge(int(time.mktime(parse(date).timetuple()))),
-                'size': int(self.getElement(nzb, 'enclosure').attrib['length']) / 1024 / 1024,
+                'size': int(self.get_element(nzb, 'enclosure').attrib['length']) / 1024 / 1024,
                 'url': link,
                 'detail_url': detail_url,
-                'content': self.getTextElement(nzb, 'description'),
+                'content': self.get_text_element(nzb, 'description'),
                 'description': description,
                 'score': host['extra_score'],
             })
 
     def getHosts(self):
 
-        uses = splitString(str(self.conf('use')), clean = False)
-        hosts = splitString(self.conf('host'), clean = False)
-        api_keys = splitString(self.conf('api_key'), clean = False)
-        extra_score = splitString(self.conf('extra_score'), clean = False)
-        custom_tags = splitString(self.conf('custom_tag'), clean = False)
-        custom_categories = splitString(self.conf('custom_categories'), clean = False)
+        uses = split_string(str(self.conf('use')), clean=False)
+        hosts = split_string(self.conf('host'), clean=False)
+        api_keys = split_string(self.conf('api_key'), clean=False)
+        extra_score = split_string(self.conf('extra_score'), clean=False)
+        custom_tags = split_string(self.conf('custom_tag'), clean=False)
+        custom_categories = split_string(self.conf('custom_categories'), clean=False)
 
         list = []
         for nr in range(len(hosts)):
@@ -139,7 +140,8 @@ class Base(NZBProvider, RSS):
             try: host = hosts[nr]
             except: host = ''
 
-            try: score = tryInt(extra_score[nr])
+            try:
+                score = try_int(extra_score[nr])
             except: score = 0
 
             try: custom_tag = custom_tags[nr]
@@ -170,23 +172,23 @@ class Base(NZBProvider, RSS):
 
     def getUrl(self, host):
         if '?page=newznabapi' in host:
-            return cleanHost(host)[:-1] + '&'
+            return clean_host(host)[:-1] + '&'
 
-        return cleanHost(host) + 'api?'
+        return clean_host(host) + 'api?'
 
-    def isDisabled(self, host = None):
-        return not self.isEnabled(host)
+    def is_disabled(self, host=None):
+        return not self.is_enabled(host)
 
-    def isEnabled(self, host = None):
+    def is_enabled(self, host=None):
 
         # Return true if at least one is enabled and no host is given
         if host is None:
             for host in self.getHosts():
-                if self.isEnabled(host):
+                if self.is_enabled(host):
                     return True
             return False
 
-        return NZBProvider.isEnabled(self) and host['host'] and host['api_key'] and int(host['use'])
+        return NZBProvider.is_enabled(self) and host['host'] and host['api_key'] and int(host['use'])
 
     def getApiExt(self, host):
         return '&apikey=%s' % host['api_key']
@@ -218,7 +220,7 @@ class Base(NZBProvider, RSS):
         return 'try_next'
 
     def buildDetailsUrl(self, nzb_id, api_key):
-        query = tryUrlencode({
+        query = try_url_encode({
             't': 'details',
             'id': nzb_id,
             'apikey': api_key,

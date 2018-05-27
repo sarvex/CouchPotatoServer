@@ -7,7 +7,8 @@ import warnings
 from twisted.internet import reactor
 
 # from the pyutil library
-from weakutil import WeakMethod
+from .weakutil import WeakMethod
+
 
 def callLater_weakly(delay, func, *args, **kwargs):
     """

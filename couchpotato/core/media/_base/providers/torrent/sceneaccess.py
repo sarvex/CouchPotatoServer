@@ -1,11 +1,11 @@
 import traceback
 
 from bs4 import BeautifulSoup
-from couchpotato.core.helpers.encoding import toUnicode
-from couchpotato.core.helpers.variable import tryInt
+
+from couchpotato.core.helpers.encoding import to_unicode
+from couchpotato.core.helpers.variable import try_int
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.torrent.base import TorrentProvider
-
 
 log = CPLog(__name__)
 
@@ -53,8 +53,8 @@ class Base(TorrentProvider):
                         'url': self.urls['download'] % url['href'],
                         'detail_url': self.urls['detail'] % torrent_id,
                         'size': self.parseSize(result.find('td', attrs = {'class': 'ttr_size'}).contents[0]),
-                        'seeders': tryInt(seeders.string) if seeders else 0,
-                        'leechers': tryInt(leechers.string) if leechers else 0,
+                        'seeders': try_int(seeders.string) if seeders else 0,
+                        'leechers': try_int(leechers.string) if leechers else 0,
                         'get_more_info': self.getMoreInfo,
                     })
 
@@ -65,7 +65,7 @@ class Base(TorrentProvider):
         full_description = self.getCache('sceneaccess.%s' % item['id'], item['detail_url'], cache_timeout = 25920000)
         html = BeautifulSoup(full_description)
         nfo_pre = html.find('div', attrs = {'id': 'details_table'})
-        description = toUnicode(nfo_pre.text) if nfo_pre else ''
+        description = to_unicode(nfo_pre.text) if nfo_pre else ''
 
         item['description'] = description
         return item

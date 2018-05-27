@@ -2,12 +2,11 @@ import re
 import traceback
 
 from bs4 import BeautifulSoup
-from couchpotato.core.helpers.encoding import toUnicode, tryUrlencode
-from couchpotato.core.helpers.variable import tryInt
+
+from couchpotato.core.helpers.encoding import try_url_encode
+from couchpotato.core.helpers.variable import try_int
 from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.torrent.base import TorrentMagnetProvider
-import six
-
 
 log = CPLog(__name__)
 
@@ -22,7 +21,7 @@ class Base(TorrentMagnetProvider):
 
     def _searchOnTitle(self, title, movie, quality, results):
 
-        movieTitle = tryUrlencode('%s-%s' % (title.replace(':', '').replace(' ', '-'), movie['info']['year']))
+        movieTitle = try_url_encode('%s-%s' % (title.replace(':', '').replace(' ', '-'), movie['info']['year']))
 
         next_page = True
         current_page = 1
@@ -58,8 +57,8 @@ class Base(TorrentMagnetProvider):
                                 'detail_url': self.urls['detail'] % link['href'],
                                 'size': self.parseSize(size),
                                 'age' : self.ageToDays(age),
-                                'seeders': tryInt(tds[len(tds)-2].string),
-                                'leechers': tryInt(tds[len(tds)-1].string),
+                                'seeders': try_int(tds[len(tds) - 2].string),
+                                'leechers': try_int(tds[len(tds) - 1].string),
                             })
                         elif result.find('td', attrs = {'id': 'pages'}):
                             page_td = result.find('td', attrs = {'id': 'pages'})
@@ -88,9 +87,9 @@ class Base(TorrentMagnetProvider):
             elif size == 'year':
                 mult = 365
 
-            age += tryInt(nr) * mult
+            age += try_int(nr) * mult
 
-        return tryInt(age)
+        return try_int(age)
 
 config = [{
     'name': 'magnetdl',

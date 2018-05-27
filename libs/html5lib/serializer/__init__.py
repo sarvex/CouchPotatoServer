@@ -1,8 +1,7 @@
-from __future__ import absolute_import, division, unicode_literals
 
-from .. import treewalkers
 
 from .htmlserializer import HTMLSerializer
+from .. import treewalkers
 
 
 def serialize(input, tree="etree", format="html", encoding=None,
